@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>中国象棋</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f0f1a;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 24px;
+      background: #1a1a2e;
+      border-bottom: 1px solid #2d2d4e;
+    }
+
+    .back-btn {
+      color: #a0aec0;
+      text-decoration: none;
+      font-size: 0.9rem;
+      padding: 6px 14px;
+      border: 1px solid #4a5568;
+      border-radius: 8px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    .back-btn:hover { color: #fff; border-color: #fff; }
+
+    .game-title { font-size: 1.2rem; font-weight: 700; color: #e2e8f0; }
+
+    .turn-label {
+      font-size: 0.95rem;
+      padding: 6px 16px;
+      border-radius: 20px;
+      background: #2d2d4e;
+      color: #e2e8f0;
+      min-width: 120px;
+      text-align: center;
+    }
+
+    .board-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px;
+    }
+
+    canvas {
+      box-shadow: 0 4px 32px rgba(0,0,0,0.5);
+      max-width: 100%;
+      cursor: pointer;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+    }
+
+    .modal.hidden { display: none; }
+
+    .modal-content {
+      background: #1a1a2e;
+      border: 1px solid #4a5568;
+      border-radius: 20px;
+      padding: 48px 56px;
+      text-align: center;
+      box-shadow: 0 16px 64px rgba(0,0,0,0.5);
+    }
+
+    .modal-content h2 { font-size: 2rem; margin-bottom: 12px; }
+    .modal-content p { color: #a0aec0; margin-bottom: 28px; }
+
+    .modal-content button {
+      padding: 12px 36px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    .modal-content button:hover { opacity: 0.85; }
+    .btn-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 12px; }
+    .btn { padding: 10px 24px; background: #2d2d4e; color: #e2e8f0; border: 2px solid #4a5568; border-radius: 10px; font-size: 0.95rem; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+    .btn:hover { border-color: #667eea; background: #3a3a5e; }
+    .btn.active { border-color: #667eea; background: linear-gradient(135deg,#667eea,#764ba2); color: #fff; }
+    .section-label { color: #718096; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+  <nav class="topbar">
+    <a href="../index.html" class="back-btn">← 返回目录</a>
+    <span class="game-title">中国象棋</span>
+    <span class="turn-label" id="turn">红方回合</span>
+  </nav>
+
+  <!-- Mode selection modal -->
+  <div id="setup-modal" class="modal">
+    <div class="modal-content">
+      <h2>中国象棋</h2>
+      <p>选择游戏模式</p>
+      <div class="section-label">游戏模式</div>
+      <div class="btn-row">
+        <button class="btn active" id="btn-2p" onclick="selectMode('2p')">👥 双人对战</button>
+        <button class="btn" id="btn-1p" onclick="selectMode('1p')">🤖 单人 vs AI</button>
+      </div>
+      <div id="diff-section" style="display:none;margin-top:12px">
+        <div class="section-label">AI 难度</div>
+        <div class="btn-row">
+          <button class="btn active" id="diff-low" onclick="selectDiff('low')">🟢 低</button>
+          <button class="btn" id="diff-mid" onclick="selectDiff('mid')">🟡 中</button>
+          <button class="btn" id="diff-high" onclick="selectDiff('high')">🔴 高</button>
+        </div>
+      </div>
+      <br>
+      <button style="padding:12px 36px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:10px;font-size:1rem;cursor:pointer;margin-top:8px" onclick="startGame()">开始游戏</button>
+    </div>
+  </div>
+
+  <div class="board-container">
+    <canvas id="board"></canvas>
+  </div>
+
+  <div id="modal" class="modal hidden">
+    <div class="modal-content">
+      <h2 id="modal-msg"></h2>
+      <p id="modal-sub"></p>
+      <button onclick="showSetup()">再来一局</button>
+    </div>
+  </div>
+
+  <script>
+    // ── Mode / difficulty ─────────────────────────────────────
+    let gameMode = '2p';
+    let aiDiff = 'low';
+    let aiThinking = false;
+
+    function selectMode(m) {
+      gameMode = m;
+      document.getElementById('btn-2p').classList.toggle('active', m === '2p');
+      document.getElementById('btn-1p').classList.toggle('active', m === '1p');
+      document.getElementById('diff-section').style.display = m === '1p' ? '' : 'none';
+    }
+    function selectDiff(d) {
+      aiDiff = d;
+      ['low','mid','high'].forEach(x => document.getElementById('diff-'+x).classList.toggle('active', x === d));
+    }
+    function startGame() {
+      document.getElementById('setup-modal').classList.add('hidden');
+      initGame();
+    }
+    function showSetup() {
+      modal.classList.add('hidden');
+      document.getElementById('setup-modal').classList.remove('hidden');
+    }
+
+    // Board: 9 cols (0-8), 10 rows (0-9). Black at top (rows 0-4), Red at bottom (rows 5-9).
+    const COLS = 9;
+    const ROWS = 10;
+    const CELL = 60;
+    const MARGIN = 40;
+    const BW = MARGIN * 2 + CELL * (COLS - 1); // 520
+    const BH = MARGIN * 2 + CELL * (ROWS - 1); // 580
+
+    const canvas = document.getElementById('board');
+    const turnEl = document.getElementById('turn');
+    const modal = document.getElementById('modal');
+    const modalMsg = document.getElementById('modal-msg');
+    const modalSub = document.getElementById('modal-sub');
+
+    let dpr, ctx;
+    let pieces, selected, validMoves, currentPlayer, gameOver;
+
+    function setupCanvas() {
+      dpr = window.devicePixelRatio || 1;
+      canvas.width = BW * dpr;
+      canvas.height = BH * dpr;
+      canvas.style.width = BW + 'px';
+      canvas.style.height = BH + 'px';
+      ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+    }
+
+    // Piece labels: [redLabel, blackLabel]
+    const LABELS = {
+      K: ['帅','将'], A: ['仕','士'], B: ['相','象'],
+      N: ['马','馬'], R: ['车','車'], C: ['炮','砲'], P: ['兵','卒']
+    };
+
+    function mkPiece(type, color, row, col) {
+      return { type, color, row, col };
+    }
+
+    function initPieces() {
+      const ps = [];
+      const add = (type, color, row, col) => ps.push(mkPiece(type, color, row, col));
+
+      // Black pieces (top)
+      add('R','black',0,0); add('N','black',0,1); add('B','black',0,2);
+      add('A','black',0,3); add('K','black',0,4); add('A','black',0,5);
+      add('B','black',0,6); add('N','black',0,7); add('R','black',0,8);
+      add('C','black',2,1); add('C','black',2,7);
+      for (let c of [0,2,4,6,8]) add('P','black',3,c);
+
+      // Red pieces (bottom)
+      add('R','red',9,0); add('N','red',9,1); add('B','red',9,2);
+      add('A','red',9,3); add('K','red',9,4); add('A','red',9,5);
+      add('B','red',9,6); add('N','red',9,7); add('R','red',9,8);
+      add('C','red',7,1); add('C','red',7,7);
+      for (let c of [0,2,4,6,8]) add('P','red',6,c);
+
+      return ps;
+    }
+
+    function getPieceAt(ps, row, col) {
+      return ps.find(p => p.row === row && p.col === col) || null;
+    }
+
+    function inBounds(r, c) { return r >= 0 && r < ROWS && c >= 0 && c < COLS; }
+
+    function inPalace(r, c, color) {
+      const rows = color === 'black' ? [0,1,2] : [7,8,9];
+      return rows.includes(r) && c >= 3 && c <= 5;
+    }
+
+    function crossedRiver(r, color) {
+      return color === 'red' ? r < 5 : r > 4;
+    }
+
+    function getMoves(ps, piece) {
+      const {type, color, row: r, col: c} = piece;
+      const moves = [];
+
+      const push = (nr, nc) => {
+        if (!inBounds(nr, nc)) return;
+        const at = getPieceAt(ps, nr, nc);
+        if (!at || at.color !== color) moves.push([nr, nc]);
+      };
+
+      if (type === 'K') {
+        for (const [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]]) {
+          const nr = r+dr, nc = c+dc;
+          if (inPalace(nr, nc, color)) push(nr, nc);
+        }
+      } else if (type === 'A') {
+        for (const [dr, dc] of [[-1,-1],[-1,1],[1,-1],[1,1]]) {
+          const nr = r+dr, nc = c+dc;
+          if (inPalace(nr, nc, color)) push(nr, nc);
+        }
+      } else if (type === 'B') {
+        // 2-step diagonal, blocked if midpoint occupied, cannot cross river
+        for (const [dr, dc] of [[-2,-2],[-2,2],[2,-2],[2,2]]) {
+          const nr = r+dr, nc = c+dc;
+          const mr = r+dr/2, mc = c+dc/2;
+          if (!inBounds(nr, nc)) continue;
+          // Cannot cross river
+          const midRiver = color === 'red' ? nr < 5 : nr > 4;
+          if (midRiver) continue;
+          if (getPieceAt(ps, mr, mc)) continue; // blocked (象腿)
+          push(nr, nc);
+        }
+      } else if (type === 'N') {
+        // Orthogonal step then diagonal, blocked if orthogonal square occupied (马腿)
+        const nMoves = [
+          [-1,0,[-2,-1],[-2,1]],
+          [1,0,[2,-1],[2,1]],
+          [0,-1,[-1,-2],[1,-2]],
+          [0,1,[-1,2],[1,2]],
+        ];
+        for (const [lr, lc, ...diags] of nMoves) {
+          if (getPieceAt(ps, r+lr, c+lc)) continue; // leg blocked
+          for (const [dr, dc] of diags) push(r+dr, c+dc);
+        }
+      } else if (type === 'R') {
+        for (const [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]]) {
+          let nr = r+dr, nc = c+dc;
+          while (inBounds(nr, nc)) {
+            const at = getPieceAt(ps, nr, nc);
+            if (!at) { moves.push([nr, nc]); }
+            else { if (at.color !== color) moves.push([nr, nc]); break; }
+            nr += dr; nc += dc;
+          }
+        }
+      } else if (type === 'C') {
+        // Move: like rook (no capture). Capture: jump exactly one piece.
+        for (const [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]]) {
+          let nr = r+dr, nc = c+dc;
+          let platform = false;
+          while (inBounds(nr, nc)) {
+            const at = getPieceAt(ps, nr, nc);
+            if (!platform) {
+              if (!at) moves.push([nr, nc]);
+              else platform = true;
+            } else {
+              if (at) {
+                if (at.color !== color) moves.push([nr, nc]);
+                break;
+              }
+            }
+            nr += dr; nc += dc;
+          }
+        }
+      } else if (type === 'P') {
+        const forward = color === 'red' ? -1 : 1;
+        // Always can move forward
+        push(r+forward, c);
+        // After crossing river can also move sideways
+        if (crossedRiver(r, color)) {
+          push(r, c-1);
+          push(r, c+1);
+        }
+      }
+
+      return moves;
+    }
+
+    function isInCheck(ps, color) {
+      const king = ps.find(p => p.type === 'K' && p.color === color);
+      if (!king) return false;
+
+      // Check flying general
+      const oppKing = ps.find(p => p.type === 'K' && p.color !== color);
+      if (oppKing && oppKing.col === king.col) {
+        const minR = Math.min(king.row, oppKing.row);
+        const maxR = Math.max(king.row, oppKing.row);
+        let between = 0;
+        for (let r = minR+1; r < maxR; r++) {
+          if (getPieceAt(ps, r, king.col)) between++;
+        }
+        if (between === 0) return true; // flying general
+      }
+
+      const oppColor = color === 'red' ? 'black' : 'red';
+      const oppPieces = ps.filter(p => p.color === oppColor);
+      for (const op of oppPieces) {
+        const moves = getMoves(ps, op);
+        if (moves.some(([r, c]) => r === king.row && c === king.col)) return true;
+      }
+      return false;
+    }
+
+    function getValidMoves(ps, piece) {
+      const raw = getMoves(ps, piece);
+      return raw.filter(([nr, nc]) => {
+        // Simulate move
+        const copy = ps.map(p => ({...p}));
+        const idx = copy.indexOf(copy.find(p => p === piece || (p.row === piece.row && p.col === piece.col && p.type === piece.type && p.color === piece.color)));
+        // Remove captured piece
+        const capIdx = copy.findIndex(p => p.row === nr && p.col === nc);
+        if (capIdx !== -1) copy.splice(capIdx, 1);
+        // Move piece
+        const movingPiece = copy.find(p => p.row === piece.row && p.col === piece.col && p.type === piece.type && p.color === piece.color);
+        if (!movingPiece) return false;
+        movingPiece.row = nr;
+        movingPiece.col = nc;
+        return !isInCheck(copy, piece.color);
+      });
+    }
+
+    function hasAnyLegalMove(ps, color) {
+      return ps.filter(p => p.color === color).some(p => getValidMoves(ps, p).length > 0);
+    }
+
+    function initGame() {
+      pieces = initPieces();
+      selected = null;
+      validMoves = [];
+      currentPlayer = 'red';
+      gameOver = false;
+      aiThinking = false;
+      modal.classList.add('hidden');
+      updateTurn();
+      draw();
+    }
+
+    function updateTurn() {
+      if (gameOver) return;
+      if (gameMode === '1p' && currentPlayer === 'black') { turnEl.textContent = '🤖 AI 思考中…'; return; }
+      turnEl.textContent = currentPlayer === 'red' ? '红方回合' : '黑方回合';
+    }
+
+    function cx(col) { return MARGIN + col * CELL; }
+    function cy(row) { return MARGIN + row * CELL; }
+
+    function draw() {
+      ctx.clearRect(0, 0, BW, BH);
+
+      // Board background
+      ctx.fillStyle = '#f5deb3';
+      ctx.fillRect(0, 0, BW, BH);
+
+      // Grid lines
+      ctx.strokeStyle = '#8b4513';
+      ctx.lineWidth = 1.5;
+
+      for (let r = 0; r < ROWS; r++) {
+        ctx.beginPath();
+        ctx.moveTo(cx(0), cy(r));
+        ctx.lineTo(cx(COLS-1), cy(r));
+        ctx.stroke();
+      }
+
+      // Vertical lines with river gap
+      for (let c = 0; c < COLS; c++) {
+        if (c === 0 || c === COLS-1) {
+          ctx.beginPath();
+          ctx.moveTo(cx(c), cy(0));
+          ctx.lineTo(cx(c), cy(ROWS-1));
+          ctx.stroke();
+        } else {
+          // Top half
+          ctx.beginPath();
+          ctx.moveTo(cx(c), cy(0));
+          ctx.lineTo(cx(c), cy(4));
+          ctx.stroke();
+          // Bottom half
+          ctx.beginPath();
+          ctx.moveTo(cx(c), cy(5));
+          ctx.lineTo(cx(c), cy(ROWS-1));
+          ctx.stroke();
+        }
+      }
+
+      // Palace diagonals
+      const drawPalDiag = (r1, c1, r2, c2) => {
+        ctx.beginPath();
+        ctx.moveTo(cx(c1), cy(r1));
+        ctx.lineTo(cx(c2), cy(r2));
+        ctx.stroke();
+      };
+      drawPalDiag(0,3,2,5); drawPalDiag(0,5,2,3);
+      drawPalDiag(7,3,9,5); drawPalDiag(7,5,9,3);
+
+      // River text
+      ctx.fillStyle = '#8b4513';
+      ctx.font = 'bold 22px serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('楚 河', cx(2), (cy(4)+cy(5))/2);
+      ctx.fillText('汉 界', cx(6), (cy(4)+cy(5))/2);
+
+      // Cannon and pawn markers (decorative crosses)
+      function drawMarker(row, col) {
+        const x = cx(col), y = cy(row);
+        const s = 7, g = 3;
+        ctx.strokeStyle = '#8b4513';
+        ctx.lineWidth = 1.5;
+        // corners
+        const corners = [[-1,-1],[-1,1],[1,-1],[1,1]];
+        for (const [dr, dc] of corners) {
+          ctx.beginPath();
+          if (dr < 0) { ctx.moveTo(x+dc*g, y+dr*(g+s)); ctx.lineTo(x+dc*g, y+dr*g); ctx.lineTo(x+dc*(g+s), y+dr*g); }
+          else { ctx.moveTo(x+dc*g, y+dr*(g+s)); ctx.lineTo(x+dc*g, y+dr*g); ctx.lineTo(x+dc*(g+s), y+dr*g); }
+          ctx.stroke();
+        }
+      }
+
+      // Cannon markers
+      drawMarker(2,1); drawMarker(2,7); drawMarker(7,1); drawMarker(7,7);
+      // Pawn markers
+      for (const c of [0,2,4,6,8]) { drawMarker(3,c); drawMarker(6,c); }
+
+      // Valid move highlights
+      for (const [mr, mc] of validMoves) {
+        ctx.beginPath();
+        ctx.arc(cx(mc), cy(mr), CELL*0.38, 0, Math.PI*2);
+        const atTarget = getPieceAt(pieces, mr, mc);
+        ctx.fillStyle = atTarget ? 'rgba(255,0,0,0.3)' : 'rgba(0,180,0,0.25)';
+        ctx.fill();
+        ctx.strokeStyle = atTarget ? 'rgba(255,0,0,0.6)' : 'rgba(0,180,0,0.5)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      // Pieces
+      for (const p of pieces) {
+        const x = cx(p.col), y = cy(p.row);
+        const r = CELL * 0.42;
+        const isSelected = selected && selected.row === p.row && selected.col === p.col;
+
+        // Shadow
+        ctx.beginPath();
+        ctx.arc(x+2, y+2, r, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.fill();
+
+        // Base circle
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI*2);
+        if (isSelected) {
+          ctx.fillStyle = p.color === 'red' ? '#ff6b6b' : '#4a90e2';
+        } else {
+          ctx.fillStyle = p.color === 'red' ? '#e8c97d' : '#e8c97d';
+        }
+        ctx.fill();
+        ctx.strokeStyle = p.color === 'red' ? '#c41e3a' : '#1a1a2e';
+        ctx.lineWidth = isSelected ? 3 : 2;
+        ctx.stroke();
+
+        // Inner ring
+        ctx.beginPath();
+        ctx.arc(x, y, r * 0.82, 0, Math.PI*2);
+        ctx.strokeStyle = p.color === 'red' ? '#c41e3a' : '#1a1a2e';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Text
+        const label = LABELS[p.type][p.color === 'red' ? 0 : 1];
+        ctx.fillStyle = p.color === 'red' ? '#c41e3a' : '#1a1a2e';
+        ctx.font = `bold ${22}px serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(label, x, y+1);
+      }
+    }
+
+    // ── AI (Xiangqi) ──────────────────────────────────────────
+    const PIECE_VAL_XQ = { K:10000, R:900, C:450, N:400, B:200, A:200, P:100 };
+
+    function evalXQ(ps, aiColor) {
+      let score = 0;
+      for (const p of ps) {
+        const v = PIECE_VAL_XQ[p.type];
+        score += p.color === aiColor ? v : -v;
+      }
+      return score;
+    }
+
+    function getAllMovesXQ(ps, color) {
+      const moves = [];
+      for (const p of ps.filter(x => x.color === color)) {
+        for (const [nr, nc] of getValidMoves(ps, p)) moves.push({piece:p, nr, nc});
+      }
+      return moves;
+    }
+
+    function applyMoveXQ(ps, piece, nr, nc) {
+      const copy = ps.map(p => ({...p}));
+      const capIdx = copy.findIndex(p => p.row === nr && p.col === nc);
+      if (capIdx !== -1) copy.splice(capIdx, 1);
+      const mp = copy.find(p => p.row === piece.row && p.col === piece.col && p.type === piece.type && p.color === piece.color);
+      if (mp) { mp.row = nr; mp.col = nc; }
+      return copy;
+    }
+
+    function negamaxXQ(ps, depth, alpha, beta, color, aiColor) {
+      const sign = color === aiColor ? 1 : -1;
+      if (depth === 0) return sign * evalXQ(ps, aiColor);
+      const moves = getAllMovesXQ(ps, color);
+      if (moves.length === 0) return -50000;
+      // Sort captures first
+      moves.sort((a,b) => {
+        const va = getPieceAt(ps,a.nr,a.nc) ? PIECE_VAL_XQ[getPieceAt(ps,a.nr,a.nc).type] : 0;
+        const vb = getPieceAt(ps,b.nr,b.nc) ? PIECE_VAL_XQ[getPieceAt(ps,b.nr,b.nc).type] : 0;
+        return vb - va;
+      });
+      const nextColor = color === 'red' ? 'black' : 'red';
+      let best = -Infinity;
+      for (const mv of moves) {
+        const next = applyMoveXQ(ps, mv.piece, mv.nr, mv.nc);
+        const v = -negamaxXQ(next, depth-1, -beta, -alpha, nextColor, aiColor);
+        if (v > best) best = v;
+        if (v > alpha) alpha = v;
+        if (alpha >= beta) break;
+      }
+      return best;
+    }
+
+    function aiMoveXQ() {
+      const aiColor = 'black';
+      const moves = getAllMovesXQ(pieces, aiColor);
+      if (moves.length === 0) return null;
+
+      if (aiDiff === 'low') return moves[Math.floor(Math.random() * moves.length)];
+
+      if (aiDiff === 'mid') {
+        // 1-ply: max material gain
+        let bestVal = -Infinity, bestMv = moves[0];
+        for (const mv of moves) {
+          const cap = getPieceAt(pieces, mv.nr, mv.nc);
+          const val = cap ? PIECE_VAL_XQ[cap.type] : 0;
+          if (val > bestVal) { bestVal = val; bestMv = mv; }
+        }
+        return bestMv;
+      }
+
+      // High: negamax depth 3
+      let bestVal = -Infinity, bestMv = moves[0];
+      moves.sort((a,b) => {
+        const va = getPieceAt(pieces,a.nr,a.nc) ? PIECE_VAL_XQ[getPieceAt(pieces,a.nr,a.nc).type] : 0;
+        const vb = getPieceAt(pieces,b.nr,b.nc) ? PIECE_VAL_XQ[getPieceAt(pieces,b.nr,b.nc).type] : 0;
+        return vb - va;
+      });
+      for (const mv of moves) {
+        const next = applyMoveXQ(pieces, mv.piece, mv.nr, mv.nc);
+        const v = -negamaxXQ(next, 2, -Infinity, Infinity, 'red', aiColor);
+        if (v > bestVal) { bestVal = v; bestMv = mv; }
+      }
+      return bestMv;
+    }
+
+    function triggerAI() {
+      if (gameOver) return;
+      updateTurn();
+      setTimeout(() => {
+        const mv = aiMoveXQ();
+        aiThinking = false;
+        if (!mv) return;
+        doMove(mv.piece, mv.nr, mv.nc);
+      }, 60);
+    }
+
+    function doMove(piece, mr, mc) {
+      const capIdx = pieces.findIndex(p => p.row === mr && p.col === mc);
+      if (capIdx !== -1) pieces.splice(capIdx, 1);
+      piece.row = mr;
+      piece.col = mc;
+      selected = null;
+      validMoves = [];
+      currentPlayer = currentPlayer === 'red' ? 'black' : 'red';
+      updateTurn();
+
+      if (!hasAnyLegalMove(pieces, currentPlayer)) {
+        gameOver = true;
+        if (isInCheck(pieces, currentPlayer)) {
+          const winner = currentPlayer === 'red' ? '黑方' : '红方';
+          turnEl.textContent = `${winner} 获胜！`;
+          modalMsg.textContent = `${winner} 获胜！`;
+          modalSub.textContent = gameMode === '1p' ? (currentPlayer === 'red' ? 'AI 获胜！' : '你赢了！') : '将死！';
+        } else {
+          turnEl.textContent = '困毙';
+          modalMsg.textContent = '困毙！';
+          modalSub.textContent = '无子可走，判负。';
+        }
+        draw();
+        modal.classList.remove('hidden');
+        return;
+      }
+      if (isInCheck(pieces, currentPlayer)) {
+        turnEl.textContent = (currentPlayer === 'red' ? '红方' : '黑方') + ' 被将军！';
+      }
+      draw();
+
+      if (gameMode === '1p' && currentPlayer === 'black' && !gameOver) {
+        aiThinking = true;
+        triggerAI();
+      }
+    }
+
+    function pixelToCell(px, py) {
+      const c = Math.round((px - MARGIN) / CELL);
+      const r = Math.round((py - MARGIN) / CELL);
+      if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return null;
+      return {r, c};
+    }
+
+    canvas.addEventListener('click', e => {
+      if (gameOver || aiThinking) return;
+      if (gameMode === '1p' && currentPlayer === 'black') return;
+      const rect = canvas.getBoundingClientRect();
+      const pos = pixelToCell(
+        (e.clientX - rect.left) * BW / rect.width,
+        (e.clientY - rect.top) * BH / rect.height
+      );
+      if (!pos) return;
+      const {r, c} = pos;
+
+      if (selected) {
+        const move = validMoves.find(([mr, mc]) => mr === r && mc === c);
+        if (move) {
+          doMove(selected, move[0], move[1]);
+          return;
+        }
+        const clickedPiece = getPieceAt(pieces, r, c);
+        if (clickedPiece && clickedPiece.color === currentPlayer) {
+          selected = clickedPiece;
+          validMoves = getValidMoves(pieces, clickedPiece);
+          draw();
+          return;
+        }
+        selected = null;
+        validMoves = [];
+        draw();
+        return;
+      }
+
+      const piece = getPieceAt(pieces, r, c);
+      if (piece && piece.color === currentPlayer) {
+        selected = piece;
+        validMoves = getValidMoves(pieces, piece);
+        draw();
+      }
+    });
+
+    setupCanvas();
+    selectDiff('low');
+  </script>
+</body>
+</html>
