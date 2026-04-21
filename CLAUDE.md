@@ -38,3 +38,19 @@ All four games implement the same three-tier AI pattern:
 ## Known Gap
 
 `games/checkers.html` is fully implemented but **not listed in the `GAMES` array** in `index.html`, making it unreachable from the portal. Add an entry to make it accessible.
+
+## Git Push
+
+This project uses a dedicated SSH key stored at `.ssh/github_minipage` (relative to the repo root). Always push with:
+
+```bash
+GIT_SSH_COMMAND="ssh -i /Users/lixin156/Desktop/mini-page-game/.ssh/github_minipage -o StrictHostKeyChecking=no" git push origin main
+```
+
+If the push is rejected due to remote changes, rebase first:
+
+```bash
+GIT_SSH_COMMAND="ssh -i /Users/lixin156/Desktop/mini-page-game/.ssh/github_minipage -o StrictHostKeyChecking=no" git pull --rebase origin main
+```
+
+Remote: `git@github.com:Lee123-hub/mini-page-game.git`
