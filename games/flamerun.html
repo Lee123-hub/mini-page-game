@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>焰跑</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #0f0f1a;
+  color: #fff;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  background: #1a1a2e;
+  border-bottom: 1px solid #2d2d4e;
+  flex-shrink: 0;
+}
+.back-btn {
+  color: #a0aec0;
+  text-decoration: none;
+  font-size: 0.9rem;
+  padding: 6px 14px;
+  border: 1px solid #4a5568;
+  border-radius: 8px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.back-btn:hover { color: #fff; border-color: #fff; }
+.game-title { font-size: 1.2rem; font-weight: 700; color: #e2e8f0; }
+.topbar-right { width: 80px; }
+canvas { display: block; flex: 1; width: 100%; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a class="back-btn" href="../index.html">← 返回</a>
+  <div class="game-title">焰跑</div>
+  <div class="topbar-right"></div>
+</div>
+<canvas id="c"></canvas>
+<script>
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H, dpr;
+
+function setupCanvas() {
+  dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  W = rect.width;
+  H = rect.height;
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', () => {
+  setupCanvas();
+  if (gameState === 'start') drawStartScreen();
+  else if (gameState === 'gameover') drawGameOver();
+});
+
+// Game constants
+const TILE_W = 64;
+const TILE_H = 22;
+const PLAYER_W = 32;
+const PLAYER_H = 40;
+const GRAVITY = 1400;
+const JUMP_VEL = -600;
+const START_SPEED = 300;
+const MAX_SPEED = 800;
+const SPEED_RAMP = 120;
+const MAX_HP = 5;
+const DMG_INTERVAL = 0.5;
+const SURVIVAL_SCORE = 10;
+
+// State
+let gameState = 'start'; // start | playing | gameover
+let speed, score, coins, hp, survivalTime, damageTimer;
+let floorY;
+let form; // 'red' | 'blue'
+let player;
+let tiles = [];
+let coinObjs = [];
+let particles = [];
+let clouds = [];
+let worldOffset;
+let lastTime;
+
+// Input
+const keys = {};
+window.addEventListener('keydown', e => {
+  if (keys[e.code]) return;
+  keys[e.code] = true;
+  if (e.code === 'Space') {
+    e.preventDefault();
+    if (gameState === 'start') { startGame(); return; }
+    if (gameState === 'gameover') { startGame(); return; }
+    if (gameState === 'playing' && player.onGround) {
+      player.vy = JUMP_VEL;
+      player.onGround = false;
+    }
+  }
+  if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+    e.preventDefault();
+    if (gameState === 'playing') toggleForm();
+  }
+});
+window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+function toggleForm() {
+  form = form === 'red' ? 'blue' : 'red';
+  // spawn a burst of form-change particles
+  for (let i = 0; i < 12; i++) spawnFormBurst();
+}
+
+function spawnFormBurst() {
+  const colors = form === 'red' ? ['#FF4500','#FF8C00','#FFB300'] : ['#00B0FF','#00E5FF','#82CFFF'];
+  particles.push({
+    x: player.x + PLAYER_W/2 + (Math.random()-0.5)*20,
+    y: player.y + PLAYER_H/2 + (Math.random()-0.5)*20,
+    vx: (Math.random()-0.5)*120,
+    vy: -Math.random()*150-60,
+    life: 0.4 + Math.random()*0.3,
+    maxLife: 0.7,
+    r: 4 + Math.random()*5,
+    color: colors[Math.floor(Math.random()*colors.length)],
+    type: 'burst'
+  });
+}
+
+// Cloud generation
+function initClouds() {
+  clouds = [];
+  for (let i = 0; i < 6; i++) {
+    clouds.push({
+      x: Math.random() * 1200,
+      y: 30 + Math.random() * 180,
+      w: 60 + Math.random() * 100,
+      h: 30 + Math.random() * 30,
+      speed: 20 + Math.random() * 30
+    });
+  }
+}
+
+// Floor / tile generation
+function initTiles() {
+  tiles = [];
+  coinObjs = [];
+  worldOffset = 0;
+  // start with a long safe red section
+  let x = 0;
+  let color = 'red';
+  // first segment: 10 tiles red, no gaps
+  for (let i = 0; i < 10; i++) {
+    tiles.push({ x, color: 'red', w: TILE_W, gap: false });
+    x += TILE_W;
+  }
+  color = 'red';
+  // generate more
+  while (x < 3000) {
+    // random segment
+    let len = 3 + Math.floor(Math.random() * 6);
+    color = Math.random() < 0.5 ? 'red' : 'blue';
+    for (let i = 0; i < len; i++) {
+      tiles.push({ x, color, w: TILE_W, gap: false });
+      // maybe a coin above this tile (30% chance, not first tile of segment)
+      if (i > 0 && Math.random() < 0.3) {
+        coinObjs.push({ x: x + TILE_W/2, y: floorY - 50, collected: false, bob: Math.random() * Math.PI * 2 });
+      }
+      x += TILE_W;
+    }
+    // maybe a gap (20% chance, only after first 500px)
+    if (x > 500 && Math.random() < 0.2) {
+      let gapW = TILE_W + Math.floor(Math.random() * TILE_W);
+      x += gapW;
+    }
+  }
+}
+
+function generateMoreTiles() {
+  // find rightmost tile
+  let maxX = 0;
+  for (let t of tiles) if (t.x + t.w > maxX) maxX = t.x + t.w;
+  let x = maxX;
+  let color = 'red';
+  while (x < worldOffset + W + 2000) {
+    let len = 3 + Math.floor(Math.random() * 6);
+    color = Math.random() < 0.5 ? 'red' : 'blue';
+    for (let i = 0; i < len; i++) {
+      tiles.push({ x, color, w: TILE_W, gap: false });
+      if (i > 0 && Math.random() < 0.3) {
+        coinObjs.push({ x: x + TILE_W/2, y: floorY - 50, collected: false, bob: Math.random() * Math.PI * 2 });
+      }
+      x += TILE_W;
+    }
+    // gap
+    if (Math.random() < 0.22) {
+      x += TILE_W * (1 + Math.random());
+    }
+  }
+  // prune far-left tiles
+  tiles = tiles.filter(t => t.x + t.w > worldOffset - TILE_W * 4);
+  coinObjs = coinObjs.filter(c => c.x > worldOffset - TILE_W * 4);
+}
+
+function startGame() {
+  setupCanvas();
+  floorY = H * 0.72;
+  speed = START_SPEED;
+  score = 0;
+  coins = 0;
+  hp = MAX_HP;
+  survivalTime = 0;
+  damageTimer = 0;
+  form = 'red';
+  particles = [];
+  player = {
+    x: 80,
+    y: floorY - PLAYER_H,
+    vx: 0,
+    vy: 0,
+    onGround: true,
+    flameParts: []
+  };
+  initClouds();
+  initTiles();
+  gameState = 'playing';
+  lastTime = null;
+  requestAnimationFrame(loop);
+}
+
+function playerBounds() {
+  return { x: player.x, y: player.y, w: PLAYER_W, h: PLAYER_H };
+}
+
+function update(dt) {
+  if (gameState !== 'playing') return;
+
+  survivalTime += dt;
+  // speed ramp
+  let t = Math.min(survivalTime / SPEED_RAMP, 1);
+  speed = START_SPEED + (MAX_SPEED - START_SPEED) * t * t;
+  score = Math.floor(coins * 100 + survivalTime * SURVIVAL_SCORE);
+
+  // world scroll
+  worldOffset += speed * dt;
+
+  // player physics
+  player.vy += GRAVITY * dt;
+  player.y += player.vy * dt;
+
+  // floor collision
+  player.onGround = false;
+
+  // find tiles under player
+  let landedOn = null;
+  for (let tile of tiles) {
+    let tx = tile.x - worldOffset + 0;
+    let tr = tile.x - worldOffset + tile.w;
+    let ty = floorY;
+    // check horizontal overlap
+    if (player.x + PLAYER_W > tx + 4 && player.x < tr - 4) {
+      // check vertical: player bottom near tile top
+      if (player.y + PLAYER_H >= ty - 2 && player.y + PLAYER_H <= ty + 20 && player.vy >= 0) {
+        player.y = ty - PLAYER_H;
+        player.vy = 0;
+        player.onGround = true;
+        landedOn = tile;
+        break;
+      }
+    }
+  }
+
+  // bottom of screen kill (fell in gap)
+  if (player.y > H + 100) {
+    hp = 0;
+    endGame();
+    return;
+  }
+
+  // damage from wrong tile
+  if (landedOn) {
+    let wrongColor = (form === 'red' && landedOn.color === 'blue') || (form === 'blue' && landedOn.color === 'red');
+    if (wrongColor) {
+      damageTimer += dt;
+      if (damageTimer >= DMG_INTERVAL) {
+        damageTimer -= DMG_INTERVAL;
+        hp = Math.max(0, hp - 1);
+        if (hp <= 0) { endGame(); return; }
+      }
+    } else {
+      damageTimer = Math.max(0, damageTimer - dt * 0.5);
+    }
+  }
+
+  // coin collection
+  for (let c of coinObjs) {
+    if (c.collected) continue;
+    let cx = c.x - worldOffset;
+    let cy = c.y + Math.sin(survivalTime * 3 + c.bob) * 6;
+    // check overlap
+    if (player.x < cx + 12 && player.x + PLAYER_W > cx - 12 &&
+        player.y < cy + 12 && player.y + PLAYER_H > cy - 12) {
+      c.collected = true;
+      coins++;
+      // spawn collect particles
+      for (let i = 0; i < 6; i++) {
+        particles.push({
+          x: cx, y: cy,
+          vx: (Math.random()-0.5)*150,
+          vy: -Math.random()*120-40,
+          life: 0.5, maxLife: 0.5,
+          r: 3 + Math.random()*3,
+          color: '#FFD700',
+          type: 'coin'
+        });
+      }
+    }
+  }
+
+  // update particles
+  particles = particles.filter(p => p.life > 0);
+  for (let p of particles) {
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.vy += 300 * dt;
+    p.life -= dt;
+    p.r *= 0.97;
+  }
+
+  // spawn flame particles
+  spawnFlameParticles(dt);
+
+  // clouds move left slowly
+  for (let c of clouds) {
+    c.x -= c.speed * dt;
+    if (c.x + c.w < 0) c.x = W + 50;
+  }
+
+  // generate more floor
+  generateMoreTiles();
+}
+
+
+function spawnFlameParticles(dt) {
+  let colors = form === 'red'
+    ? ['#FF4500','#FF6500','#FFB300','#FF8C00','#FF3300']
+    : ['#00B0FF','#00E5FF','#82CFFF','#40C4FF','#00BFFF'];
+  let count = Math.ceil(8 * dt * 60);
+  for (let i = 0; i < count; i++) {
+    let angle = -Math.PI/2 + (Math.random()-0.5)*0.8;
+    let spd = 60 + Math.random()*80;
+    particles.push({
+      x: player.x + PLAYER_W/2 + (Math.random()-0.5)*10,
+      y: player.y + 4,
+      vx: Math.cos(angle)*spd,
+      vy: Math.sin(angle)*spd,
+      life: 0.25 + Math.random()*0.2,
+      maxLife: 0.45,
+      r: 3 + Math.random()*4,
+      color: colors[Math.floor(Math.random()*colors.length)],
+      type: 'flame'
+    });
+  }
+}
+
+function endGame() {
+  gameState = 'gameover';
+  score = Math.floor(coins * 100 + survivalTime * SURVIVAL_SCORE);
+}
+
+// --- Drawing functions ---
+
+function drawBackground() {
+  // sky gradient
+  let grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, '#B8D4F5');
+  grad.addColorStop(0.5, '#D4E8FF');
+  grad.addColorStop(1, '#EAF4FF');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+}
+
+function drawClouds() {
+  for (let c of clouds) {
+    ctx.save();
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle = '#FFFFFF';
+    drawCloud(c.x, c.y, c.w, c.h);
+    ctx.restore();
+  }
+}
+
+function drawCloud(x, y, w, h) {
+  ctx.beginPath();
+  ctx.ellipse(x + w*0.35, y + h*0.5, w*0.35, h*0.5, 0, 0, Math.PI*2);
+  ctx.ellipse(x + w*0.6, y + h*0.45, w*0.3, h*0.45, 0, 0, Math.PI*2);
+  ctx.ellipse(x + w*0.2, y + h*0.55, w*0.22, h*0.38, 0, 0, Math.PI*2);
+  ctx.fill();
+}
+
+function drawFloor() {
+  for (let tile of tiles) {
+    let tx = tile.x - worldOffset;
+    if (tx + tile.w < -10 || tx > W + 10) continue;
+    let ty = floorY;
+    let tw = tile.w - 2;
+
+    // shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.1)';
+    roundRect(ctx, tx + 3, ty + TILE_H + 2, tw, 6, 4);
+    ctx.fill();
+
+    // tile body
+    let mainColor = tile.color === 'red' ? '#FF6B7A' : '#6BB8FF';
+    let darkColor = tile.color === 'red' ? '#E0505F' : '#4A90D9';
+    let shineColor = tile.color === 'red' ? '#FFB3BB' : '#B3D9FF';
+
+    ctx.fillStyle = mainColor;
+    roundRect(ctx, tx, ty, tw, TILE_H, 6);
+    ctx.fill();
+
+    // bottom shade
+    ctx.fillStyle = darkColor;
+    roundRect(ctx, tx, ty + TILE_H - 5, tw, 5, [0, 0, 6, 6]);
+    ctx.fill();
+
+    // top shine
+    ctx.fillStyle = shineColor;
+    ctx.globalAlpha = 0.5;
+    roundRect(ctx, tx + 4, ty + 2, tw - 8, 4, 3);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  if (typeof r === 'number') r = [r, r, r, r];
+  ctx.beginPath();
+  ctx.moveTo(x + r[0], y);
+  ctx.lineTo(x + w - r[1], y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r[1]);
+  ctx.lineTo(x + w, y + h - r[2]);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r[2], y + h);
+  ctx.lineTo(x + r[3], y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r[3]);
+  ctx.lineTo(x, y + r[0]);
+  ctx.quadraticCurveTo(x, y, x + r[0], y);
+  ctx.closePath();
+}
+
+function drawCoins(time) {
+  for (let c of coinObjs) {
+    if (c.collected) continue;
+    let cx = c.x - worldOffset;
+    if (cx < -20 || cx > W + 20) continue;
+    let cy = c.y + Math.sin(time * 3 + c.bob) * 6;
+
+    // shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.12)';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + 14, 8, 3, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // coin body
+    let cgrad = ctx.createRadialGradient(cx-3, cy-3, 1, cx, cy, 12);
+    cgrad.addColorStop(0, '#FFE066');
+    cgrad.addColorStop(0.6, '#FFD700');
+    cgrad.addColorStop(1, '#D4A800');
+    ctx.fillStyle = cgrad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 12, 0, Math.PI*2);
+    ctx.fill();
+
+    // star
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    drawStar(ctx, cx, cy, 5, 6, 2.5);
+    ctx.fill();
+  }
+}
+
+function drawStar(ctx, cx, cy, spikes, outerR, innerR) {
+  ctx.beginPath();
+  for (let i = 0; i < spikes * 2; i++) {
+    let r = i % 2 === 0 ? outerR : innerR;
+    let angle = (i / (spikes * 2)) * Math.PI * 2 - Math.PI/2;
+    if (i === 0) ctx.moveTo(cx + Math.cos(angle)*r, cy + Math.sin(angle)*r);
+    else ctx.lineTo(cx + Math.cos(angle)*r, cy + Math.sin(angle)*r);
+  }
+  ctx.closePath();
+}
+
+function drawPlayer() {
+  let px = player.x;
+  let py = player.y;
+
+  let bodyColor = form === 'red' ? '#FF7043' : '#29B6F6';
+  let bodyDark = form === 'red' ? '#E64A19' : '#0288D1';
+  let bodyLight = form === 'red' ? '#FFAB91' : '#81D4FA';
+  let eyeColor = '#FFF';
+  let pupilColor = form === 'red' ? '#B71C1C' : '#01579B';
+
+  // shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  ctx.beginPath();
+  ctx.ellipse(px + PLAYER_W/2, py + PLAYER_H + 3, PLAYER_W*0.5, 5, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // body
+  let bgrad = ctx.createRadialGradient(px+PLAYER_W*0.35, py+PLAYER_H*0.35, 2, px+PLAYER_W/2, py+PLAYER_H/2, PLAYER_W*0.65);
+  bgrad.addColorStop(0, bodyLight);
+  bgrad.addColorStop(0.5, bodyColor);
+  bgrad.addColorStop(1, bodyDark);
+  ctx.fillStyle = bgrad;
+  roundRect(ctx, px, py + 8, PLAYER_W, PLAYER_H - 8, [PLAYER_W*0.4, PLAYER_W*0.4, PLAYER_W*0.35, PLAYER_W*0.35]);
+  ctx.fill();
+
+  // head (upper rounded)
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.arc(px + PLAYER_W/2, py + 12, PLAYER_W*0.45, 0, Math.PI*2);
+  ctx.fill();
+
+  // eyes
+  ctx.fillStyle = eyeColor;
+  ctx.beginPath();
+  ctx.ellipse(px + PLAYER_W*0.3, py + 11, 5, 5.5, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(px + PLAYER_W*0.7, py + 11, 5, 5.5, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // pupils
+  ctx.fillStyle = pupilColor;
+  ctx.beginPath();
+  ctx.arc(px + PLAYER_W*0.3 + 1, py + 12, 3, 0, Math.PI*2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(px + PLAYER_W*0.7 + 1, py + 12, 3, 0, Math.PI*2);
+  ctx.fill();
+
+  // shine on eyes
+  ctx.fillStyle = '#FFF';
+  ctx.beginPath();
+  ctx.arc(px + PLAYER_W*0.3, py + 9.5, 1.5, 0, Math.PI*2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(px + PLAYER_W*0.7, py + 9.5, 1.5, 0, Math.PI*2);
+  ctx.fill();
+
+  // smile
+  ctx.strokeStyle = bodyDark;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(px + PLAYER_W/2, py + 16, 5, 0.1, Math.PI - 0.1);
+  ctx.stroke();
+}
+
+function drawParticles() {
+  for (let p of particles) {
+    let alpha = p.life / p.maxLife;
+    ctx.globalAlpha = Math.min(alpha, 0.9);
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, Math.max(0.1, p.r), 0, Math.PI*2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawHUD() {
+  // HP hearts top-left
+  let heartSize = 22;
+  let hx = 16;
+  let hy = 16;
+  for (let i = 0; i < MAX_HP; i++) {
+    ctx.font = (heartSize) + 'px serif';
+    ctx.globalAlpha = i < hp ? 1 : 0.25;
+    ctx.fillText('❤️', hx + i * (heartSize + 4), hy + heartSize - 4);
+  }
+  ctx.globalAlpha = 1;
+
+  // Score top-center
+  ctx.fillStyle = '#333';
+  ctx.font = 'bold 20px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(score.toString().padStart(6, '0'), W/2, 30);
+  ctx.textAlign = 'left';
+
+  // Form indicator + speed top-right
+  let formColor = form === 'red' ? '#FF6B7A' : '#6BB8FF';
+  let formText = form === 'red' ? '🔴 赤焰' : '🔵 蓝焰';
+  ctx.font = 'bold 14px sans-serif';
+  ctx.fillStyle = formColor;
+  ctx.textAlign = 'right';
+  ctx.fillText(formText, W - 16, 22);
+  ctx.fillStyle = '#555';
+  ctx.font = '12px sans-serif';
+  ctx.fillText('速度 ' + Math.round(speed) + ' px/s', W - 16, 38);
+  ctx.textAlign = 'left';
+
+  // Danger flash overlay when on wrong tile
+  if (damageTimer > 0.1) {
+    let alpha = damageTimer / DMG_INTERVAL * 0.15;
+    ctx.fillStyle = form === 'red' ? 'rgba(0,80,255,' + alpha + ')' : 'rgba(255,50,50,' + alpha + ')';
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // Key hints bottom
+  ctx.fillStyle = 'rgba(80,80,100,0.65)';
+  ctx.font = '12px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Space = 跳跃    Shift = 切换形态', W/2, H - 10);
+  ctx.textAlign = 'left';
+}
+
+function drawStartScreen() {
+  drawBackground();
+  if (clouds.length === 0) initClouds();
+  drawClouds();
+
+  // panel
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  roundRect(ctx, W/2 - 200, H/2 - 160, 400, 310, 24);
+  ctx.fill();
+
+  ctx.fillStyle = '#FF6B7A';
+  ctx.font = 'bold 40px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('焰跑', W/2, H/2 - 95);
+
+  ctx.fillStyle = '#555';
+  ctx.font = '16px sans-serif';
+  ctx.fillText('自动跑酷 · 切换火焰形态躲避危险！', W/2, H/2 - 60);
+
+  ctx.font = '14px sans-serif';
+  ctx.fillStyle = '#FF6B7A';
+  ctx.fillText('🔴 赤焰 → 安全踩红砖', W/2, H/2 - 25);
+  ctx.fillStyle = '#6BB8FF';
+  ctx.fillText('🔵 蓝焰 → 安全踩蓝砖', W/2, H/2);
+
+  ctx.fillStyle = '#555';
+  ctx.font = '14px sans-serif';
+  ctx.fillText('踩错颜色砖块 → 失血！', W/2, H/2 + 28);
+  ctx.fillText('收集金币得分 💰', W/2, H/2 + 52);
+
+  // start button
+  ctx.fillStyle = 'rgba(102,126,234,0.9)';
+  roundRect(ctx, W/2 - 100, H/2 + 75, 200, 50, 14);
+  ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 20px sans-serif';
+  ctx.fillText('Space 开始游戏', W/2, H/2 + 107);
+
+  ctx.fillStyle = '#999';
+  ctx.font = '12px sans-serif';
+  ctx.fillText('Space=跳跃   Shift=切换形态', W/2, H/2 + 138);
+  ctx.textAlign = 'left';
+}
+
+function drawGameOver() {
+  // draw game scene behind
+  draw(lastTime || 0);
+
+  // overlay
+  ctx.fillStyle = 'rgba(15,15,26,0.7)';
+  ctx.fillRect(0, 0, W, H);
+
+  // panel
+  ctx.fillStyle = 'rgba(255,255,255,0.93)';
+  roundRect(ctx, W/2 - 180, H/2 - 170, 360, 320, 24);
+  ctx.fill();
+
+  ctx.fillStyle = '#333';
+  ctx.font = 'bold 30px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('游戏结束', W/2, H/2 - 125);
+
+  ctx.font = '16px sans-serif';
+  ctx.fillStyle = '#666';
+  ctx.fillText('存活时间：' + survivalTime.toFixed(1) + ' 秒', W/2, H/2 - 85);
+  ctx.fillText('金币收集：' + coins + ' 枚', W/2, H/2 - 58);
+  ctx.fillText('金币分数：' + coins * 100, W/2, H/2 - 32);
+  ctx.fillText('时间分数：' + Math.floor(survivalTime * SURVIVAL_SCORE), W/2, H/2 - 6);
+
+  // divider
+  ctx.strokeStyle = '#ddd';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(W/2 - 130, H/2 + 12);
+  ctx.lineTo(W/2 + 130, H/2 + 12);
+  ctx.stroke();
+
+  ctx.fillStyle = '#FF6B7A';
+  ctx.font = 'bold 26px sans-serif';
+  ctx.fillText('总分：' + score, W/2, H/2 + 48);
+
+  // retry button
+  ctx.fillStyle = 'rgba(102,126,234,0.9)';
+  roundRect(ctx, W/2 - 110, H/2 + 70, 220, 50, 14);
+  ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 20px sans-serif';
+  ctx.fillText('再来一次', W/2, H/2 + 102);
+
+  ctx.fillStyle = '#999';
+  ctx.font = '12px sans-serif';
+  ctx.fillText('按 Space 或点击按钮重新开始', W/2, H/2 + 136);
+  ctx.textAlign = 'left';
+}
+
+// click on gameover retry button
+canvas.addEventListener('click', function(e) {
+  if (gameState === 'gameover' || gameState === 'start') {
+    let rect = canvas.getBoundingClientRect();
+    let mx = (e.clientX - rect.left);
+    let my = (e.clientY - rect.top);
+    let bx = W/2 - 110, by = H/2 + 70, bw = 220, bh = 50;
+    if (mx >= bx && mx <= bx + bw && my >= by && my <= by + bh) {
+      startGame();
+    }
+  }
+});
+
+function draw(time) {
+  ctx.clearRect(0, 0, W, H);
+  drawBackground();
+  drawClouds();
+  drawFloor();
+  drawParticles();
+  drawCoins(time);
+  drawPlayer();
+  drawHUD();
+}
+
+function loop(timestamp) {
+  if (!lastTime) lastTime = timestamp;
+  let dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+  lastTime = timestamp;
+
+  if (gameState === 'playing') {
+    update(dt);
+    draw(survivalTime);
+  } else if (gameState === 'gameover') {
+    drawGameOver();
+    return; // stop loop
+  }
+
+  requestAnimationFrame(loop);
+}
+
+// Init - show start screen
+setupCanvas();
+initClouds();
+worldOffset = 0;
+floorY = H * 0.72;
+drawStartScreen();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>国际跳棋</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f0f1a;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 24px;
+      background: #1a1a2e;
+      border-bottom: 1px solid #2d2d4e;
+    }
+
+    .back-btn {
+      color: #a0aec0;
+      text-decoration: none;
+      font-size: 0.9rem;
+      padding: 6px 14px;
+      border: 1px solid #4a5568;
+      border-radius: 8px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .back-btn:hover { color: #fff; border-color: #fff; }
+
+    .game-title { font-size: 1.2rem; font-weight: 700; color: #e2e8f0; }
+
+    .turn-label {
+      font-size: 0.95rem;
+      padding: 6px 16px;
+      border-radius: 20px;
+      background: #2d2d4e;
+      color: #e2e8f0;
+      min-width: 120px;
+      text-align: center;
+    }
+
+    .board-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px;
+      gap: 16px;
+    }
+
+    canvas {
+      border-radius: 4px;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.5);
+      cursor: pointer;
+      max-width: 100%;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+    }
+    .modal.hidden { display: none; }
+
+    .modal-content {
+      background: #1a1a2e;
+      border: 1px solid #4a5568;
+      border-radius: 20px;
+      padding: 40px 48px;
+      text-align: center;
+      box-shadow: 0 16px 64px rgba(0,0,0,0.5);
+      min-width: 320px;
+    }
+
+    .modal-content h2 { font-size: 1.8rem; margin-bottom: 10px; }
+    .modal-content p { color: #a0aec0; margin-bottom: 24px; font-size: 0.95rem; }
+
+    .btn-row {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .btn {
+      padding: 10px 24px;
+      background: #2d2d4e;
+      color: #e2e8f0;
+      border: 2px solid #4a5568;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .btn:hover { border-color: #667eea; background: #3a3a5e; }
+    .btn.active { border-color: #667eea; background: linear-gradient(135deg,#667eea,#764ba2); color: #fff; }
+
+    .btn-primary {
+      padding: 12px 36px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      margin-top: 8px;
+    }
+    .btn-primary:hover { opacity: 0.85; }
+
+    .section-label {
+      color: #718096;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    .difficulty-section { margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <nav class="topbar">
+    <a href="../index.html" class="back-btn">← 返回目录</a>
+    <span class="game-title">国际跳棋</span>
+    <span class="turn-label" id="turn">⚫ 黑方回合</span>
+  </nav>
+
+  <div class="board-container">
+    <canvas id="board"></canvas>
+  </div>
+
+  <!-- Mode selection modal -->
+  <div id="setup-modal" class="modal">
+    <div class="modal-content">
+      <h2>国际跳棋</h2>
+      <p>选择游戏模式</p>
+
+      <div class="section-label">游戏模式</div>
+      <div class="btn-row">
+        <button class="btn active" id="btn-2p" onclick="selectMode('2p')">👥 双人对战</button>
+        <button class="btn" id="btn-1p" onclick="selectMode('1p')">🤖 单人 vs AI</button>
+      </div>
+
+      <div class="difficulty-section" id="diff-section" style="display:none">
+        <div class="section-label" style="margin-top:16px">AI 难度</div>
+        <div class="btn-row">
+          <button class="btn active" id="diff-low" onclick="selectDiff('low')">🟢 低</button>
+          <button class="btn" id="diff-mid" onclick="selectDiff('mid')">🟡 中</button>
+          <button class="btn" id="diff-high" onclick="selectDiff('high')">🔴 高</button>
+        </div>
+      </div>
+
+      <br>
+      <button class="btn-primary" onclick="startGame()">开始游戏</button>
+    </div>
+  </div>
+
+  <!-- End game modal -->
+  <div id="end-modal" class="modal hidden">
+    <div class="modal-content">
+      <h2 id="modal-msg"></h2>
+      <p id="modal-sub"></p>
+      <button class="btn-primary" onclick="showSetup()">再来一局</button>
+    </div>
+  </div>
+
+  <script>
+    const CELL = 70;
+    const BOARD_PX = 560; // 8 * 70
+
+    const canvas = document.getElementById('board');
+    const turnEl = document.getElementById('turn');
+    const setupModal = document.getElementById('setup-modal');
+    const endModal = document.getElementById('end-modal');
+    const modalMsg = document.getElementById('modal-msg');
+    const modalSub = document.getElementById('modal-sub');
+
+    let dpr, ctx;
+    // board: 0=empty, 1=black(player), 2=red(AI/P2), 3=black-king, 4=red-king
+    let board, currentPlayer, gameOver, hoverPos;
+    let selected = null;    // {r,c}
+    let highlights = [];    // [{tr,tc,cr,cc}] cr/cc=-1 for non-jumps
+    let jumpChainPiece = null; // {r,c} locked piece during multi-jump
+    let gameMode = '2p';
+    let aiDiff = 'low';
+    let aiThinking = false;
+
+    // ── Setup UI ──────────────────────────────────────────────
+    function selectMode(m) {
+      gameMode = m;
+      document.getElementById('btn-2p').classList.toggle('active', m === '2p');
+      document.getElementById('btn-1p').classList.toggle('active', m === '1p');
+      document.getElementById('diff-section').style.display = m === '1p' ? '' : 'none';
+    }
+
+    function selectDiff(d) {
+      aiDiff = d;
+      ['low','mid','high'].forEach(x => document.getElementById('diff-'+x).classList.toggle('active', x === d));
+    }
+
+    function showSetup() {
+      endModal.classList.add('hidden');
+      setupModal.classList.remove('hidden');
+    }
+
+    function startGame() {
+      setupModal.classList.add('hidden');
+      initGame();
+    }
+
+    // ── Canvas ────────────────────────────────────────────────
+    function setupCanvas() {
+      dpr = window.devicePixelRatio || 1;
+      canvas.width = BOARD_PX * dpr;
+      canvas.height = BOARD_PX * dpr;
+      canvas.style.width = BOARD_PX + 'px';
+      canvas.style.height = BOARD_PX + 'px';
+      ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+    }
+
+    function initGame() {
+      board = Array.from({length:8}, () => Array(8).fill(0));
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          if ((r + c) % 2 === 1) {
+            if (r <= 2) board[r][c] = 2;      // red
+            else if (r >= 5) board[r][c] = 1; // black
+          }
+        }
+      }
+      currentPlayer = 'black';
+      gameOver = false;
+      hoverPos = null;
+      selected = null;
+      highlights = [];
+      jumpChainPiece = null;
+      aiThinking = false;
+      updateTurn();
+      draw();
+    }
+
+    function updateTurn() {
+      if (gameOver) return;
+      const isAiTurn = gameMode === '1p' && currentPlayer === 'red';
+      if (isAiTurn) {
+        turnEl.textContent = '🤖 AI 思考中…';
+      } else {
+        turnEl.textContent = currentPlayer === 'black' ? '⚫ 黑方回合' : '🔴 红方回合';
+      }
+    }
+
+    // ── Board helpers ─────────────────────────────────────────
+    function colorOf(v) {
+      if (v === 1 || v === 3) return 'black';
+      if (v === 2 || v === 4) return 'red';
+      return null;
+    }
+
+    function isKing(v) { return v === 3 || v === 4; }
+
+    function enemy(color) { return color === 'black' ? 'red' : 'black'; }
+
+    // ── Move generation ───────────────────────────────────────
+    // Returns {moves:[{tr,tc}], jumps:[{tr,tc,cr,cc}]}
+    function getPieceMoves(b, r, c) {
+      const v = b[r][c];
+      const color = colorOf(v);
+      if (!color) return {moves:[], jumps:[]};
+      const king = isKing(v);
+      const fwd = color === 'black' ? -1 : 1; // forward direction
+      const dirs = king ? [[-1,-1],[-1,1],[1,-1],[1,1]] : [[fwd,-1],[fwd,1]];
+
+      const moves = [], jumps = [];
+      for (const [dr, dc] of dirs) {
+        const nr = r + dr, nc = c + dc;
+        if (nr < 0 || nr > 7 || nc < 0 || nc > 7) continue;
+        const nv = b[nr][nc];
+        if (nv === 0) {
+          moves.push({tr:nr, tc:nc});
+        } else if (colorOf(nv) === enemy(color)) {
+          const lr = r + 2*dr, lc = c + 2*dc;
+          if (lr >= 0 && lr <= 7 && lc >= 0 && lc <= 7 && b[lr][lc] === 0) {
+            jumps.push({tr:lr, tc:lc, cr:nr, cc:nc});
+          }
+        }
+      }
+      return {moves, jumps};
+    }
+
+    function getAllJumps(b, color) {
+      const all = [];
+      for (let r = 0; r < 8; r++)
+        for (let c = 0; c < 8; c++)
+          if (colorOf(b[r][c]) === color) {
+            const {jumps} = getPieceMoves(b, r, c);
+            if (jumps.length) all.push({r, c, jumps});
+          }
+      return all;
+    }
+
+    function getAllLegal(b, color) {
+      const jumpGroups = getAllJumps(b, color);
+      if (jumpGroups.length) return jumpGroups; // forced capture
+      const all = [];
+      for (let r = 0; r < 8; r++)
+        for (let c = 0; c < 8; c++)
+          if (colorOf(b[r][c]) === color) {
+            const {moves} = getPieceMoves(b, r, c);
+            if (moves.length) all.push({r, c, jumps: moves.map(m => ({...m, cr:-1, cc:-1}))});
+          }
+      return all;
+    }
+
+    function hasAnyMove(b, color) { return getAllLegal(b, color).length > 0; }
+
+    // ── Draw ──────────────────────────────────────────────────
+    function draw() {
+      ctx.clearRect(0, 0, BOARD_PX, BOARD_PX);
+
+      // Draw squares
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          const dark = (r + c) % 2 === 1;
+          ctx.fillStyle = dark ? '#b58863' : '#f0d9b5';
+          ctx.fillRect(c * CELL, r * CELL, CELL, CELL);
+        }
+      }
+
+      // Selected square highlight
+      if (selected) {
+        ctx.fillStyle = 'rgba(255,220,0,0.35)';
+        ctx.fillRect(selected.c * CELL, selected.r * CELL, CELL, CELL);
+      }
+
+      // Highlight dots for valid move targets
+      for (const h of highlights) {
+        const cx = h.tc * CELL + CELL / 2;
+        const cy = h.tr * CELL + CELL / 2;
+        ctx.beginPath();
+        ctx.arc(cx, cy, CELL * 0.15, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(100,200,100,0.7)';
+        ctx.fill();
+      }
+
+      // Hover highlight
+      if (hoverPos && !gameOver && !aiThinking) {
+        const {r, c} = hoverPos;
+        if ((r + c) % 2 === 1 && colorOf(board[r][c]) === currentPlayer) {
+          ctx.fillStyle = 'rgba(255,255,255,0.12)';
+          ctx.fillRect(c * CELL, r * CELL, CELL, CELL);
+        }
+      }
+
+      // Draw pieces
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          const v = board[r][c];
+          if (v === 0) continue;
+          const cx = c * CELL + CELL / 2;
+          const cy = r * CELL + CELL / 2;
+          const radius = CELL * 0.38;
+
+          const grad = ctx.createRadialGradient(cx - radius*0.3, cy - radius*0.3, radius*0.1, cx, cy, radius);
+          if (colorOf(v) === 'black') {
+            grad.addColorStop(0, '#555');
+            grad.addColorStop(1, '#111');
+          } else {
+            grad.addColorStop(0, '#e74c3c');
+            grad.addColorStop(1, '#8b2500');
+          }
+
+          ctx.beginPath();
+          ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+          ctx.fillStyle = grad;
+          ctx.fill();
+
+          // King indicator: inner white circle
+          if (isKing(v)) {
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius * 0.38, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255,255,255,0.85)';
+            ctx.fill();
+          }
+        }
+      }
+    }
+
+    function pixelToGrid(px, py) {
+      const c = Math.floor(px / CELL);
+      const r = Math.floor(py / CELL);
+      if (r < 0 || r > 7 || c < 0 || c > 7) return null;
+      return {r, c};
+    }
+
+    // ── Move execution ────────────────────────────────────────
+    function applyMove(b, r, c, tr, tc, cr, cc) {
+      const nb = b.map(row => [...row]);
+      nb[tr][tc] = nb[r][c];
+      nb[r][c] = 0;
+      if (cr >= 0) nb[cr][cc] = 0;
+      // Promotion
+      const v = nb[tr][tc];
+      if (v === 1 && tr === 0) nb[tr][tc] = 3;
+      else if (v === 2 && tr === 7) nb[tr][tc] = 4;
+      return nb;
+    }
+
+    function executeMove(r, c, tr, tc, cr, cc) {
+      const wasKing = isKing(board[r][c]);
+      board = applyMove(board, r, c, tr, tc, cr, cc);
+      const promoted = !wasKing && isKing(board[tr][tc]);
+
+      selected = null;
+      highlights = [];
+      jumpChainPiece = null;
+
+      const isJump = cr >= 0;
+
+      // Check for multi-jump continuation
+      if (isJump && !promoted) {
+        const {jumps} = getPieceMoves(board, tr, tc);
+        if (jumps.length) {
+          jumpChainPiece = {r: tr, c: tc};
+          selected = {r: tr, c: tc};
+          highlights = jumps;
+          draw();
+          return;
+        }
+      }
+
+      // End of turn
+      const next = enemy(currentPlayer);
+      currentPlayer = next;
+      updateTurn();
+      draw();
+
+      if (!hasAnyMove(board, next)) {
+        endGame(enemy(next));
+        return;
+      }
+
+      if (gameMode === '1p' && currentPlayer === 'red') {
+        triggerAI();
+      }
+    }
+
+    function endGame(winner) {
+      gameOver = true;
+      if (winner === 'black') {
+        turnEl.textContent = '⚫ 黑方获胜！';
+        modalMsg.textContent = '⚫ 黑方获胜！';
+        modalSub.textContent = gameMode === '1p' ? '你赢了！' : '恭喜黑方！';
+      } else {
+        turnEl.textContent = '🔴 红方获胜！';
+        modalMsg.textContent = '🔴 红方获胜！';
+        modalSub.textContent = gameMode === '1p' ? 'AI 获胜！' : '恭喜红方！';
+      }
+      endModal.classList.remove('hidden');
+    }
+
+    // ── Click / hover ─────────────────────────────────────────
+    canvas.addEventListener('mousemove', e => {
+      if (aiThinking) return;
+      const rect = canvas.getBoundingClientRect();
+      hoverPos = pixelToGrid(
+        (e.clientX - rect.left) * BOARD_PX / rect.width,
+        (e.clientY - rect.top) * BOARD_PX / rect.height
+      );
+      draw();
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      hoverPos = null;
+      draw();
+    });
+
+    canvas.addEventListener('click', e => {
+      if (gameOver || aiThinking) return;
+      if (gameMode === '1p' && currentPlayer === 'red') return;
+
+      const rect = canvas.getBoundingClientRect();
+      const pos = pixelToGrid(
+        (e.clientX - rect.left) * BOARD_PX / rect.width,
+        (e.clientY - rect.top) * BOARD_PX / rect.height
+      );
+      if (!pos) return;
+
+      // Mid-chain: only the chain piece can move, only jump targets accepted
+      if (jumpChainPiece) {
+        const h = highlights.find(h => h.tr === pos.r && h.tc === pos.c);
+        if (h) executeMove(jumpChainPiece.r, jumpChainPiece.c, h.tr, h.tc, h.cr, h.cc);
+        return;
+      }
+
+      // Click on a highlighted target
+      if (selected) {
+        const h = highlights.find(h => h.tr === pos.r && h.tc === pos.c);
+        if (h) {
+          executeMove(selected.r, selected.c, h.tr, h.tc, h.cr, h.cc);
+          return;
+        }
+      }
+
+      // Click on own piece — select it
+      if (colorOf(board[pos.r][pos.c]) === currentPlayer) {
+        const allJumps = getAllJumps(board, currentPlayer);
+        const mustJump = allJumps.length > 0;
+        if (mustJump) {
+          const entry = allJumps.find(e => e.r === pos.r && e.c === pos.c);
+          if (entry) {
+            selected = pos;
+            highlights = entry.jumps;
+          } else {
+            selected = null;
+            highlights = [];
+          }
+        } else {
+          const {moves} = getPieceMoves(board, pos.r, pos.c);
+          if (moves.length) {
+            selected = pos;
+            highlights = moves.map(m => ({...m, cr:-1, cc:-1}));
+          } else {
+            selected = null;
+            highlights = [];
+          }
+        }
+        draw();
+        return;
+      }
+
+      // Click elsewhere — deselect
+      selected = null;
+      highlights = [];
+      draw();
+    });
+
+    // ── AI ────────────────────────────────────────────────────
+    function cloneBoard(b) { return b.map(row => [...row]); }
+
+    // Returns all possible full-turn end results for AI: [{board, moves}]
+    // moves is an array of {r,c,tr,tc,cr,cc}
+    function enumTurns(b, color) {
+      const legal = getAllLegal(b, color);
+      const results = [];
+
+      function expand(curB, r, c, movesSoFar, isJumpChain) {
+        const {moves, jumps} = getPieceMoves(curB, r, c);
+        const opts = isJumpChain ? jumps : (jumps.length ? jumps : moves.map(m => ({...m, cr:-1, cc:-1})));
+
+        for (const mv of opts) {
+          const nb = applyMove(curB, r, c, mv.tr, mv.tc, mv.cr, mv.cc);
+          const seq = [...movesSoFar, {r, c, ...mv}];
+          const promoted = !isKing(curB[r][c]) && isKing(nb[mv.tr][mv.tc]);
+          const isJump = mv.cr >= 0;
+
+          if (isJump && !promoted) {
+            const {jumps: nextJumps} = getPieceMoves(nb, mv.tr, mv.tc);
+            if (nextJumps.length) {
+              expand(nb, mv.tr, mv.tc, seq, true);
+              continue;
+            }
+          }
+          results.push({board: nb, moves: seq});
+        }
+      }
+
+      for (const {r, c} of legal) {
+        expand(b, r, c, [], false);
+      }
+      return results;
+    }
+
+    function evalBoard(b, aiColor) {
+      let score = 0;
+      const opp = enemy(aiColor);
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          const v = b[r][c];
+          const col = colorOf(v);
+          if (!col) continue;
+          const val = isKing(v) ? 3 : 1;
+          // Center bonus
+          const centerBonus = (Math.abs(3.5 - r) < 2 && Math.abs(3.5 - c) < 2) ? 0.1 : 0;
+          if (col === aiColor) score += val + centerBonus;
+          else score -= val + centerBonus;
+        }
+      }
+      return score;
+    }
+
+    function minimaxCheckers(b, depth, alpha, beta, maximizing, aiColor) {
+      const color = maximizing ? aiColor : enemy(aiColor);
+      const turns = enumTurns(b, color);
+      if (depth === 0 || turns.length === 0) return evalBoard(b, aiColor);
+
+      if (maximizing) {
+        let best = -Infinity;
+        for (const {board: nb} of turns) {
+          const v = minimaxCheckers(nb, depth-1, alpha, beta, false, aiColor);
+          if (v > best) best = v;
+          if (best > alpha) alpha = best;
+          if (beta <= alpha) break;
+        }
+        return best;
+      } else {
+        let best = Infinity;
+        for (const {board: nb} of turns) {
+          const v = minimaxCheckers(nb, depth-1, alpha, beta, true, aiColor);
+          if (v < best) best = v;
+          if (best < beta) beta = best;
+          if (beta <= alpha) break;
+        }
+        return best;
+      }
+    }
+
+    function aiGetFullTurn() {
+      const aiColor = 'red';
+      const turns = enumTurns(board, aiColor);
+      if (!turns.length) return null;
+
+      if (aiDiff === 'low') {
+        return turns[Math.floor(Math.random() * turns.length)].moves;
+      }
+
+      if (aiDiff === 'mid') {
+        // Prefer most captures, then best material gain
+        let best = null, bestScore = -Infinity;
+        for (const t of turns) {
+          const captures = t.moves.filter(m => m.cr >= 0).length;
+          const material = evalBoard(t.board, aiColor);
+          const score = captures * 10 + material;
+          if (score > bestScore) { bestScore = score; best = t; }
+        }
+        return best.moves;
+      }
+
+      // high: minimax depth 4
+      let best = null, bestScore = -Infinity;
+      for (const t of turns) {
+        const score = minimaxCheckers(t.board, 3, -Infinity, Infinity, false, aiColor);
+        if (score > bestScore) { bestScore = score; best = t; }
+      }
+      return best.moves;
+    }
+
+    function applyAITurn(moves, idx) {
+      if (idx >= moves.length) {
+        // Done — check win
+        if (!hasAnyMove(board, 'black')) {
+          endGame('red');
+        } else {
+          currentPlayer = 'black';
+          updateTurn();
+          draw();
+        }
+        return;
+      }
+      const mv = moves[idx];
+      board = applyMove(board, mv.r, mv.c, mv.tr, mv.tc, mv.cr, mv.cc);
+      draw();
+      setTimeout(() => applyAITurn(moves, idx + 1), idx === moves.length - 1 ? 0 : 180);
+    }
+
+    function triggerAI() {
+      if (gameOver) return;
+      aiThinking = true;
+      updateTurn();
+      setTimeout(() => {
+        const moves = aiGetFullTurn();
+        aiThinking = false;
+        if (moves && moves.length) {
+          applyAITurn(moves, 0);
+        } else {
+          endGame('black');
+        }
+      }, 60);
+    }
+
+    setupCanvas();
+    selectDiff('low');
+  </script>
+</body>
+</html>

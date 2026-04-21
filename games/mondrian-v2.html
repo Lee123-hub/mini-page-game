@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>蒙德里安填色 v2</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0f0f1a;font-family:system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:0 0 32px}
+
+/* topbar */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;background:#1a1a2e;border-bottom:1px solid #2d2d4e;width:100%;margin-bottom:24px}
+.back-btn{color:#a0aec0;text-decoration:none;font-size:.9rem;padding:6px 14px;border:1px solid #4a5568;border-radius:8px;transition:color .15s,border-color .15s}
+.back-btn:hover{color:#e2e8f0;border-color:#e2e8f0}
+.game-title{font-size:1.2rem;font-weight:700;color:#e2e8f0}
+
+h1{font-size:1.4rem;letter-spacing:3px;text-transform:uppercase;color:#e2e8f0;margin-bottom:2px}
+.sub{font-size:.72rem;color:#718096;letter-spacing:2px;margin-bottom:18px}
+
+/* difficulty */
+.diff-row{display:flex;gap:6px;margin-bottom:18px}
+.diff-btn{padding:7px 20px;font-size:.78rem;background:#2d2d4e;border:1px solid #4a5568;color:#e2e8f0;cursor:pointer;letter-spacing:1px;border-radius:8px;transition:background .15s,border-color .15s}
+.diff-btn:hover{border-color:#667eea}
+.diff-btn.active{background:linear-gradient(135deg,#667eea,#764ba2);border-color:transparent;color:#fff}
+
+/* stats */
+.stats{display:flex;gap:28px;margin-bottom:14px;font-size:.8rem;color:#a0aec0}
+.stats span b{color:#e2e8f0}
+
+/* palette */
+.palette{display:flex;gap:14px;margin-bottom:18px;align-items:flex-end}
+.pal-wrap{display:flex;flex-direction:column;align-items:center;gap:5px}
+.pal-wrap label{font-size:.6rem;color:#718096;letter-spacing:.5px}
+.color-btn{width:46px;height:46px;border:3px solid #4a5568;cursor:pointer;transition:transform .12s,box-shadow .12s;position:relative;border-radius:4px}
+.color-btn:hover{transform:scale(1.08)}
+.color-btn.selected{transform:scale(1.18);box-shadow:0 0 0 3px #0f0f1a,0 0 0 5px #667eea}
+
+/* board */
+.board-wrap{position:relative;margin-bottom:20px}
+canvas{display:block;cursor:pointer;border-radius:4px;box-shadow:0 4px 32px rgba(0,0,0,0.5)}
+
+/* status */
+.status{font-size:.82rem;color:#a0aec0;margin-bottom:12px;min-height:22px;text-align:center}
+.ok{color:#68d391;font-weight:bold}
+.err{color:#fc8181;font-weight:bold}
+
+/* controls */
+.controls{display:flex;gap:10px}
+.ctrl{padding:8px 18px;font-size:.8rem;border:2px solid #4a5568;background:#2d2d4e;color:#e2e8f0;cursor:pointer;letter-spacing:1px;border-radius:8px;transition:background .15s,border-color .15s}
+.ctrl:hover{background:#3a3a5e;border-color:#667eea}
+
+/* overlay */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:100;justify-content:center;align-items:center}
+.overlay.show{display:flex}
+.box{background:#1a1a2e;border:1px solid #4a5568;border-radius:20px;padding:36px 46px;text-align:center;box-shadow:0 16px 64px rgba(0,0,0,0.5)}
+.box h2{font-size:1.6rem;margin-bottom:8px;color:#e2e8f0}
+.box p{color:#a0aec0;font-size:.85rem;margin-bottom:6px}
+.box .big{font-size:1.1rem;color:#e2e8f0;font-weight:bold;margin-bottom:18px}
+
+/* ripple animation */
+@keyframes ripple{0%{opacity:.6;transform:scale(1)}100%{opacity:0;transform:scale(2.2)}}
+.ripple-canvas{position:absolute;top:0;left:0;pointer-events:none}
+</style>
+</head>
+<body>
+
+<nav class="topbar">
+  <a href="../index.html" class="back-btn">← 返回目录</a>
+  <span class="game-title">蒙德里安填色</span>
+  <span style="width:100px"></span>
+</nav>
+
+<h1>Mondrian Color</h1>
+<p class="sub">蒙德里安填色解谜 · v2</p>
+
+<div class="diff-row">
+  <button class="diff-btn active" data-diff="easy">简单</button>
+  <button class="diff-btn" data-diff="normal">普通</button>
+  <button class="diff-btn" data-diff="hard">困难</button>
+  <button class="diff-btn" data-diff="expert">专家</button>
+</div>
+
+<div class="stats">
+  <span>⏱ <b id="timer">0:00</b></span>
+  <span>🖌 步数 <b id="steps">0</b></span>
+  <span>📐 谜题 <b id="pnum">1</b></span>
+</div>
+
+<div class="palette">
+  <div class="pal-wrap">
+    <div class="color-btn selected" style="background:#D62828" data-color="#D62828"></div>
+    <label>红</label>
+  </div>
+  <div class="pal-wrap">
+    <div class="color-btn" style="background:#1A56A0" data-color="#1A56A0"></div>
+    <label>蓝</label>
+  </div>
+  <div class="pal-wrap">
+    <div class="color-btn" style="background:#F4C430" data-color="#F4C430"></div>
+    <label>黄</label>
+  </div>
+  <div class="pal-wrap">
+    <div class="color-btn" style="background:#FAFAF0;border-color:#111" data-color="#FAFAF0"></div>
+    <label>白</label>
+  </div>
+  <div class="pal-wrap" style="margin-left:6px">
+    <div class="color-btn" style="background:#0f0f1a;border-style:dashed;border-color:#4a5568" data-color="null"></div>
+    <label>擦除</label>
+  </div>
+</div>
+
+<div class="status" id="status">选择颜色，点击区域填色</div>
+
+<div class="board-wrap" id="boardWrap">
+  <canvas id="canvas"></canvas>
+  <canvas id="rippleCanvas" class="ripple-canvas"></canvas>
+</div>
+
+<div class="controls">
+  <button class="ctrl" id="btnUndo">↩ 撤销</button>
+  <button class="ctrl" id="btnReset">重置</button>
+  <button class="ctrl" id="btnNew">换题</button>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="box">
+    <h2>🎨 完成！</h2>
+    <p id="win-diff"></p>
+    <p class="big" id="win-stats"></p>
+    <button class="ctrl" onclick="newPuzzle()">再来一局</button>
+    &nbsp;
+    <button class="ctrl" onclick="nextDiff()">挑战更难 →</button>
+  </div>
+</div>
+
+<script>
+// ─── Color constants ───────────────────────────────────────────
+const COLORS = ['#D62828','#1A56A0','#F4C430','#FAFAF0'];
+const LINE = '#111';
+
+// ─── Puzzle data ───────────────────────────────────────────────
+// Each puzzle: { grid: N, regions: [[cells],...] }
+const PUZZLES = {
+  easy: [
+    // 4x4, 6 regions
+    {grid:4,regions:[[[0,0],[0,1],[1,0]],[[0,2],[0,3],[1,3]],[[1,1],[1,2],[2,2]],[[2,0],[3,0],[3,1]],[[2,1],[2,3],[3,3]],[[3,2]]]},
+    {grid:4,regions:[[[0,0],[1,0],[2,0]],[[0,1],[0,2],[0,3]],[[1,1],[1,2]],[[1,3],[2,3],[3,3]],[[2,1],[2,2],[3,2]],[[3,0],[3,1]]]},
+    {grid:4,regions:[[[0,0],[0,1]],[[0,2],[0,3],[1,3]],[[1,0],[2,0],[3,0]],[[1,1],[1,2],[2,2]],[[2,1],[3,1],[3,2]],[[2,3],[3,3]]]},
+    {grid:4,regions:[[[0,0],[0,1],[0,2],[0,3]],[[1,0],[2,0]],[[1,1],[1,2],[1,3]],[[2,1],[2,2]],[[2,3],[3,3]],[[3,0],[3,1],[3,2]]]},
+    {grid:4,regions:[[[0,0],[1,0],[1,1]],[[0,1],[0,2]],[[0,3],[1,3],[2,3]],[[2,0],[3,0],[3,1]],[[1,2],[2,2],[2,1]],[[3,2],[3,3]]]},
+  ],
+  normal: [
+    // 5x5, ~9 regions
+    {grid:5,regions:[[[0,0],[0,1],[1,0]],[[0,2],[0,3],[0,4],[1,4]],[[1,1],[1,2],[1,3],[2,3]],[[2,0],[3,0],[4,0]],[[2,1],[2,2]],[[2,4],[3,4],[4,4]],[[3,1],[3,2],[4,2]],[[3,3],[4,3]],[[4,1]]]},
+    {grid:5,regions:[[[0,0],[1,0],[2,0],[3,0]],[[0,1],[0,2]],[[0,3],[0,4],[1,4],[2,4]],[[1,1],[2,1],[2,2],[2,3]],[[1,2],[1,3]],[[3,1],[3,2]],[[3,3],[3,4],[4,4]],[[4,0],[4,1],[4,2],[4,3]]]},
+    {grid:5,regions:[[[0,0],[0,1],[0,2],[0,3],[0,4]],[[1,0],[2,0]],[[1,1],[1,2],[2,2]],[[1,3],[1,4],[2,4]],[[2,1],[3,1],[3,0]],[[2,3],[3,3],[3,4]],[[3,2],[4,2],[4,3],[4,4]],[[4,0],[4,1]]]},
+    {grid:5,regions:[[[0,0],[1,0]],[[0,1],[0,2],[0,3]],[[0,4],[1,4],[2,4],[3,4]],[[1,1],[1,2],[1,3]],[[2,0],[3,0],[4,0]],[[2,1],[2,2],[2,3]],[[3,1],[3,2],[4,2],[4,1]],[[3,3],[4,3],[4,4]]]},
+    {grid:5,regions:[[[0,0],[0,1],[1,1],[1,0]],[[0,2],[0,3],[0,4]],[[1,2],[2,2],[2,1]],[[1,3],[1,4],[2,4]],[[2,0],[3,0],[4,0],[4,1]],[[2,3],[3,3],[3,2]],[[3,1],[4,2]],[[3,4],[4,4],[4,3]]]},
+  ],
+  hard: [
+    // 6x6, ~12 regions
+    {grid:6,regions:[[[0,0],[1,0],[2,0]],[[0,1],[0,2],[0,3]],[[0,4],[0,5],[1,5]],[[1,1],[1,2]],[[1,3],[1,4],[2,4]],[[2,1],[2,2],[2,3]],[[2,5],[3,5],[4,5]],[[3,0],[4,0],[5,0]],[[3,1],[3,2],[4,2]],[[3,3],[3,4],[4,4]],[[4,1],[5,1],[5,2]],[[4,3],[5,3],[5,4],[5,5]]]},
+    {grid:6,regions:[[[0,0],[0,1],[0,2]],[[0,3],[0,4],[0,5],[1,5]],[[1,0],[2,0],[3,0]],[[1,1],[1,2],[1,3]],[[1,4],[2,4],[2,5]],[[2,1],[2,2],[2,3]],[[3,1],[3,2],[4,2],[4,1]],[[3,3],[3,4],[3,5]],[[4,0],[5,0],[5,1]],[[4,3],[4,4],[5,4]],[[4,5],[5,5]],[[5,2],[5,3]]]},
+    {grid:6,regions:[[[0,0],[0,1],[1,1],[1,0]],[[0,2],[0,3],[0,4],[0,5]],[[1,2],[1,3]],[[1,4],[2,4],[2,5],[1,5]],[[2,0],[3,0],[2,1]],[[2,2],[2,3],[3,3]],[[3,1],[3,2],[4,2],[4,1]],[[3,4],[3,5],[4,5]],[[4,0],[5,0],[5,1],[5,2]],[[4,3],[4,4],[5,4]],[[5,3],[5,5]]]},
+    {grid:6,regions:[[[0,0],[0,1],[0,2]],[[0,3],[1,3],[1,4]],[[0,4],[0,5],[1,5]],[[1,0],[1,1],[2,1],[2,0]],[[1,2],[2,2],[2,3]],[[2,4],[2,5],[3,5]],[[3,0],[4,0],[3,1]],[[3,2],[3,3],[3,4],[4,4]],[[4,1],[4,2],[5,2],[5,1]],[[4,3],[5,3],[5,4]],[[4,5],[5,5]],[[5,0]]]},
+    {grid:6,regions:[[[0,0],[1,0],[1,1],[0,1]],[[0,2],[0,3],[0,4],[0,5]],[[1,2],[2,2],[2,1]],[[1,3],[1,4],[1,5]],[[2,0],[3,0],[4,0]],[[2,3],[2,4],[3,4]],[[2,5],[3,5],[4,5],[5,5]],[[3,1],[3,2],[3,3]],[[4,1],[5,1],[5,2]],[[4,2],[4,3],[5,3]],[[4,4],[5,4]],[[5,0]]]},
+  ],
+  expert: [
+    // 7x7, ~15 regions
+    {grid:7,regions:[[[0,0],[1,0],[2,0],[2,1]],[[0,1],[0,2],[0,3]],[[0,4],[0,5],[0,6],[1,6]],[[1,1],[1,2],[2,2]],[[1,3],[1,4],[1,5],[2,5]],[[2,3],[2,4],[3,4]],[[2,6],[3,6],[4,6]],[[3,0],[4,0],[5,0]],[[3,1],[3,2],[3,3],[4,3]],[[3,5],[4,5],[5,5]],[[4,1],[4,2],[5,2]],[[4,4],[5,4],[5,3]],[[5,1],[6,1],[6,0]],[[5,6],[6,6],[6,5]],[[6,2],[6,3],[6,4]]]},
+    {grid:7,regions:[[[0,0],[0,1],[0,2],[1,2]],[[0,3],[0,4],[0,5],[0,6]],[[1,0],[2,0],[3,0]],[[1,1],[2,1],[2,2]],[[1,3],[1,4],[2,4]],[[1,5],[1,6],[2,6]],[[2,3],[3,3],[3,2]],[[2,5],[3,5],[3,4]],[[3,1],[4,1],[4,0]],[[3,6],[4,6],[5,6]],[[4,2],[4,3],[5,3]],[[4,4],[4,5],[5,5]],[[5,0],[6,0],[6,1]],[[5,1],[5,2],[6,2]],[[5,4],[6,3],[6,4],[6,5],[6,6]]]},
+    {grid:7,regions:[[[0,0],[1,0],[1,1],[0,1]],[[0,2],[0,3],[0,4]],[[0,5],[0,6],[1,6],[2,6]],[[1,2],[1,3],[2,3]],[[1,4],[1,5],[2,5]],[[2,0],[3,0],[2,1]],[[2,2],[3,2],[3,1]],[[2,4],[3,4],[3,5]],[[3,3],[4,3],[4,2]],[[3,6],[4,6],[5,6]],[[4,0],[5,0],[4,1]],[[4,4],[4,5],[5,5]],[[5,1],[5,2],[6,2],[6,1],[6,0]],[[5,3],[5,4]],[[6,3],[6,4],[6,5],[6,6]]]},
+    {grid:7,regions:[[[0,0],[0,1],[1,1]],[[0,2],[0,3],[0,4],[0,5],[0,6]],[[1,0],[2,0],[3,0]],[[1,2],[1,3],[2,3]],[[1,4],[2,4],[2,5]],[[1,5],[1,6],[2,6]],[[2,1],[2,2],[3,2]],[[3,1],[4,1],[4,0]],[[3,3],[3,4],[4,4]],[[3,5],[3,6],[4,6]],[[4,2],[4,3],[5,3]],[[4,5],[5,5],[5,6]],[[5,0],[6,0],[6,1]],[[5,1],[5,2],[6,2]],[[5,4],[6,3],[6,4],[6,5],[6,6]]]},
+    {grid:7,regions:[[[0,0],[0,1],[0,2],[1,2],[1,1]],[[0,3],[0,4],[0,5],[0,6]],[[1,0],[2,0],[2,1]],[[1,3],[1,4],[2,4]],[[1,5],[1,6],[2,6]],[[2,2],[3,2],[3,1]],[[2,3],[3,3],[3,4]],[[2,5],[3,5],[3,6]],[[3,0],[4,0],[5,0]],[[4,1],[4,2],[5,2]],[[4,3],[4,4],[5,4]],[[4,5],[4,6],[5,6]],[[5,1],[6,0],[6,1]],[[5,3],[6,2],[6,3]],[[5,5],[6,4],[6,5],[6,6]]]},
+  ]
+};
+
+// ─── State ─────────────────────────────────────────────────────
+let diff = 'easy';
+let puzzle, N, CELL;
+let cellRegion, regionColor, history;
+let selectedColor = '#D62828';
+let errorRegions = new Set();
+let steps = 0, startTime, timerInterval, puzzleIdx;
+
+// ─── Canvas refs ───────────────────────────────────────────────
+let canvas, ctx, rCanvas, rCtx;
+let ripples = [];
+
+// ─── Init ──────────────────────────────────────────────────────
+function init() {
+  canvas = document.getElementById('canvas');
+  ctx = canvas.getContext('2d');
+  rCanvas = document.getElementById('rippleCanvas');
+  rCtx = rCanvas.getContext('2d');
+
+  canvas.addEventListener('click', onCanvasClick);
+
+  document.querySelectorAll('.diff-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      diff = btn.dataset.diff;
+      newPuzzle();
+    });
+  });
+
+  document.querySelectorAll('.color-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.color-btn').forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedColor = btn.dataset.color === 'null' ? null : btn.dataset.color;
+    });
+  });
+
+  document.getElementById('btnUndo').addEventListener('click', undo);
+  document.getElementById('btnReset').addEventListener('click', reset);
+  document.getElementById('btnNew').addEventListener('click', newPuzzle);
+
+  requestAnimationFrame(animLoop);
+  newPuzzle();
+}
+
+function newPuzzle() {
+  document.getElementById('overlay').classList.remove('show');
+  const pool = PUZZLES[diff];
+  puzzleIdx = Math.floor(Math.random() * pool.length);
+  puzzle = pool[puzzleIdx];
+  N = puzzle.grid;
+  CELL = diff === 'expert' ? 52 : diff === 'hard' ? 62 : 70;
+
+  canvas.width = N * CELL;
+  canvas.height = N * CELL;
+  rCanvas.width = N * CELL;
+  rCanvas.height = N * CELL;
+
+  cellRegion = Array.from({length:N}, () => new Array(N).fill(-1));
+  puzzle.regions.forEach((region, ri) => {
+    region.forEach(([r,c]) => cellRegion[r][c] = ri);
+  });
+  regionColor = new Array(puzzle.regions.length).fill(null);
+  history = [];
+  errorRegions = new Set();
+  steps = 0;
+  ripples = [];
+
+  document.getElementById('steps').textContent = '0';
+  document.getElementById('pnum').textContent = puzzleIdx + 1;
+  setStatus('选择颜色，点击区域填色');
+
+  clearInterval(timerInterval);
+  startTime = null;
+  document.getElementById('timer').textContent = '0:00';
+
+  draw();
+}
+
+function reset() {
+  regionColor = new Array(puzzle.regions.length).fill(null);
+  history = [];
+  errorRegions = new Set();
+  steps = 0;
+  document.getElementById('steps').textContent = '0';
+  clearInterval(timerInterval);
+  startTime = null;
+  document.getElementById('timer').textContent = '0:00';
+  setStatus('已重置，重新开始');
+  draw();
+}
+
+function undo() {
+  if (!history.length) return;
+  const {ri, prev} = history.pop();
+  regionColor[ri] = prev;
+  steps = Math.max(0, steps - 1);
+  document.getElementById('steps').textContent = steps;
+  validate();
+  draw();
+}
+
+// ─── Timer ─────────────────────────────────────────────────────
+function startTimer() {
+  if (startTime) return;
+  startTime = Date.now();
+  timerInterval = setInterval(() => {
+    const s = Math.floor((Date.now() - startTime) / 1000);
+    document.getElementById('timer').textContent = `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+  }, 500);
+}
+
+// ─── Click ─────────────────────────────────────────────────────
+function onCanvasClick(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const x = (e.clientX - rect.left) * scaleX;
+  const y = (e.clientY - rect.top) * scaleY;
+  const col = Math.floor(x / CELL);
+  const row = Math.floor(y / CELL);
+  if (row < 0 || row >= N || col < 0 || col >= N) return;
+  const ri = cellRegion[row][col];
+  if (ri === -1) return;
+
+  startTimer();
+
+  const prev = regionColor[ri];
+  if (prev === selectedColor) return; // no change
+
+  history.push({ri, prev});
+  regionColor[ri] = selectedColor;
+  steps++;
+  document.getElementById('steps').textContent = steps;
+
+  // ripple
+  addRipple(col * CELL + CELL/2, row * CELL + CELL/2, selectedColor || '#ccc');
+
+  validate();
+  draw();
+  checkWin();
+}
+
+// ─── Validate ──────────────────────────────────────────────────
+function getNeighborRegions(ri) {
+  const s = new Set();
+  puzzle.regions[ri].forEach(([r,c]) => {
+    [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc]) => {
+      const nr=r+dr, nc=c+dc;
+      if(nr>=0&&nr<N&&nc>=0&&nc<N){
+        const nri=cellRegion[nr][nc];
+        if(nri!==ri) s.add(nri);
+      }
+    });
+  });
+  return s;
+}
+
+function validate() {
+  errorRegions = new Set();
+  puzzle.regions.forEach((_,ri) => {
+    if(!regionColor[ri]) return;
+    getNeighborRegions(ri).forEach(nri => {
+      if(regionColor[nri] && regionColor[nri]===regionColor[ri]){
+        errorRegions.add(ri); errorRegions.add(nri);
+      }
+    });
+  });
+  const filled = regionColor.filter(Boolean).length;
+  const total = puzzle.regions.length;
+  if(errorRegions.size > 0){
+    setStatus(`<span class="err">⚠ 相邻颜色冲突，请调整</span>`);
+  } else if(filled === total){
+    setStatus(`<span class="ok">✓ 全部填色正确！</span>`);
+  } else {
+    setStatus(`已填 ${filled} / ${total} 个区域`);
+  }
+}
+
+function checkWin() {
+  if(regionColor.every(Boolean) && errorRegions.size===0){
+    clearInterval(timerInterval);
+    setTimeout(showWin, 400);
+  }
+}
+
+function showWin() {
+  const s = startTime ? Math.floor((Date.now()-startTime)/1000) : 0;
+  const timeStr = `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+  document.getElementById('win-diff').textContent = {easy:'简单',normal:'普通',hard:'困难',expert:'专家'}[diff] + ' 难度';
+  document.getElementById('win-stats').textContent = `用时 ${timeStr}，共 ${steps} 步`;
+  document.getElementById('overlay').classList.add('show');
+}
+
+function nextDiff() {
+  const order = ['easy','normal','hard','expert'];
+  const idx = order.indexOf(diff);
+  if(idx < order.length-1){
+    diff = order[idx+1];
+    document.querySelectorAll('.diff-btn').forEach(b=>{
+      b.classList.toggle('active', b.dataset.diff===diff);
+    });
+  }
+  newPuzzle();
+}
+
+// ─── Ripple ────────────────────────────────────────────────────
+function addRipple(x, y, color) {
+  ripples.push({x, y, r: CELL*0.3, maxR: CELL*1.1, color, alpha: 0.5, t: 0});
+}
+
+function animLoop() {
+  rCtx.clearRect(0, 0, rCanvas.width, rCanvas.height);
+  ripples = ripples.filter(rp => rp.alpha > 0.01);
+  ripples.forEach(rp => {
+    rp.t += 0.07;
+    rp.r += (rp.maxR - rp.r) * 0.12;
+    rp.alpha *= 0.85;
+    rCtx.beginPath();
+    rCtx.arc(rp.x, rp.y, rp.r, 0, Math.PI*2);
+    rCtx.strokeStyle = rp.color === '#FAFAF0' ? '#aaa' : rp.color;
+    rCtx.lineWidth = 3;
+    rCtx.globalAlpha = rp.alpha;
+    rCtx.stroke();
+    rCtx.globalAlpha = 1;
+  });
+  requestAnimationFrame(animLoop);
+}
+
+// ─── Draw ──────────────────────────────────────────────────────
+function draw() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // fill regions
+  puzzle.regions.forEach((region, ri) => {
+    const color = regionColor[ri];
+    region.forEach(([r,c]) => {
+      ctx.fillStyle = color || '#1a1a2e';
+      ctx.fillRect(c*CELL+1, r*CELL+1, CELL-1, CELL-1);
+      if(errorRegions.has(ri)){
+        ctx.fillStyle = 'rgba(252,129,129,0.22)';
+        ctx.fillRect(c*CELL+1, r*CELL+1, CELL-1, CELL-1);
+      }
+    });
+  });
+
+  // thin grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.lineWidth = 0.5;
+  for(let i=0;i<=N;i++){
+    ctx.beginPath(); ctx.moveTo(i*CELL,0); ctx.lineTo(i*CELL,N*CELL); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,i*CELL); ctx.lineTo(N*CELL,i*CELL); ctx.stroke();
+  }
+
+  // thick region borders
+  ctx.strokeStyle = '#e2e8f0';
+  ctx.lineCap = 'square';
+  const BW = diff==='hard' ? 4 : 5;
+  ctx.lineWidth = BW;
+  for(let r=0;r<N;r++){
+    for(let c=0;c<N;c++){
+      const ri = cellRegion[r][c];
+      // right
+      if(c+1<N && cellRegion[r][c+1]!==ri){
+        ctx.beginPath(); ctx.moveTo((c+1)*CELL, r*CELL); ctx.lineTo((c+1)*CELL, (r+1)*CELL); ctx.stroke();
+      }
+      // bottom
+      if(r+1<N && cellRegion[r+1][c]!==ri){
+        ctx.beginPath(); ctx.moveTo(c*CELL, (r+1)*CELL); ctx.lineTo((c+1)*CELL, (r+1)*CELL); ctx.stroke();
+      }
+    }
+  }
+
+  // outer border
+  ctx.lineWidth = BW;
+  ctx.strokeRect(BW/2, BW/2, N*CELL-BW, N*CELL-BW);
+
+  // region number hints (faint, only for unfilled)
+  ctx.font = `${CELL*0.22}px Georgia`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  puzzle.regions.forEach((region, ri) => {
+    if(regionColor[ri]) return;
+    const cx = region.reduce((s,[,c])=>s+c,0)/region.length * CELL + CELL/2;
+    const cy = region.reduce((s,[r])=>s+r,0)/region.length * CELL + CELL/2;
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.fillText(region.length, cx, cy);
+  });
+}
+
+function setStatus(html){
+  document.getElementById('status').innerHTML = html;
+}
+
+window.newPuzzle = newPuzzle;
+window.nextDiff = nextDiff;
+window.addEventListener('load', init);
+</script>
+</body>
+</html>
