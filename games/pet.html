@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>电子宠物乐园</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Comic Sans MS', 'Chalkboard SE', cursive, system-ui;
+  background: linear-gradient(160deg, #fdf6ff 0%, #f0f9ff 50%, #fff9f0 100%);
+  min-height: 100vh;
+  color: #374151;
+}
+.topbar {
+  background: #fff;
+  height: 52px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.topbar a {
+  text-decoration: none;
+  color: #c084fc;
+  font-size: 14px;
+  font-weight: 600;
+}
+.topbar-title {
+  flex: 1;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #c084fc, #f472b6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.topbar-right {
+  width: 60px;
+  display: flex;
+  justify-content: flex-end;
+}
+.photo-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.photo-btn:hover { transform: scale(1.2); }
+.main {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px;
+}
+.card {
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(180,140,255,0.12);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+/* Pet display */
+.pet-display {
+  border-radius: 24px;
+  padding: 24px 20px 16px;
+  text-align: center;
+  transition: background 0.5s ease;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 32px rgba(180,140,255,0.12);
+}
+.thought-bubble {
+  display: inline-block;
+  background: #fff;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 13px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  margin-bottom: 12px;
+  position: relative;
+  color: #374151;
+  min-height: 28px;
+}
+.thought-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 8px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+}
+.pet-emoji {
+  font-size: 120px;
+  line-height: 1;
+  display: block;
+  margin: 0 auto 12px;
+  cursor: default;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+}
+.pet-name {
+  font-size: 22px;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 10px;
+}
+.status-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+.badge {
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.badge-age { background: #e0e7ff; color: #4338ca; }
+.badge-mood { background: #fce7f3; color: #be185d; }
+.badge-breed { background: #d1fae5; color: #065f46; }
+.badge-level { background: #fef3c7; color: #92400e; }
+.badge-tag { background: #ede9fe; color: #5b21b6; }
+
+/* Animations */
+@keyframes floatNormal {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes bounceHappy {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+@keyframes wiggleExcited {
+  0%, 100% { transform: rotate(-5deg); }
+  50% { transform: rotate(5deg); }
+}
+@keyframes swaySad {
+  0%, 100% { transform: translateX(-4px) rotate(-2deg); }
+  50% { transform: translateX(4px) rotate(2deg); }
+}
+@keyframes pulseSick {
+  0%, 100% { opacity: 0.7; transform: scale(0.97); }
+  50% { opacity: 1; transform: scale(1); }
+}
+@keyframes toastUp {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-60px); }
+}
+@keyframes warningPulse {
+  0%, 100% { box-shadow: 0 0 0 rgba(239,68,68,0); }
+  50% { box-shadow: 0 0 8px rgba(239,68,68,0.4); }
+}
+@keyframes levelUpBounce {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  25% { transform: scale(1.2) rotate(-5deg); }
+  75% { transform: scale(1.2) rotate(5deg); }
+}
+@keyframes sparkle {
+  0% { opacity: 0; transform: scale(0) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1) rotate(180deg); }
+  100% { opacity: 0; transform: scale(0) rotate(360deg); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.anim-normal { animation: floatNormal 2s ease-in-out infinite; }
+.anim-happy { animation: bounceHappy 0.6s ease-in-out infinite; }
+.anim-excited { animation: wiggleExcited 0.3s ease-in-out infinite; }
+.anim-sad { animation: swaySad 2s ease-in-out infinite; }
+.anim-sick { animation: pulseSick 2s ease-in-out infinite; }
+
+/* Stats */
+.stats-grid { display: flex; flex-direction: column; gap: 10px; }
+.stat-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.stat-label {
+  font-size: 13px;
+  min-width: 80px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.stat-value {
+  font-size: 12px;
+  font-weight: 700;
+  min-width: 28px;
+  text-align: right;
+  color: #9ca3af;
+}
+.stat-bar-bg {
+  flex: 1;
+  height: 10px;
+  background: #f3f4f6;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.stat-bar {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.4s ease;
+}
+.stat-row.critical { animation: warningPulse 1.5s ease-in-out infinite; border-radius: 8px; padding: 2px 4px; }
+.stat-hunger .stat-bar { background: linear-gradient(90deg, #f87171, #fb923c); }
+.stat-thirst .stat-bar { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
+.stat-mood .stat-bar { background: linear-gradient(90deg, #f9a8d4, #fbbf24); }
+.stat-energy .stat-bar { background: linear-gradient(90deg, #34d399, #86efac); }
+.stat-clean .stat-bar { background: linear-gradient(90deg, #67e8f9, #a5f3fc); }
+.stat-affection .stat-bar { background: linear-gradient(90deg, #f472b6, #fb7185); }
+.stat-growth .stat-bar { background: linear-gradient(90deg, #a78bfa, #c084fc); }
+
+.stats-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f3f4f6;
+  font-size: 12px;
+  color: #9ca3af;
+}
+.stats-info span strong { color: #374151; }
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  background: #f9fafb;
+  border-radius: 16px;
+  padding: 4px;
+}
+.tab-btn {
+  flex: 1;
+  padding: 8px 4px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #9ca3af;
+  font-weight: 600;
+}
+.tab-btn.active {
+  background: #fff;
+  color: #374151;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.tab-content { display: none; }
+.tab-content.active { display: block; animation: fadeIn 0.2s ease; }
+.actions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  border: none;
+  border-radius: 16px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  text-align: center;
+  line-height: 1.3;
+}
+.action-btn:hover { transform: scale(1.04); }
+.action-btn:active { transform: scale(0.95); }
+.action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+.action-btn .btn-emoji { font-size: 24px; }
+.tab-feed .action-btn { background: linear-gradient(135deg, #fff7ed, #fef3c7); color: #92400e; }
+.tab-play .action-btn { background: linear-gradient(135deg, #ede9fe, #e0e7ff); color: #4338ca; }
+.tab-care .action-btn { background: linear-gradient(135deg, #d1fae5, #e0f2fe); color: #065f46; }
+.tab-bond .action-btn { background: linear-gradient(135deg, #fce7f3, #fdf2f8); color: #9d174d; }
+
+/* Toast */
+.toast-container {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 8px;
+  z-index: 999;
+  pointer-events: none;
+}
+.toast {
+  background: #fff;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  animation: toastUp 1.5s ease forwards;
+  white-space: nowrap;
+}
+
+/* Modals */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.overlay.hidden { display: none; }
+.modal-card {
+  background: #fff;
+  border-radius: 28px;
+  padding: 28px 24px;
+  max-width: 360px;
+  width: 100%;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.15);
+  animation: fadeIn 0.2s ease;
+  text-align: center;
+}
+.modal-emoji { font-size: 64px; margin-bottom: 12px; }
+.modal-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+.modal-text { font-size: 14px; color: #6b7280; margin-bottom: 20px; line-height: 1.5; }
+.modal-btn {
+  display: inline-block;
+  padding: 10px 24px;
+  border: none;
+  border-radius: 20px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s;
+  margin: 4px;
+}
+.modal-btn:active { transform: scale(0.95); }
+.modal-btn-primary { background: linear-gradient(135deg, #c084fc, #f472b6); color: #fff; }
+.modal-btn-secondary { background: #f3f4f6; color: #374151; }
+
+/* Naming modal */
+.name-input {
+  width: 100%;
+  padding: 10px 16px;
+  border: 2px solid #e0e7ff;
+  border-radius: 16px;
+  font-family: inherit;
+  font-size: 16px;
+  text-align: center;
+  outline: none;
+  margin-bottom: 16px;
+  transition: border-color 0.2s;
+}
+.name-input:focus { border-color: #c084fc; }
+.breed-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.breed-btn {
+  padding: 12px 8px;
+  border: 2px solid #e0e7ff;
+  border-radius: 16px;
+  background: #fafafa;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+.breed-btn:hover { background: #ede9fe; border-color: #c084fc; }
+.breed-btn.selected { background: #ede9fe; border-color: #c084fc; }
+.breed-btn .b-emoji { font-size: 32px; display: block; }
+.breed-btn .b-name { font-size: 11px; font-weight: 600; color: #374151; }
+
+/* Level up overlay */
+#levelup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#levelup-overlay.hidden { display: none; }
+.levelup-card {
+  background: #fff;
+  border-radius: 32px;
+  padding: 32px 28px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+.levelup-emoji {
+  font-size: 80px;
+  display: block;
+  animation: levelUpBounce 0.6s ease-in-out infinite;
+}
+.levelup-title {
+  font-size: 28px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #c084fc, #f472b6, #fbbf24);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 12px 0 8px;
+}
+.sparkles {
+  font-size: 24px;
+  letter-spacing: 4px;
+}
+.levelup-bonuses {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 12px 0;
+}
+
+/* Photo gallery */
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 12px;
+}
+.polaroid {
+  background: #fff;
+  border-radius: 12px;
+  padding: 8px 8px 24px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  text-align: center;
+  transform: rotate(var(--rot, 0deg));
+}
+.polaroid-emoji { font-size: 32px; }
+.polaroid-info { font-size: 9px; color: #9ca3af; margin-top: 4px; line-height: 1.4; }
+
+/* Event modal */
+.event-actions { display: flex; flex-direction: column; gap: 8px; }
+
+/* Reset area */
+.reset-area {
+  text-align: center;
+  padding: 8px;
+}
+.reset-btn {
+  background: none;
+  border: 1px solid #fca5a5;
+  color: #ef4444;
+  border-radius: 12px;
+  padding: 6px 16px;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.reset-btn:hover { background: #fef2f2; }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <a href="../index.html">← 返回</a>
+  <div class="topbar-title">电子宠物乐园 🐾</div>
+  <div class="topbar-right">
+    <button class="photo-btn" onclick="openPhotoGallery()" title="相册">📷</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- PET DISPLAY -->
+  <div class="pet-display card" id="pet-display">
+    <div class="thought-bubble" id="thought-bubble">在想什么呢…</div>
+    <span class="pet-emoji anim-normal" id="pet-emoji">🐱</span>
+    <div class="pet-name" id="pet-name">我的宠物</div>
+    <div class="status-badges" id="status-badges">
+      <span class="badge badge-age" id="badge-age">年龄 0天</span>
+      <span class="badge badge-mood" id="badge-mood">普通</span>
+      <span class="badge badge-breed" id="badge-breed">猫咪</span>
+      <span class="badge badge-level" id="badge-level">Lv.1</span>
+    </div>
+  </div>
+
+  <!-- STATS PANEL -->
+  <div class="card">
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-row stat-hunger" id="row-hunger">
+        <span class="stat-label">🍖 饱食度</span>
+        <div class="stat-bar-bg"><div class="stat-bar" id="bar-hunger" style="width:80%"></div></div>
+        <span class="stat-value" id="val-hunger">80</span>
+      </div>
+      <div class="stat-row stat-thirst" id="row-thirst">
+        <span class="stat-label">💧 口渴度</span>
+        <div class="stat-bar-bg"><div class="stat-bar" id="bar-thirst" style="width:80%"></div></div>
+        <span class="stat-value" id="val-thirst">80</span>
+      </div>
+      <div class="stat-row stat-mood" id="row-mood">
+        <span class="stat-label">😊 心情值</span>
+        <div class="stat-bar-bg"><div class="stat-bar" id="bar-mood" style="width:80%"></div></div>
+        <span class="stat-value" id="val-mood">80</span>
+      </div>
+      <div class="stat-row stat-energy" id="row-energy">
+        <span class="stat-label">⚡ 精力值</span>
+        <div class="stat-bar-bg"><div class="stat-bar" id="bar-energy" style="width:80%"></div></div>
+        <span class="stat-value" id="val-energy">80</span>
+      </div>
+      <div class="stat-row stat-clean" id="row-clean">
+        <span class="stat-label">🧼 清洁度</span>
+        <div class="stat-bar-bg"><div class="stat-bar" id="bar-clean" style="width:80%"></div></div>
+        <span class="stat-value" id="val-clean">80</span>
+      </div>
+      <div class="stat-row stat-affection" id="row-affection">
+        <span class="stat-label">💕 亲密度</span>
+        <div class="stat-bar-bg"><div class="stat-bar" id="bar-affection" style="width:80%"></div></div>
+        <span class="stat-value" id="val-affection">80</span>
+      </div>
+      <div class="stat-row stat-growth" id="row-growth">
+        <span class="stat-label">🌱 成长点</span>
+        <div class="stat-bar-bg"><div class="stat-bar" id="bar-growth" style="width:0%"></div></div>
+        <span class="stat-value" id="val-growth">0</span>
+      </div>
+    </div>
+    <div class="stats-info" id="stats-info">
+      <span>年龄 <strong id="info-age">0</strong>天</span>
+      <span>等级 <strong id="info-level">1</strong></span>
+      <span>互动 <strong id="info-interactions">0</strong>次</span>
+      <span>品种 <strong id="info-breed">猫咪</strong></span>
+    </div>
+  </div>
+
+  <!-- ACTIONS TABS -->
+  <div class="card">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('feed')">🍽️ 喂食</button>
+      <button class="tab-btn" onclick="switchTab('play')">🎮 玩耍</button>
+      <button class="tab-btn" onclick="switchTab('care')">🛁 护理</button>
+      <button class="tab-btn" onclick="switchTab('bond')">💬 互动</button>
+    </div>
+
+    <!-- FEED -->
+    <div class="tab-content tab-feed active" id="tab-feed">
+      <div class="actions-grid">
+        <button class="action-btn" id="btn-fruit" onclick="doAction('fruit')">
+          <span class="btn-emoji">🍎</span>喂水果
+        </button>
+        <button class="action-btn" id="btn-meat" onclick="doAction('meat')">
+          <span class="btn-emoji">🍖</span>喂肉肉
+        </button>
+        <button class="action-btn" id="btn-cake" onclick="doAction('cake')">
+          <span class="btn-emoji">🍰</span>喂蛋糕
+        </button>
+        <button class="action-btn" id="btn-water" onclick="doAction('water')">
+          <span class="btn-emoji">💧</span>喂水
+        </button>
+        <button class="action-btn" id="btn-meal" onclick="doAction('meal')">
+          <span class="btn-emoji">🍵</span>喂营养餐
+        </button>
+        <button class="action-btn" id="btn-snack" onclick="doAction('snack')">
+          <span class="btn-emoji">🍬</span>喂零食
+        </button>
+      </div>
+    </div>
+
+    <!-- PLAY -->
+    <div class="tab-content tab-play" id="tab-play">
+      <div class="actions-grid">
+        <button class="action-btn" id="btn-ball" onclick="doAction('ball')">
+          <span class="btn-emoji">🎾</span>扔球玩
+        </button>
+        <button class="action-btn" id="btn-puzzle" onclick="doAction('puzzle')">
+          <span class="btn-emoji">🧩</span>益智游戏
+        </button>
+        <button class="action-btn" id="btn-walk" onclick="doAction('walk')">
+          <span class="btn-emoji">🌿</span>户外散步
+        </button>
+        <button class="action-btn" id="btn-perform" onclick="doAction('perform')">
+          <span class="btn-emoji">🎪</span>表演才艺
+        </button>
+        <button class="action-btn" id="btn-paint" onclick="doAction('paint')">
+          <span class="btn-emoji">🎨</span>一起画画
+        </button>
+        <button class="action-btn" id="btn-run" onclick="doAction('run')">
+          <span class="btn-emoji">🏃</span>跑步锻炼
+        </button>
+      </div>
+    </div>
+
+    <!-- CARE -->
+    <div class="tab-content tab-care" id="tab-care">
+      <div class="actions-grid">
+        <button class="action-btn" id="btn-bath" onclick="doAction('bath')">
+          <span class="btn-emoji">🛁</span>洗澡
+        </button>
+        <button class="action-btn" id="btn-sleep" onclick="doAction('sleep')">
+          <span class="btn-emoji">💤</span>哄睡觉
+        </button>
+        <button class="action-btn" id="btn-medicine" onclick="doAction('medicine')">
+          <span class="btn-emoji">💊</span>喂药
+        </button>
+        <button class="action-btn" id="btn-groom" onclick="doAction('groom')">
+          <span class="btn-emoji">💇</span>梳毛发型
+        </button>
+        <button class="action-btn" id="btn-temp" onclick="doAction('temp')">
+          <span class="btn-emoji">🌡️</span>量体温
+        </button>
+      </div>
+    </div>
+
+    <!-- BOND -->
+    <div class="tab-content tab-bond" id="tab-bond">
+      <div class="actions-grid">
+        <button class="action-btn" id="btn-hug" onclick="doAction('hug')">
+          <span class="btn-emoji">🤗</span>抱一抱
+        </button>
+        <button class="action-btn" id="btn-sing" onclick="doAction('sing')">
+          <span class="btn-emoji">🎵</span>唱歌给它听
+        </button>
+        <button class="action-btn" id="btn-story" onclick="doAction('story')">
+          <span class="btn-emoji">📚</span>讲故事
+        </button>
+        <button class="action-btn" id="btn-photo" onclick="doAction('photo')">
+          <span class="btn-emoji">🪞</span>拍照留念
+        </button>
+        <button class="action-btn" id="btn-dress" onclick="doAction('dress')">
+          <span class="btn-emoji">👗</span>换装扮
+        </button>
+        <button class="action-btn" id="btn-diary" onclick="doAction('diary')">
+          <span class="btn-emoji">💌</span>写日记
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESET -->
+  <div class="reset-area">
+    <button class="reset-btn" onclick="confirmReset()">🔄 重置宠物</button>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- NAMING MODAL -->
+<div class="overlay" id="naming-overlay">
+  <div class="modal-card">
+    <div class="modal-emoji">🐾</div>
+    <div class="modal-title">欢迎来到宠物乐园！</div>
+    <div class="modal-text">给你的宠物起个名字，然后选择品种吧~</div>
+    <input class="name-input" id="pet-name-input" type="text" placeholder="输入宠物名字..." maxlength="12">
+    <div class="breed-grid" id="breed-grid">
+      <button class="breed-btn selected" onclick="selectBreed(0)">
+        <span class="b-emoji">🐱</span><span class="b-name">猫咪</span>
+      </button>
+      <button class="breed-btn" onclick="selectBreed(1)">
+        <span class="b-emoji">🐶</span><span class="b-name">犬犬</span>
+      </button>
+      <button class="breed-btn" onclick="selectBreed(2)">
+        <span class="b-emoji">🐰</span><span class="b-name">兔子</span>
+      </button>
+      <button class="breed-btn" onclick="selectBreed(3)">
+        <span class="b-emoji">🐼</span><span class="b-name">熊猫</span>
+      </button>
+      <button class="breed-btn" onclick="selectBreed(4)">
+        <span class="b-emoji">🐭</span><span class="b-name">龙猫</span>
+      </button>
+      <button class="breed-btn" onclick="selectBreed(5)">
+        <span class="b-emoji">🐹</span><span class="b-name">仓鼠</span>
+      </button>
+    </div>
+    <button class="modal-btn modal-btn-primary" onclick="confirmNaming()">开始养宠 💕</button>
+  </div>
+</div>
+
+<!-- EVENT MODAL -->
+<div class="overlay hidden" id="event-overlay">
+  <div class="modal-card">
+    <div class="modal-emoji" id="event-emoji">🌧️</div>
+    <div class="modal-title" id="event-title">事件标题</div>
+    <div class="modal-text" id="event-text">事件描述</div>
+    <div class="event-actions" id="event-actions"></div>
+  </div>
+</div>
+
+<!-- LEVEL UP OVERLAY -->
+<div id="levelup-overlay" class="hidden">
+  <div class="levelup-card">
+    <span class="sparkles">✨ ✨ ✨</span>
+    <span class="levelup-emoji" id="levelup-pet-emoji">🐱</span>
+    <div class="levelup-title" id="levelup-title">升级啦！Lv.2</div>
+    <div class="levelup-bonuses" id="levelup-bonuses">能力提升中…</div>
+    <span class="sparkles">🌟 🎉 🌟</span>
+  </div>
+</div>
+
+<!-- PHOTO GALLERY OVERLAY -->
+<div class="overlay hidden" id="gallery-overlay">
+  <div class="modal-card" style="max-width:400px">
+    <div class="modal-title">📷 照片相册</div>
+    <div class="photo-grid" id="photo-grid"></div>
+    <div style="margin-top:16px">
+      <button class="modal-btn modal-btn-secondary" onclick="closeGallery()">关闭</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+// === STATE ===
+const BREEDS = [
+  {name:'猫咪', emoji:['😸','🐱','😿','🤒','😻']},
+  {name:'犬犬', emoji:['😄','🐶','😢','🤕','🤩']},
+  {name:'兔子', emoji:['🥰','🐰','🥺','😷','🥳']},
+  {name:'熊猫', emoji:['🐼','🐼','😔','😵','🎉']},
+  {name:'龙猫', emoji:['🐭','🐭','😞','🤢','😍']},
+  {name:'仓鼠', emoji:['🐹','🐹','😟','🤧','🤭']}
+];
+const MOODS = ['happy','normal','sad','sick','excited'];
+const MOOD_LABELS = {happy:'开心✨',normal:'普通',sad:'难过',sick:'生病',excited:'兴奋🎉'};
+const MOOD_BG = {
+  happy:'linear-gradient(135deg,#fef3c7,#fed7aa)',
+  normal:'linear-gradient(135deg,#e0e7ff,#ede9fe)',
+  sad:'linear-gradient(135deg,#dbeafe,#e0e7ff)',
+  sick:'linear-gradient(135deg,#d1fae5,#a7f3d0)',
+  excited:'linear-gradient(135deg,#fce7f3,#fdf2f8)'
+};
+
+const THOUGHTS = {
+  normal:['在想什么呢…','好无聊哦~','主人在吗？','饿了吗…','要不要玩点什么？'],
+  happy:['好开心呀！','今天真棒！','主人最好了💕','嘿嘿嘿~','哇哦！'],
+  sad:['好难过…','不开心了…','呜呜呜…','想要抱抱…','没精神…'],
+  excited:['哇哇哇！','超兴奋！','快来快来！','好期待好期待！','啊啊啊！'],
+  sick:['头好晕…','不舒服…','好难受哦…','想睡觉…','需要吃药了吗？']
+};
+const IDLE_THOUGHTS = ['咕~咕咕~','有没有零食？','今天天气真好呀','主人去哪了？','想出去玩！','肚子唱歌了…','困了~','好想被夸夸','这是什么气味？'];
+
+let S; // state
+const DEFAULT_STATE = () => ({
+  name:'',breed:0,age:0,level:1,interactions:0,
+  hunger:80,thirst:80,mood:80,energy:80,clean:80,affection:50,growth:0,
+  moodState:'normal',sick:false,
+  costume:0,
+  growthTags:{athletic:0,scholar:0,gourmet:0,social:0,cozy:0},
+  photos:[],diary:[],
+  lastDecay: Date.now(),
+  named:false
+});
+
+function load(){
+  try{ S=JSON.parse(localStorage.getItem('petgame_v1'))||DEFAULT_STATE(); }
+  catch(e){ S=DEFAULT_STATE(); }
+  if(!S.photos) S.photos=[];
+  if(!S.diary) S.diary=[];
+  if(!S.growthTags) S.growthTags={athletic:0,scholar:0,gourmet:0,social:0,cozy:0};
+}
+function save(){ localStorage.setItem('petgame_v1',JSON.stringify(S)); }
+
+function clamp(v,mn=0,mx=100){ return Math.max(mn,Math.min(mx,v)); }
+function stat(key,delta){
+  S[key]=clamp(S[key]+(delta||0));
+}
+
+// === MOOD CALCULATION ===
+function recalcMood(){
+  if(S.sick){ S.moodState='sick'; return; }
+  let m=S.mood;
+  if(m>=80) S.moodState='excited';
+  else if(m>=60) S.moodState='happy';
+  else if(m>=40) S.moodState='normal';
+  else if(m>=20) S.moodState='sad';
+  else S.moodState='sad';
+}
+
+// === RENDER ===
+function render(){
+  recalcMood();
+  // Pet emoji & animation
+  const breedData=BREEDS[S.breed];
+  const moodIdx=MOODS.indexOf(S.moodState);
+  let emoji=breedData.emoji[moodIdx>=0?moodIdx:1];
+  // Costume overlay
+  const costumes=['','🎩','🎀','👑','🎓','🌸'];
+  const costume=costumes[S.costume%costumes.length];
+  document.getElementById('pet-emoji').textContent=emoji+(costume?' '+costume:'');
+  document.getElementById('pet-emoji').className='pet-emoji anim-'+S.moodState;
+  document.getElementById('pet-name').textContent=S.name;
+  document.getElementById('pet-display').style.background=MOOD_BG[S.moodState]||MOOD_BG.normal;
+
+  // Badges
+  document.getElementById('badge-age').textContent='年龄 '+S.age+'天';
+  document.getElementById('badge-mood').textContent=MOOD_LABELS[S.moodState]||'普通';
+  document.getElementById('badge-breed').textContent=breedData.name;
+  document.getElementById('badge-level').textContent='Lv.'+S.level;
+
+  // Growth tags
+  const tags=getGrowthTags();
+  const badgesEl=document.getElementById('status-badges');
+  // Remove old tag badges
+  badgesEl.querySelectorAll('.badge-tag').forEach(e=>e.remove());
+  tags.forEach(t=>{
+    const b=document.createElement('span');
+    b.className='badge badge-tag';
+    b.textContent=t;
+    badgesEl.appendChild(b);
+  });
+
+  // Stats bars
+  const bars={hunger:'bar-hunger',thirst:'bar-thirst',mood:'bar-mood',energy:'bar-energy',clean:'bar-clean',affection:'bar-affection'};
+  for(const[key,id] of Object.entries(bars)){
+    document.getElementById(id).style.width=S[key]+'%';
+    document.getElementById('val-'+key).textContent=Math.round(S[key]);
+    const row=document.getElementById('row-'+key.replace('clean','clean'));
+    if(row) row.classList.toggle('critical',S[key]<30);
+  }
+  // Fix row IDs
+  document.getElementById('row-clean').classList.toggle('critical',S.clean<30);
+  document.getElementById('bar-growth').style.width=S.growth+'%';
+  document.getElementById('val-growth').textContent=Math.round(S.growth);
+
+  // Stats info
+  document.getElementById('info-age').textContent=S.age;
+  document.getElementById('info-level').textContent=S.level;
+  document.getElementById('info-interactions').textContent=S.interactions;
+  document.getElementById('info-breed').textContent=breedData.name;
+
+  // Disable buttons
+  updateButtons();
+  save();
+}
+
+function getGrowthTags(){
+  const tags=[];
+  const g=S.growthTags;
+  if(g.athletic>=15) tags.push('+运动🏃');
+  if(g.scholar>=15) tags.push('+学霸📚');
+  if(g.gourmet>=15) tags.push('+吃货🍰');
+  if(g.social>=15) tags.push('+社牛🎉');
+  if(g.cozy>=15) tags.push('+宅宝💤');
+  return tags;
+}
+
+function updateButtons(){
+  const lowEnergy=S.energy<10;
+  // All buttons disabled if low energy (except free ones)
+  const freeActions=['water','sleep','temp','medicine'];
+  document.querySelectorAll('.action-btn').forEach(btn=>{
+    const id=btn.id.replace('btn-','');
+    btn.disabled=false;
+  });
+  if(lowEnergy){
+    document.querySelectorAll('.action-btn').forEach(btn=>{
+      const id=btn.id.replace('btn-','');
+      if(!freeActions.includes(id)) btn.disabled=true;
+    });
+  }
+  // Perform requires affection>=30
+  const performBtn=document.getElementById('btn-perform');
+  if(performBtn && S.affection<30) performBtn.disabled=true;
+  // Sleep requires energy<40
+  const sleepBtn=document.getElementById('btn-sleep');
+  if(sleepBtn) sleepBtn.disabled=S.energy>=40;
+  // Medicine only useful when sick
+  const medBtn=document.getElementById('btn-medicine');
+  if(medBtn) medBtn.disabled=!S.sick;
+}
+
+// === ACTIONS ===
+const ACTIONS = {
+  // FEED
+  fruit:{cost:5,fn(){ stat('hunger',15);stat('mood',5);stat('thirst',5);S.growthTags.gourmet+=1; return ['+15饱食🍎','+5心情','+5解渴']; }},
+  meat:{cost:3,fn(){ stat('hunger',30);stat('energy',10);S.growthTags.athletic+=2; return ['+30饱食🍖','+10精力']; }},
+  cake:{cost:3,fn(){ stat('hunger',20);stat('mood',20);stat('affection',5);S.growthTags.gourmet+=2; return ['+20饱食🍰','+20心情','+5亲密']; }},
+  water:{cost:2,fn(){ stat('thirst',30);stat('clean',5); return ['+30解渴💧','+5清洁']; }},
+  meal:{cost:5,fn(){ stat('hunger',25);stat('thirst',10);stat('energy',15);['hunger','thirst','mood','energy','clean','affection'].forEach(k=>stat(k,3)); return ['+25饱食🍵','+15精力','全属性+3']; }},
+  snack:{cost:2,fn(){ stat('hunger',10);stat('mood',15);stat('affection',5);S.growthTags.gourmet+=1; return ['+10饱食🍬','+15心情']; }},
+  // PLAY
+  ball:{cost:15,fn(){ stat('mood',20);stat('energy',-15);stat('affection',10);S.growthTags.athletic+=2; return ['+20心情🎾','+10亲密','-15精力']; }},
+  puzzle:{cost:10,fn(){ stat('mood',15);stat('energy',-10);S.growthTags.scholar+=3; return ['+15心情🧩','学者+3']; }},
+  walk:{cost:20,fn(){ stat('mood',25);stat('hunger',-5);stat('energy',-20);stat('clean',-10);S.growthTags.athletic+=2; return ['+25心情🌿','-20精力','-10清洁']; }},
+  perform:{cost:15,req(){return S.affection>=30;},fn(){ stat('mood',30);stat('affection',15);stat('energy',-15);S.growthTags.social+=2; return ['+30心情🎪','+15亲密']; }},
+  paint:{cost:10,fn(){ stat('mood',20);stat('affection',20);S.growthTags.scholar+=2;S.growthTags.social+=1; return ['+20心情🎨','+20亲密']; }},
+  run:{cost:25,fn(){ stat('hunger',-10);S.growthTags.athletic+=3;S._runBonus=true; return ['🏃跑步完成！','下次睡觉恢复+20','运动+3']; }},
+  // CARE
+  bath:{cost:10,fn(){ stat('clean',40);stat('mood',10); return ['+40清洁🛁','+10心情']; }},
+  sleep:{cost:0,req(){return S.energy<40;},fn(){
+    let bonus=S._runBonus?70:50;
+    S._runBonus=false;
+    stat('energy',bonus);stat('hunger',-10);stat('thirst',-10);S.growthTags.cozy+=2;
+    return ['+'+bonus+'精力💤','-10饱食','-10解渴'];
+  }},
+  medicine:{cost:5,req(){return S.sick;},fn(){ S.sick=false;S.moodState='normal';stat('mood',10); return ['💊药效发挥！','治愈疾病','+10心情']; }},
+  groom:{cost:5,fn(){ stat('clean',15);stat('mood',10);stat('affection',5);S.growthTags.social+=1; return ['+15清洁💇','+10心情','+5亲密']; }},
+  temp:{cost:0,fn(){
+    const s=S.sick?'😷发烧了！要吃药哦':'💚体温正常';
+    const e=S.energy<20?'⚡精力不足':'';
+    return ['🌡️测温完成',s,e].filter(Boolean);
+  }},
+  // BOND
+  hug:{cost:5,fn(){ stat('affection',20);stat('mood',15);stat('energy',-5); return ['+20亲密🤗','+15心情']; }},
+  sing:{cost:8,fn(){ stat('mood',25);stat('affection',15);S.growthTags.social+=2; return ['+25心情🎵','+15亲密']; }},
+  story:{cost:5,fn(){ stat('mood',20);stat('affection',10);S.growthTags.scholar+=2;stat('energy',-5); return ['+20心情📚','+10亲密']; }},
+  photo:{cost:3,fn(){
+    const now=new Date();
+    const p={breed:S.breed,moodEmoji:BREEDS[S.breed].emoji[MOODS.indexOf(S.moodState)||1],age:S.age,level:S.level,date:now.toLocaleDateString('zh-CN'),rot:(Math.random()*6-3).toFixed(1)};
+    S.photos.unshift(p); if(S.photos.length>6) S.photos.pop();
+    stat('affection',10);stat('mood',10);S.growthTags.social+=1;
+    return ['+10亲密📸','照片已存入相册！'];
+  }},
+  dress:{cost:5,fn(){ S.costume=(S.costume+1)%6;stat('mood',20);stat('affection',10);S.growthTags.social+=2; return ['+20心情👗','换了新装扮！']; }},
+  diary:{cost:3,fn(){
+    const now=new Date();
+    S.diary.unshift({date:now.toLocaleDateString('zh-CN'),text:'今天和'+S.name+'互动了~'});
+    if(S.diary.length>20) S.diary.pop();
+    stat('affection',5);S.growthTags.scholar+=1;
+    return ['+5亲密💌','写进日记啦！'];
+  }}
+};
+
+function doAction(id){
+  const act=ACTIONS[id];
+  if(!act) return;
+  // Check requirement
+  if(act.req && !act.req()){ showToast('条件不满足哦~','#fbbf24'); return; }
+  // Deduct energy cost
+  if(act.cost) stat('energy',-act.cost);
+  // Execute
+  const msgs=act.fn();
+  S.interactions++;
+  // Growth points
+  addGrowthPoints(3);
+  // Show toasts
+  msgs.forEach((m,i)=>setTimeout(()=>showToast(m),i*200));
+  render();
+}
+
+function addGrowthPoints(pts){
+  S.growth=clamp(S.growth+pts);
+  if(S.growth>=100){
+    S.growth=0;
+    levelUp();
+  }
+}
+
+function levelUp(){
+  S.level++;
+  const statKeys=['hunger','thirst','mood','energy','clean','affection'];
+  const chosen=[];
+  for(let i=0;i<2;i++){
+    const k=statKeys[Math.floor(Math.random()*statKeys.length)];
+    stat(k,5);
+    const labels={hunger:'饱食',thirst:'解渴',mood:'心情',energy:'精力',clean:'清洁',affection:'亲密'};
+    chosen.push(labels[k]+'上限+5');
+  }
+  // Show overlay
+  document.getElementById('levelup-pet-emoji').textContent=BREEDS[S.breed].emoji[MOODS.indexOf('excited')];
+  document.getElementById('levelup-title').textContent='升级啦！Lv.'+S.level+' 🎉';
+  document.getElementById('levelup-bonuses').textContent=chosen.join(' · ');
+  document.getElementById('levelup-overlay').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('levelup-overlay').classList.add('hidden'),3000);
+}
+
+// === TIME DECAY ===
+let decayInterval, eventInterval, thoughtInterval;
+function startTimers(){
+  decayInterval=setInterval(()=>{
+    const now=Date.now();
+    const elapsed=(now-S.lastDecay)/1000;
+    S.lastDecay=now;
+    // Scale decay by elapsed time (normalize to 30s tick)
+    const ticks=elapsed/30;
+    S.hunger=clamp(S.hunger-3*ticks);
+    S.thirst=clamp(S.thirst-4*ticks);
+    S.clean=clamp(S.clean-2*ticks);
+    S.energy=clamp(S.energy+1*ticks);
+    if(S.hunger<20) S.mood=clamp(S.mood-5*ticks);
+    if(S.thirst<20) S.mood=clamp(S.mood-5*ticks);
+    if(S.clean<20) S.mood=clamp(S.mood-10*ticks);
+    render();
+  },30000);
+
+  // Age: +1 day every 5 minutes
+  setInterval(()=>{ S.age++; save(); },300000);
+
+  // Random events every 60s (30% chance)
+  eventInterval=setInterval(()=>{
+    if(Math.random()<0.3 && document.getElementById('event-overlay').classList.contains('hidden')){
+      triggerRandomEvent();
+    }
+  },60000);
+
+  // Thought bubble every 8s
+  thoughtInterval=setInterval(updateThought,8000);
+  updateThought();
+}
+
+function updateThought(){
+  const pool=THOUGHTS[S.moodState]||THOUGHTS.normal;
+  const all=[...pool,...IDLE_THOUGHTS];
+  const t=all[Math.floor(Math.random()*all.length)];
+  const el=document.getElementById('thought-bubble');
+  el.style.opacity='0';
+  setTimeout(()=>{ el.textContent=t; el.style.opacity='1'; el.style.transition='opacity 0.5s'; },300);
+}
+
+// === RANDOM EVENTS ===
+const EVENTS = [
+  {emoji:'🌧️',title:'下雨了！',text:'宠物淋湿了，清洁度下降~',
+   effect(){stat('clean',-20);stat('mood',-10);},
+   actions:[{label:'快去擦干 🧴',fn(){stat('clean',15);closeEvent();render();}}]},
+  {emoji:'😴',title:'宠物打了个大哈欠…',text:'看起来有点困了',
+   effect(){stat('energy',-15);},
+   actions:[{label:'哄它睡觉 💤',fn(){if(S.energy<40){doAction('sleep');}closeEvent();render();}},{label:'没关系~',fn(){closeEvent();}}]},
+  {emoji:'🍭',title:'发现了神秘零食！',text:'宠物开心地吃掉了~',
+   effect(){stat('hunger',10);stat('mood',20);},
+   actions:[{label:'好棒！',fn(){closeEvent();}}]},
+  {emoji:'💔',title:'宠物有点难过…',text:'需要主人的安慰',
+   effect(){stat('mood',-20);},
+   actions:[{label:'安慰它 🤗',fn(){stat('affection',15);stat('mood',10);closeEvent();render();}}]},
+  {emoji:'🌟',title:'宠物做了个好梦！',text:'醒来心情超好~',
+   effect(){stat('mood',15);stat('energy',10);},
+   actions:[{label:'哇真棒！',fn(){closeEvent();}}]},
+  {emoji:'🤒',title:'宠物好像有点不舒服',text:'需要吃药治疗！',
+   effect(){S.sick=true;stat('energy',-20);},
+   actions:[{label:'快去喂药 💊',fn(){closeEvent();switchTab('care');}},{label:'等等再说',fn(){closeEvent();}}]},
+  {emoji:'🎉',title:'今天是宠物的生日！',text:'生日快乐~！',
+   effect(){stat('mood',30);stat('affection',20);},
+   actions:[{label:'庆祝！🎂',fn(){closeEvent();showToast('🎂 生日快乐！',  '#f472b6');}}]},
+  {emoji:'🐛',title:'发现了小虫子！',text:'宠物被吓到了！',
+   effect(){stat('clean',-15);stat('mood',-15);},
+   actions:[{label:'帮它捉虫 🦋',fn(){stat('clean',20);stat('affection',10);closeEvent();render();}}]},
+  {emoji:'🌈',title:'彩虹出现了！',text:'宠物高兴地跳了起来！',
+   effect(){stat('mood',25);},
+   actions:[{label:'好漂亮！',fn(){closeEvent();}}]},
+  {emoji:'📦',title:'神秘礼物到来！',text:'随机获得一项属性提升~',
+   effect(){
+     const keys=['hunger','thirst','mood','energy','clean','affection'];
+     const k=keys[Math.floor(Math.random()*keys.length)];
+     stat(k,20);
+   },
+   actions:[{label:'拆开礼物！🎁',fn(){closeEvent();render();}}]},
+  {emoji:'🥱',title:'宠物无聊了…',text:'需要玩耍和陪伴',
+   effect(){stat('mood',-15);},
+   actions:[{label:'陪它玩 🎮',fn(){closeEvent();switchTab('play');}},{label:'等会儿~',fn(){closeEvent();}}]},
+  {emoji:'💤',title:'宠物悄悄睡着了',text:'能量慢慢恢复中~',
+   effect(){stat('energy',30);},
+   actions:[{label:'让它睡吧 😊',fn(){closeEvent();}}]}
+];
+
+function triggerRandomEvent(){
+  const ev=EVENTS[Math.floor(Math.random()*EVENTS.length)];
+  ev.effect();
+  document.getElementById('event-emoji').textContent=ev.emoji;
+  document.getElementById('event-title').textContent=ev.title;
+  document.getElementById('event-text').textContent=ev.text;
+  const actEl=document.getElementById('event-actions');
+  actEl.innerHTML='';
+  ev.actions.forEach(a=>{
+    const btn=document.createElement('button');
+    btn.className='modal-btn modal-btn-primary';
+    btn.textContent=a.label;
+    btn.onclick=a.fn;
+    actEl.appendChild(btn);
+  });
+  document.getElementById('event-overlay').classList.remove('hidden');
+  render();
+}
+function closeEvent(){ document.getElementById('event-overlay').classList.add('hidden'); }
+
+// === TOAST ===
+function showToast(msg, color='#c084fc'){
+  const tc=document.getElementById('toast-container');
+  const div=document.createElement('div');
+  div.className='toast';
+  div.textContent=msg;
+  div.style.color=color;
+  div.style.borderLeft='3px solid '+color;
+  tc.appendChild(div);
+  setTimeout(()=>div.remove(),1600);
+}
+
+// === TABS ===
+let currentTab='feed';
+function switchTab(tab){
+  currentTab=tab;
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>{
+    const tabs=['feed','play','care','bond'];
+    b.classList.toggle('active',tabs[i]===tab);
+  });
+  document.querySelectorAll('.tab-content').forEach(c=>{
+    c.classList.toggle('active',c.id==='tab-'+tab);
+  });
+}
+
+// === NAMING ===
+let selectedBreed=0;
+function selectBreed(idx){
+  selectedBreed=idx;
+  document.querySelectorAll('.breed-btn').forEach((b,i)=>b.classList.toggle('selected',i===idx));
+}
+function confirmNaming(){
+  const n=document.getElementById('pet-name-input').value.trim();
+  if(!n){ showToast('请给宠物起个名字~','#ef4444'); return; }
+  S.name=n;
+  S.breed=selectedBreed;
+  S.named=true;
+  document.getElementById('naming-overlay').classList.add('hidden');
+  render();
+  showToast('欢迎来到宠物乐园，'+n+'！💕','#f472b6');
+}
+
+// === PHOTO GALLERY ===
+function openPhotoGallery(){
+  const grid=document.getElementById('photo-grid');
+  if(S.photos.length===0){
+    grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:#9ca3af;padding:20px">还没有照片哦~<br>去拍照留念吧！📷</div>';
+  } else {
+    grid.innerHTML=S.photos.map(p=>`
+      <div class="polaroid" style="--rot:${p.rot}deg">
+        <div class="polaroid-emoji">${p.moodEmoji}</div>
+        <div class="polaroid-info">Lv.${p.level}<br>${p.age}天<br>${p.date}</div>
+      </div>
+    `).join('');
+  }
+  document.getElementById('gallery-overlay').classList.remove('hidden');
+}
+function closeGallery(){ document.getElementById('gallery-overlay').classList.add('hidden'); }
+
+// === RESET ===
+function confirmReset(){
+  if(confirm('确定要重置宠物吗？所有数据将清除！')){ 
+    localStorage.removeItem('petgame_v1');
+    location.reload();
+  }
+}
+
+// === LEVEL UP click to dismiss ===
+document.getElementById('levelup-overlay').addEventListener('click',function(){
+  this.classList.add('hidden');
+});
+
+// === INIT ===
+load();
+if(!S.named){
+  document.getElementById('naming-overlay').classList.remove('hidden');
+  // Set default name placeholder
+  const breedNames=['小咪','小汪','小兔','小熊','小灰','小仓'];
+  document.getElementById('pet-name-input').placeholder='例如：'+breedNames[S.breed||0];
+} else {
+  document.getElementById('naming-overlay').classList.add('hidden');
+}
+render();
+startTimers();
+</script>
+</body>
+</html>
