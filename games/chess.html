@@ -88,7 +88,7 @@
     .modal-content h2 { font-size: 1.8rem; margin-bottom: 10px; }
     .modal-content p { color: #a0aec0; margin-bottom: 28px; }
 
-    .modal-content button {
+    .modal-content button:not(.btn) {
       padding: 12px 36px;
       background: linear-gradient(135deg, #667eea, #764ba2);
       color: #fff;
@@ -99,7 +99,7 @@
       transition: opacity 0.15s;
     }
 
-    .modal-content button:hover { opacity: 0.85; }
+    .modal-content button:not(.btn):hover { opacity: 0.85; }
 
     .promo-choices {
       display: flex;

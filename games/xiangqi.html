@@ -87,7 +87,7 @@
     .modal-content h2 { font-size: 2rem; margin-bottom: 12px; }
     .modal-content p { color: #a0aec0; margin-bottom: 28px; }
 
-    .modal-content button {
+    .modal-content button:not(.btn) {
       padding: 12px 36px;
       background: linear-gradient(135deg, #667eea, #764ba2);
       color: #fff;
@@ -98,7 +98,7 @@
       transition: opacity 0.15s;
     }
 
-    .modal-content button:hover { opacity: 0.85; }
+    .modal-content button:not(.btn):hover { opacity: 0.85; }
     .btn-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 12px; }
     .btn { padding: 10px 24px; background: #2d2d4e; color: #e2e8f0; border: 2px solid #4a5568; border-radius: 10px; font-size: 0.95rem; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
     .btn:hover { border-color: #667eea; background: #3a3a5e; }

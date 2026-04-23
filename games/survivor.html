@@ -1,0 +1,1744 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>末日幸存者</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #0f0f1a;
+  color: #e2e8f0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  background: #1a1a2e;
+  border-bottom: 1px solid #2d2d4e;
+  flex-shrink: 0;
+}
+.back-btn {
+  color: #a0aec0;
+  text-decoration: none;
+  font-size: 0.9rem;
+  padding: 6px 14px;
+  border: 1px solid #4a5568;
+  border-radius: 8px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.back-btn:hover { color: #fff; border-color: #fff; }
+.game-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.topbar-right { width: 80px; text-align: right; font-size: 0.8rem; color: #718096; }
+.game-container {
+  display: flex;
+  flex: 1;
+  gap: 0;
+  overflow: hidden;
+  height: calc(100vh - 57px);
+}
+/* ===== LEFT PANEL ===== */
+.left-panel {
+  width: 240px;
+  min-width: 240px;
+  background: #1a1a2e;
+  border-right: 1px solid #2d2d4e;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+/* ===== CENTER PANEL ===== */
+.center-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #0f0f1a;
+}
+/* ===== RIGHT PANEL ===== */
+.right-panel {
+  width: 240px;
+  min-width: 240px;
+  background: #1a1a2e;
+  border-left: 1px solid #2d2d4e;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+/* ===== PANELS SHARED ===== */
+.panel-section {
+  background: #12122a;
+  border: 1px solid #2d2d4e;
+  border-radius: 8px;
+  padding: 10px;
+}
+.panel-section h3 {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #718096;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #2d2d4e;
+}
+/* ===== STAT BARS ===== */
+.stat-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+}
+.stat-label {
+  font-size: 0.72rem;
+  color: #a0aec0;
+  width: 44px;
+  flex-shrink: 0;
+}
+.stat-bar-bg {
+  flex: 1;
+  height: 8px;
+  background: #2d2d4e;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.stat-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+.stat-val {
+  font-size: 0.7rem;
+  color: #718096;
+  width: 28px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.bar-hp { background: linear-gradient(90deg, #e53e3e, #fc8181); }
+.bar-hunger { background: linear-gradient(90deg, #dd6b20, #f6ad55); }
+.bar-thirst { background: linear-gradient(90deg, #2b6cb0, #63b3ed); }
+.bar-energy { background: linear-gradient(90deg, #b7791f, #f6e05e); }
+.bar-morale { background: linear-gradient(90deg, #6b46c1, #b794f4); }
+.gold-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 0.82rem;
+  color: #f6e05e;
+  font-weight: 600;
+}
+/* ===== SKILLS ===== */
+.skill-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 4px;
+}
+.skill-name { font-size: 0.72rem; color: #a0aec0; width: 40px; flex-shrink: 0; }
+.skill-dots {
+  display: flex;
+  gap: 2px;
+  flex: 1;
+}
+.skill-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  border: 1px solid #4a5568;
+  background: #2d2d4e;
+}
+.skill-dot.filled {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-color: #764ba2;
+}
+.skill-level { font-size: 0.7rem; color: #718096; width: 14px; text-align: right; }
+.upgrade-btn {
+  background: none;
+  border: 1px solid #4a5568;
+  border-radius: 4px;
+  color: #a0aec0;
+  font-size: 0.65rem;
+  padding: 1px 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.upgrade-btn:hover:not(:disabled) { border-color: #667eea; color: #667eea; }
+.upgrade-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+/* ===== EQUIPMENT ===== */
+.equip-slot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 7px;
+  background: #0f0f1a;
+  border: 1px solid #2d2d4e;
+  border-radius: 6px;
+  margin-bottom: 5px;
+  font-size: 0.75rem;
+}
+.equip-slot .slot-label { color: #718096; width: 34px; flex-shrink: 0; }
+.equip-slot .slot-item { color: #e2e8f0; flex: 1; }
+.equip-slot .unequip-btn {
+  background: none;
+  border: 1px solid #4a5568;
+  border-radius: 3px;
+  color: #718096;
+  font-size: 0.6rem;
+  padding: 1px 4px;
+  cursor: pointer;
+}
+.equip-slot .unequip-btn:hover { color: #e53e3e; border-color: #e53e3e; }
+/* ===== LOCATION ===== */
+.location-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: linear-gradient(135deg, #1a1a2e, #12122a);
+  border: 1px solid #2d2d4e;
+  border-radius: 8px;
+  margin: 10px;
+  flex-shrink: 0;
+}
+.location-emoji { font-size: 1.4rem; }
+.location-name { font-size: 0.95rem; font-weight: 600; color: #e2e8f0; }
+.location-desc { font-size: 0.7rem; color: #718096; }
+.time-display {
+  margin-left: auto;
+  text-align: right;
+  font-size: 0.7rem;
+  color: #718096;
+  line-height: 1.5;
+}
+/* ===== ACTIONS AREA ===== */
+.actions-area {
+  padding: 8px 10px;
+  flex-shrink: 0;
+  border-bottom: 1px solid #2d2d4e;
+}
+.actions-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #718096;
+  margin-bottom: 7px;
+}
+.actions-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.travel-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+.action-btn {
+  padding: 6px 11px;
+  background: #1a1a2e;
+  border: 1px solid #2d2d4e;
+  border-radius: 6px;
+  color: #e2e8f0;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+.action-btn:hover:not(:disabled) {
+  background: #222240;
+  border-color: #667eea;
+  color: #fff;
+}
+.action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.action-btn.travel-btn {
+  border-color: #4a5568;
+  color: #a0aec0;
+  font-size: 0.75rem;
+}
+.action-btn.travel-btn:hover:not(:disabled) {
+  border-color: #764ba2;
+  color: #e2e8f0;
+}
+.action-btn.travel-btn.current-loc {
+  border-color: #667eea;
+  color: #667eea;
+  opacity: 1;
+  cursor: default;
+}
+/* ===== EVENT LOG ===== */
+.event-log {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+.log-entry {
+  padding: 4px 8px;
+  margin-bottom: 2px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  border-left: 3px solid transparent;
+}
+.log-combat { color: #fc8181; border-left-color: #e53e3e; background: rgba(229,62,62,0.05); }
+.log-loot { color: #f6e05e; border-left-color: #d69e2e; background: rgba(214,158,46,0.05); }
+.log-stat { color: #63b3ed; border-left-color: #2b6cb0; background: rgba(43,108,176,0.05); }
+.log-event { color: #b794f4; border-left-color: #6b46c1; background: rgba(107,70,193,0.05); }
+.log-system { color: #718096; border-left-color: #4a5568; background: rgba(74,85,104,0.05); }
+.log-success { color: #68d391; border-left-color: #276749; background: rgba(39,103,73,0.05); }
+.log-time { color: #4a5568; font-size: 0.68rem; margin-right: 4px; }
+/* ===== INVENTORY ===== */
+.bag-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+.item-btn {
+  padding: 4px 7px;
+  background: #0f0f1a;
+  border: 1px solid #2d2d4e;
+  border-radius: 5px;
+  color: #e2e8f0;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.item-btn:hover { border-color: #667eea; background: #12122a; }
+.item-btn .item-count {
+  background: #2d2d4e;
+  border-radius: 3px;
+  padding: 0 3px;
+  font-size: 0.65rem;
+  color: #a0aec0;
+}
+.bag-capacity {
+  font-size: 0.7rem;
+  color: #718096;
+  margin-bottom: 5px;
+}
+.bag-capacity.full { color: #e53e3e; }
+/* ===== CRAFTING MENU ===== */
+.craft-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 0;
+  border-bottom: 1px solid #1e1e38;
+  font-size: 0.74rem;
+}
+.craft-row:last-child { border-bottom: none; }
+.craft-result { color: #e2e8f0; flex: 1; }
+.craft-materials { color: #718096; font-size: 0.68rem; }
+.craft-btn {
+  padding: 3px 8px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 0.68rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.craft-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+/* ===== SHOP ===== */
+.shop-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  font-size: 0.75rem;
+  border-bottom: 1px solid #1e1e38;
+}
+.shop-row:last-child { border-bottom: none; }
+.shop-item { flex: 1; color: #e2e8f0; }
+.shop-price { color: #f6e05e; font-size: 0.7rem; flex-shrink: 0; }
+.shop-buy-btn {
+  padding: 2px 7px;
+  background: #1a1a2e;
+  border: 1px solid #2d2d4e;
+  border-radius: 4px;
+  color: #a0aec0;
+  font-size: 0.68rem;
+  cursor: pointer;
+}
+.shop-buy-btn:hover:not(:disabled) { border-color: #f6e05e; color: #f6e05e; }
+.shop-buy-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+/* ===== MODALS ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.modal-overlay.hidden { display: none; }
+.modal-box {
+  background: #1a1a2e;
+  border: 1px solid #4a5568;
+  border-radius: 12px;
+  padding: 28px 32px;
+  max-width: 420px;
+  width: 90%;
+  text-align: center;
+}
+.modal-box h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+.modal-box.gameover h2 { color: #e53e3e; }
+.modal-box.victory h2 {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.modal-stats {
+  background: #12122a;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 14px 0;
+  text-align: left;
+  font-size: 0.82rem;
+  line-height: 2;
+  color: #a0aec0;
+}
+.modal-stats span { color: #e2e8f0; font-weight: 600; }
+.modal-btn {
+  padding: 10px 28px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 6px;
+  transition: opacity 0.15s;
+}
+.modal-btn:hover { opacity: 0.85; }
+/* ===== TOOLTIP ===== */
+[data-tip] {
+  position: relative;
+}
+[data-tip]:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 5px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #2d2d4e;
+  color: #e2e8f0;
+  font-size: 0.7rem;
+  padding: 4px 8px;
+  border-radius: 5px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 50;
+  border: 1px solid #4a5568;
+}
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: #0f0f1a; }
+::-webkit-scrollbar-thumb { background: #2d2d4e; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #4a5568; }
+/* ===== SECTION TITLE ===== */
+.section-divider {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #4a5568;
+  margin: 6px 0 4px;
+  padding-top: 6px;
+  border-top: 1px solid #1e1e38;
+}
+</style>
+</head>
+<body>
+<!-- TOPBAR -->
+<div class="topbar">
+  <a class="back-btn" href="../index.html">← 返回</a>
+  <div class="game-title">末日幸存者</div>
+  <div class="topbar-right" id="save-indicator">💾 自动存档</div>
+</div>
+
+<!-- GAME CONTAINER -->
+<div class="game-container">
+
+  <!-- LEFT PANEL: Stats + Skills -->
+  <div class="left-panel" id="left-panel">
+    <!-- stats rendered by JS -->
+  </div>
+
+  <!-- CENTER PANEL: Location + Actions + Log -->
+  <div class="center-panel">
+    <div id="location-bar" class="location-display"></div>
+    <div class="actions-area" id="actions-area"></div>
+    <div class="event-log" id="event-log"></div>
+  </div>
+
+  <!-- RIGHT PANEL: Inventory + Equipment -->
+  <div class="right-panel" id="right-panel">
+    <!-- inventory rendered by JS -->
+  </div>
+
+</div>
+
+<!-- GAME OVER MODAL -->
+<div class="modal-overlay hidden" id="modal-gameover">
+  <div class="modal-box gameover">
+    <h2>💀 你已死亡</h2>
+    <div class="modal-stats" id="gameover-stats"></div>
+    <button class="modal-btn" onclick="restartGame()">重新开始</button>
+  </div>
+</div>
+
+<!-- VICTORY MODAL -->
+<div class="modal-overlay hidden" id="modal-victory">
+  <div class="modal-box victory">
+    <h2>🏆 末日幸存者！</h2>
+    <p style="color:#a0aec0;font-size:0.85rem;margin-bottom:12px;">你成功在末日中存活了30天！</p>
+    <div class="modal-stats" id="victory-stats"></div>
+    <button class="modal-btn" onclick="restartGame()">再来一局</button>
+  </div>
+</div>
+
+<!-- CRAFT MODAL -->
+<div class="modal-overlay hidden" id="modal-craft">
+  <div class="modal-box" style="max-width:360px;">
+    <h2 style="font-size:1.1rem;color:#e2e8f0;margin-bottom:12px;">⚒ 制作道具</h2>
+    <div id="craft-list"></div>
+    <button class="modal-btn" style="margin-top:14px;" onclick="closeModal('modal-craft')">关闭</button>
+  </div>
+</div>
+
+<!-- SHOP MODAL -->
+<div class="modal-overlay hidden" id="modal-shop">
+  <div class="modal-box" style="max-width:380px;">
+    <h2 style="font-size:1.1rem;color:#e2e8f0;margin-bottom:12px;">🏪 集市</h2>
+    <div style="display:flex;gap:8px;margin-bottom:10px;">
+      <button class="action-btn" onclick="showShopTab('buy')" id="tab-buy" style="flex:1;">购买</button>
+      <button class="action-btn" onclick="showShopTab('sell')" id="tab-sell" style="flex:1;">出售</button>
+    </div>
+    <div id="shop-content"></div>
+    <button class="modal-btn" style="margin-top:14px;" onclick="closeModal('modal-shop')">关闭</button>
+  </div>
+</div>
+
+<!-- SKILL UPGRADE MODAL -->
+<div class="modal-overlay hidden" id="modal-skills">
+  <div class="modal-box" style="max-width:360px;">
+    <h2 style="font-size:1.1rem;color:#e2e8f0;margin-bottom:12px;">📈 升级技能</h2>
+    <div id="skill-upgrade-list"></div>
+    <button class="modal-btn" style="margin-top:14px;" onclick="closeModal('modal-skills')">关闭</button>
+  </div>
+</div>
+
+<!-- ITEM ACTION MODAL -->
+<div class="modal-overlay hidden" id="modal-item">
+  <div class="modal-box" style="max-width:300px;">
+    <h2 style="font-size:1rem;color:#e2e8f0;margin-bottom:10px;" id="item-modal-title">道具操作</h2>
+    <p style="font-size:0.8rem;color:#718096;margin-bottom:14px;" id="item-modal-desc"></p>
+    <div id="item-modal-actions" style="display:flex;flex-direction:column;gap:7px;"></div>
+    <button class="modal-btn" style="margin-top:10px;background:#2d2d4e;" onclick="closeModal('modal-item')">取消</button>
+  </div>
+</div>
+
+<script>
+// ======================================================
+// GAME DATA DEFINITIONS
+// ======================================================
+
+const ITEMS_DEF = {
+  // Resources
+  '野果':    { cat:'food',   emoji:'🍎', desc:'野生果实，可以充饥', hunger:15, weight:1 },
+  '净水':    { cat:'drink',  emoji:'💧', desc:'干净的饮用水', thirst:20, weight:1 },
+  '木材':    { cat:'mat',    emoji:'🪵', desc:'建造和制作的原料', weight:1 },
+  '铁矿':    { cat:'mat',    emoji:'⛏', desc:'冶炼的矿石原料', weight:2 },
+  '草药':    { cat:'heal',   emoji:'🌿', desc:'药用植物，治疗伤口', hp:20, weight:1 },
+  '碎布':    { cat:'mat',    emoji:'🧵', desc:'可用于制作的布料碎片', weight:1 },
+  // Weapons
+  '锈铁刀':  { cat:'weapon', emoji:'🗡', desc:'生锈的铁刀，凑合能用', combatBonus:2, weight:2 },
+  '精钢剑':  { cat:'weapon', emoji:'⚔️', desc:'精钢打造的利剑', combatBonus:5, weight:3 },
+  '猎弓':    { cat:'weapon', emoji:'🏹', desc:'狩猎用的弓，射程较远', combatBonus:3, weight:2 },
+  // Armor
+  '皮甲':    { cat:'armor',  emoji:'🦺', desc:'皮革制成的护甲', defenseBonus:2, weight:3 },
+  '铁甲':    { cat:'armor',  emoji:'🛡', desc:'铁制护甲，防御力强', defenseBonus:5, weight:5 },
+  // Consumables
+  '干粮':    { cat:'food',   emoji:'🍞', desc:'耐储存的干粮', hunger:30, weight:1 },
+  '水壶':    { cat:'drink',  emoji:'🫗', desc:'装满水的水壶', thirst:35, weight:1 },
+  '急救包':  { cat:'heal',   emoji:'🩺', desc:'急救用的医疗包', hp:40, weight:1 },
+  '烈酒':    { cat:'misc',   emoji:'🍶', desc:'烈性酒，振奋精神', morale:20, energy:10, weight:1 },
+  // Craftable
+  '绷带':    { cat:'heal',   emoji:'🩹', desc:'简易绷带，止血愈伤', hp:15, weight:1 },
+  '火把':    { cat:'misc',   emoji:'🔦', desc:'照明用的火把，探索加成', exploreBonus:true, weight:1 },
+  // Rare / loot
+  '神秘药剂': { cat:'heal',   emoji:'⚗️', desc:'不知名的药剂，效果强烈', hp:60, morale:10, weight:1 },
+  '精铁锭':   { cat:'mat',    emoji:'🔩', desc:'精炼铁锭，高价值材料', weight:2 },
+  '金币袋':   { cat:'misc',   emoji:'👜', desc:'装有金币的袋子', gold:25, weight:1 },
+};
+
+const CRAFT_RECIPES = [
+  { result:'绷带', count:1, materials:{'碎布':2}, requireCraft:0, desc:'碎布×2 → 绷带×1' },
+  { result:'火把', count:2, materials:{'木材':1,'碎布':1}, requireCraft:0, desc:'木材×1 + 碎布×1 → 火把×2' },
+  { result:'干粮', count:1, materials:{'野果':3}, requireCraft:1, desc:'野果×3 → 干粮×1 (需制作Lv1)' },
+  { result:'水壶', count:1, materials:{'铁矿':2,'碎布':1}, requireCraft:2, desc:'铁矿×2 + 碎布×1 → 水壶×1 (需制作Lv2)' },
+  { result:'锈铁刀', count:1, materials:{'铁矿':3,'碎布':1}, requireCraft:3, desc:'铁矿×3 + 碎布×1 → 锈铁刀×1 (需制作Lv3)' },
+  { result:'皮甲', count:1, materials:{'碎布':5,'木材':2}, requireCraft:3, desc:'碎布×5 + 木材×2 → 皮甲×1 (需制作Lv3)' },
+];
+
+const SHOP_STOCK = [
+  { item:'野果',  price:5  },
+  { item:'净水',  price:8  },
+  { item:'草药',  price:15 },
+  { item:'干粮',  price:20 },
+  { item:'水壶',  price:25 },
+  { item:'急救包',price:40 },
+  { item:'皮甲',  price:60 },
+  { item:'锈铁刀',price:30 },
+  { item:'烈酒',  price:18 },
+  { item:'碎布',  price:6  },
+  { item:'木材',  price:8  },
+  { item:'铁矿',  price:12 },
+];
+
+const LOCATIONS = {
+  camp:   { emoji:'🏠', name:'营地', desc:'安全的基地，可以休息' },
+  forest: { emoji:'🌲', name:'森林', desc:'野外资源丰富，偶有危险' },
+  ruins:  { emoji:'🏚', name:'废墟', desc:'废弃建筑，满是未知危险' },
+  market: { emoji:'🏪', name:'集市', desc:'幸存者聚集的交易场所' },
+  clinic: { emoji:'🏥', name:'诊所', desc:'简陋的医疗站' },
+  mine:   { emoji:'⛏', name:'矿洞', desc:'地下矿洞，铁矿丰富但危险' },
+};
+
+const ENEMIES = {
+  bandit:  { name:'强盗',  emoji:'🗡', hp:30, atk:12, def:2,  goldMin:5,  goldMax:20, loot:['碎布','野果'] },
+  zombie:  { name:'丧尸',  emoji:'🧟', hp:40, atk:15, def:1,  goldMin:0,  goldMax:5,  loot:['草药','碎布'] },
+  beast:   { name:'野兽',  emoji:'🐺', hp:25, atk:10, def:3,  goldMin:0,  goldMax:10, loot:['野果','干粮'] },
+  mutant:  { name:'变异体',emoji:'👾', hp:60, atk:20, def:5,  goldMin:10, goldMax:30, loot:['神秘药剂','精铁锭'] },
+};
+
+const RANDOM_EVENTS = [
+  { id:'treasure', weight:12 },
+  { id:'merchant', weight:10 },
+  { id:'bandit_attack', weight:15 },
+  { id:'toxic_fog', weight:8 },
+  { id:'kind_stranger', weight:12 },
+  { id:'earthquake', weight:7 },
+  { id:'secret_shop', weight:6 },
+  { id:'infected_wound', weight:8 },
+  { id:'supply_drop', weight:8 },
+  { id:'nothing', weight:14 },
+];
+
+// ======================================================
+// GAME STATE
+// ======================================================
+
+let state = {};
+let currentShopTab = 'buy';
+let selectedItemKey = null;
+let logMessages = [];
+
+function defaultState() {
+  return {
+    hp: 100, hunger: 80, thirst: 75, energy: 100, morale: 80,
+    gold: 50,
+    day: 1, turn: 1,
+    location: 'camp',
+    skills: { combat:0, forage:0, craft:0, trade:0, medicine:0, stealth:0 },
+    bag: {},   // itemName -> count
+    weapon: null,
+    armor: null,
+    alive: true,
+    won: false,
+    totalActions: 0,
+    totalFights: 0,
+    totalWins: 0,
+    totalGoldEarned: 0,
+    hasTorch: false,
+    questActive: null,
+    questProgress: 0,
+  };
+}
+
+// ======================================================
+// SAVE / LOAD
+// ======================================================
+const SAVE_KEY = 'survivor_save_v3';
+function saveGame() {
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ state, logMessages }));
+  } catch(e) {}
+}
+function loadGame() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    state = data.state;
+    logMessages = data.logMessages || [];
+    return true;
+  } catch(e) { return false; }
+}
+
+// ======================================================
+// UTILITY
+// ======================================================
+function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+function bagCount() { return Object.values(state.bag).reduce((s, v) => s + v, 0); }
+function bagFull() { return bagCount() >= 20; }
+function addItem(name, count=1) {
+  count = Math.min(count, 20 - bagCount());
+  if (count <= 0) { addLog('背包已满！', 'system'); return 0; }
+  state.bag[name] = (state.bag[name] || 0) + count;
+  return count;
+}
+function removeItem(name, count=1) {
+  if (!state.bag[name] || state.bag[name] < count) return false;
+  state.bag[name] -= count;
+  if (state.bag[name] <= 0) delete state.bag[name];
+  return true;
+}
+function hasItem(name, count=1) { return (state.bag[name]||0) >= count; }
+function shopPrice(basePrice) {
+  const disc = 1 - state.skills.trade * 0.04;
+  return Math.max(1, Math.round(basePrice * disc));
+}
+function sellPrice(basePrice) {
+  const bonus = 1 + state.skills.trade * 0.04;
+  return Math.max(1, Math.round(basePrice * 0.4 * bonus));
+}
+
+function addLog(msg, type='system') {
+  const time = `[D${state.day} T${state.turn}]`;
+  logMessages.push({ time, msg, type });
+  if (logMessages.length > 60) logMessages.shift();
+}
+
+function advanceTurns(n) {
+  for (let i = 0; i < n; i++) {
+    state.turn++;
+    if (state.turn > 20) { state.turn = 1; state.day++; }
+    state.hunger = clamp(state.hunger - 2, 0, 100);
+    state.thirst = clamp(state.thirst - 3, 0, 100);
+    state.energy = clamp(state.energy - 1, 0, 100);
+    if (state.hunger === 0) {
+      state.hp = clamp(state.hp - 5, 0, 100);
+      addLog('你饥肠辘辘，身体虚弱…失去5点生命', 'stat');
+    }
+    if (state.thirst === 0) {
+      state.hp = clamp(state.hp - 8, 0, 100);
+      addLog('严重缺水！失去8点生命', 'stat');
+    }
+    // Check random events every 10 turns
+    if ((state.day * 20 + state.turn) % 10 === 0) {
+      triggerRandomEvent();
+    }
+  }
+  checkVitals();
+  saveGame();
+}
+
+function checkVitals() {
+  if (state.hp <= 0 && state.alive) {
+    state.hp = 0;
+    state.alive = false;
+    addLog('你倒下了……', 'combat');
+    saveGame();
+    showGameOver();
+  }
+  if (state.day > 30 && !state.won && state.alive) {
+    state.won = true;
+    addLog('你成功在末日中存活了30天！传奇！', 'event');
+    saveGame();
+    showVictory();
+  }
+}
+
+// ======================================================
+// RANDOM EVENTS
+// ======================================================
+function triggerRandomEvent() {
+  const totalWeight = RANDOM_EVENTS.reduce((s, e) => s + e.weight, 0);
+  let r = rand(1, totalWeight);
+  let ev = null;
+  for (const e of RANDOM_EVENTS) {
+    r -= e.weight;
+    if (r <= 0) { ev = e; break; }
+  }
+  if (!ev || ev.id === 'nothing') return;
+
+  switch(ev.id) {
+    case 'treasure': {
+      const pool = ['野果','净水','草药','碎布','木材','干粮','水壶','急救包'];
+      const found = pool[rand(0, pool.length-1)];
+      const got = addItem(found);
+      if (got) addLog(`✨ 随机事件: 发现宝箱！获得 ${ITEMS_DEF[found].emoji}${found} ×${got}`, 'event');
+      break;
+    }
+    case 'merchant': {
+      addLog('🧳 随机事件: 流浪商人经过，带来了特殊商品（前往集市查看）', 'event');
+      break;
+    }
+    case 'bandit_attack': {
+      addLog('💥 随机事件: 强盗袭击！', 'event');
+      doCombat('bandit', false);
+      break;
+    }
+    case 'toxic_fog': {
+      state.morale = clamp(state.morale - 15, 0, 100);
+      state.hp = clamp(state.hp - 5, 0, 100);
+      addLog('☠️ 随机事件: 毒雾弥漫！士气-15，生命-5', 'event');
+      break;
+    }
+    case 'kind_stranger': {
+      addItem('野果', 2);
+      addItem('净水', 1);
+      addLog('🤝 随机事件: 好心人赠送了食物和水', 'event');
+      break;
+    }
+    case 'earthquake': {
+      const dmg = rand(8, 20);
+      state.hp = clamp(state.hp - dmg, 0, 100);
+      addLog(`🌋 随机事件: 地震！你受到 ${dmg} 点伤害`, 'event');
+      break;
+    }
+    case 'secret_shop': {
+      addLog('🔮 随机事件: 发现隐秘商店！（可在集市以八折购买道具）', 'event');
+      break;
+    }
+    case 'infected_wound': {
+      state.hp = clamp(state.hp - 12, 0, 100);
+      addLog('🤒 随机事件: 伤口感染，失去12点生命', 'event');
+      break;
+    }
+    case 'supply_drop': {
+      addItem('急救包', 1);
+      state.gold += 15;
+      addLog('📦 随机事件: 发现救援物资！获得急救包和15金币', 'event');
+      break;
+    }
+  }
+  checkVitals();
+}
+
+// ======================================================
+// COMBAT
+// ======================================================
+function doCombat(enemyKey, canFlee=true) {
+  const enemy = { ...ENEMIES[enemyKey] };
+  const weaponBonus = state.weapon ? (ITEMS_DEF[state.weapon]?.combatBonus || 0) : 0;
+  const armorBonus  = state.armor  ? (ITEMS_DEF[state.armor ]?.defenseBonus || 0) : 0;
+  const playerAtk = state.skills.combat * 3 + weaponBonus + rand(1, 10) + Math.floor(state.morale / 20);
+  const playerDef = armorBonus + Math.floor(state.skills.combat / 2);
+  const enemyAtk  = enemy.atk + rand(-3, 3);
+
+  state.totalFights++;
+  addLog(`⚔️ 与 ${enemy.emoji}${enemy.name} 交战！你的攻击力: ${playerAtk}，对方生命: ${enemy.hp}`, 'combat');
+
+  if (playerAtk >= enemy.hp + playerDef) {
+    // Win
+    state.totalWins++;
+    const goldGain = rand(enemy.goldMin, enemy.goldMax);
+    state.gold += goldGain;
+    state.totalGoldEarned += goldGain;
+    if (goldGain > 0) addLog(`💰 战斗胜利！获得 ${goldGain} 金币`, 'loot');
+    else addLog(`✅ 战斗胜利！`, 'success');
+    // Loot drop
+    if (Math.random() < 0.5 && enemy.loot?.length) {
+      const loot = enemy.loot[rand(0, enemy.loot.length-1)];
+      const got = addItem(loot);
+      if (got) addLog(`🎁 获得战利品: ${ITEMS_DEF[loot].emoji}${loot}`, 'loot');
+    }
+    // XP / morale
+    state.morale = clamp(state.morale + 8, 0, 100);
+  } else {
+    // Lose
+    const dmg = Math.max(5, enemyAtk - playerDef);
+    state.hp = clamp(state.hp - dmg, 0, 100);
+    state.morale = clamp(state.morale - 10, 0, 100);
+    addLog(`💔 战斗失败！受到 ${dmg} 点伤害`, 'combat');
+    // Item loss
+    const bagKeys = Object.keys(state.bag);
+    if (bagKeys.length > 0 && Math.random() < 0.35) {
+      const lost = bagKeys[rand(0, bagKeys.length-1)];
+      removeItem(lost);
+      addLog(`😢 逃跑时丢失了 ${ITEMS_DEF[lost]?.emoji||''}${lost}`, 'combat');
+    }
+  }
+  checkVitals();
+}
+
+function tryFlee(enemyKey) {
+  const enemy = ENEMIES[enemyKey];
+  const stealthRoll = state.skills.stealth * 10 + rand(1, 50);
+  if (stealthRoll >= 30) {
+    addLog(`🏃 成功逃脱了 ${enemy.emoji}${enemy.name}！`, 'success');
+    state.morale = clamp(state.morale - 5, 0, 100);
+  } else {
+    const dmg = rand(8, 18);
+    state.hp = clamp(state.hp - dmg, 0, 100);
+    addLog(`😱 逃跑失败！${enemy.emoji}${enemy.name} 的攻击造成 ${dmg} 点伤害`, 'combat');
+    checkVitals();
+  }
+}
+
+// ======================================================
+// ACTIONS
+// ======================================================
+function doAction(id) {
+  if (!state.alive) return;
+  state.totalActions++;
+
+  switch(id) {
+    // === CAMP ===
+    case 'rest': {
+      const gain = 30 + state.skills.medicine * 3;
+      state.energy = clamp(state.energy + gain, 0, 100);
+      state.morale = clamp(state.morale + 5, 0, 100);
+      addLog(`😴 休息了一段时间，精力恢复 +${gain}`, 'stat');
+      advanceTurns(2);
+      break;
+    }
+    case 'craft_menu': {
+      openCraftMenu();
+      return;
+    }
+    case 'skill_menu': {
+      openSkillMenu();
+      return;
+    }
+
+    // === FOREST ===
+    case 'forage_food': {
+      const base = rand(1, 3);
+      const bonus = Math.floor(state.skills.forage / 2);
+      const found = base + bonus;
+      let got = 0;
+      for (let i = 0; i < found; i++) got += addItem('野果');
+      if (got > 0) addLog(`🍎 采集到 野果 ×${got}`, 'loot');
+      state.energy = clamp(state.energy - 10, 0, 100);
+      advanceTurns(2);
+      break;
+    }
+    case 'collect_wood': {
+      const base = rand(1, 2);
+      const got = addItem('木材', base + (state.skills.forage >= 3 ? 1 : 0));
+      if (got > 0) addLog(`🪵 收集到 木材 ×${got}`, 'loot');
+      state.energy = clamp(state.energy - 8, 0, 100);
+      advanceTurns(1);
+      break;
+    }
+    case 'hunt': {
+      const roll = state.skills.combat * 4 + rand(1, 20);
+      if (roll >= 18) {
+        const got = addItem('干粮');
+        if (got) addLog(`🏹 狩猎成功！获得 干粮 ×${got}`, 'loot');
+        else addLog('🏹 狩猎成功，但背包已满', 'system');
+        state.morale = clamp(state.morale + 5, 0, 100);
+      } else {
+        addLog('🏹 狩猎失败，猎物跑掉了', 'system');
+      }
+      state.energy = clamp(state.energy - 15, 0, 100);
+      advanceTurns(2);
+      break;
+    }
+    case 'fight_bandit': {
+      addLog('⚔️ 主动挑战森林中的强盗！', 'combat');
+      doCombat('bandit');
+      state.energy = clamp(state.energy - 15, 0, 100);
+      advanceTurns(2);
+      break;
+    }
+    case 'forest_encounter': {
+      const roll = rand(1, 100);
+      if (roll <= 40) {
+        addLog('🌲 森林遭遇：遇上了野兽！', 'combat');
+        doCombat('beast');
+      } else if (roll <= 65) {
+        addLog('🌲 森林遭遇：强盗出没！', 'combat');
+        doCombat('bandit');
+      } else {
+        const herbs = addItem('草药', rand(1, 2));
+        if (herbs) addLog(`🌿 森林遭遇：平安，顺手采了些草药 ×${herbs}`, 'loot');
+        else addLog('🌲 森林遭遇：平安无事', 'system');
+      }
+      state.energy = clamp(state.energy - 12, 0, 100);
+      advanceTurns(2);
+      break;
+    }
+
+    // === RUINS ===
+    case 'search_ruins': {
+      const hasTorch = hasItem('火把') || state.hasTorch;
+      const roll = rand(1, 100) + (hasTorch ? 15 : 0) + state.skills.forage * 3;
+      if (roll >= 70) {
+        const lootPool = ['碎布','野果','草药','净水','干粮','绷带','碎布','木材'];
+        const found = lootPool[rand(0, lootPool.length-1)];
+        const got = addItem(found);
+        if (got) addLog(`🔦 搜索废墟：找到了 ${ITEMS_DEF[found].emoji}${found} ×${got}！`, 'loot');
+        const goldFind = rand(0, 10);
+        if (goldFind > 0) { state.gold += goldFind; addLog(`💰 还找到了 ${goldFind} 金币`, 'loot'); }
+      } else if (roll >= 40) {
+        addLog('🔦 搜索废墟：什么有价值的都没找到', 'system');
+      } else {
+        addLog('🔦 搜索废墟：触发陷阱！受到5点伤害', 'combat');
+        state.hp = clamp(state.hp - 5, 0, 100);
+      }
+      state.energy = clamp(state.energy - 12, 0, 100);
+      advanceTurns(2);
+      break;
+    }
+    case 'explore_basement': {
+      const roll = rand(1, 100) + state.skills.stealth * 4;
+      if (roll >= 60) {
+        const rareLoot = ['急救包','烈酒','精铁锭','神秘药剂','金币袋'];
+        const found = rareLoot[rand(0, rareLoot.length-1)];
+        if (found === '金币袋') {
+          const g = rand(20, 40);
+          state.gold += g;
+          addLog(`💎 探索地下室：发现了金币袋！获得 ${g} 金币！`, 'loot');
+        } else {
+          const got = addItem(found);
+          if (got) addLog(`💎 探索地下室：发现稀有物品 ${ITEMS_DEF[found].emoji}${found}！`, 'loot');
+        }
+      } else if (roll >= 30) {
+        addLog('🧟 探索地下室：遭遇丧尸！', 'combat');
+        doCombat('zombie');
+      } else {
+        addLog('👾 探索地下室：碰上变异体！情况危急！', 'combat');
+        doCombat('mutant');
+      }
+      state.energy = clamp(state.energy - 20, 0, 100);
+      advanceTurns(3);
+      break;
+    }
+    case 'fight_zombie': {
+      addLog('🧟 主动清剿废墟中的丧尸群！', 'combat');
+      doCombat('zombie');
+      state.energy = clamp(state.energy - 18, 0, 100);
+      advanceTurns(2);
+      break;
+    }
+
+    // === CLINIC ===
+    case 'clinic_heal': {
+      const hpNeeded = 100 - state.hp;
+      if (hpNeeded <= 0) { addLog('你的生命已满，无需治疗', 'system'); return; }
+      const cost = Math.ceil(hpNeeded * 0.6);
+      const actualCost = Math.max(10, Math.round(cost * (1 - state.skills.medicine * 0.05)));
+      if (state.gold < actualCost) {
+        addLog(`💊 金币不足！治疗全部需要 ${actualCost} 金币（当前: ${state.gold}）`, 'system');
+        return;
+      }
+      state.gold -= actualCost;
+      state.hp = 100;
+      addLog(`💊 花费 ${actualCost} 金币完成治疗，生命回满！`, 'stat');
+      advanceTurns(2);
+      break;
+    }
+    case 'clinic_rest': {
+      const cost = 25;
+      if (state.gold < cost) { addLog(`🛏 在诊所休息需要 ${cost} 金币`, 'system'); return; }
+      state.gold -= cost;
+      const healHP = 30 + state.skills.medicine * 5;
+      state.hp = clamp(state.hp + healHP, 0, 100);
+      state.hunger = clamp(state.hunger + 20, 0, 100);
+      state.thirst = clamp(state.thirst + 20, 0, 100);
+      state.energy = 100;
+      state.morale = clamp(state.morale + 15, 0, 100);
+      addLog(`🛏 花费 ${cost} 金币在诊所休息，全面恢复 (+${healHP}HP, 精力满)`, 'stat');
+      advanceTurns(3);
+      break;
+    }
+
+    // === MINE ===
+    case 'mine_ore': {
+      const base = rand(1, 2);
+      const bonus = state.skills.forage >= 2 ? 1 : 0;
+      const got = addItem('铁矿', base + bonus);
+      if (got > 0) addLog(`⛏ 挖矿获得 铁矿 ×${got}`, 'loot');
+      state.energy = clamp(state.energy - 20, 0, 100);
+      const danger = rand(1, 100);
+      if (danger <= 20) {
+        addLog('⛏ 矿洞塌陷！受到伤害！', 'combat');
+        state.hp = clamp(state.hp - rand(8, 18), 0, 100);
+        checkVitals();
+      }
+      advanceTurns(2);
+      break;
+    }
+    case 'deep_mine': {
+      addLog('⛏ 开始深层挖掘…', 'system');
+      const roll = rand(1, 100) + state.skills.forage * 5;
+      if (roll >= 70) {
+        const ore = addItem('铁矿', rand(2, 4));
+        const rareChance = rand(1, 100);
+        if (rareChance <= 30) {
+          addItem('精铁锭', 1);
+          addLog(`💎 深层挖掘大丰收！铁矿 ×${ore} + 精铁锭 ×1`, 'loot');
+        } else {
+          addLog(`⛏ 深层挖掘成功！获得 铁矿 ×${ore}`, 'loot');
+        }
+      } else if (roll >= 40) {
+        addLog('⛏ 深层挖掘：矿脉耗尽，收获寥寥', 'system');
+        addItem('铁矿', 1);
+      } else {
+        addLog('👾 深层挖掘遭遇变异体！', 'combat');
+        doCombat('mutant');
+      }
+      state.energy = clamp(state.energy - 30, 0, 100);
+      advanceTurns(3);
+      break;
+    }
+
+    // === MARKET ===
+    case 'open_shop': {
+      openShopModal();
+      return;
+    }
+    case 'take_quest': {
+      if (state.questActive) {
+        addLog('你已经有一个任务在进行中了', 'system');
+        return;
+      }
+      const quests = [
+        { id:'gather_food', name:'收集食物', desc:'收集5个野果', reward:30, target:'野果', count:5 },
+        { id:'gather_ore',  name:'采集铁矿', desc:'采集3块铁矿', reward:40, target:'铁矿', count:3 },
+        { id:'kill_zombie', name:'清剿丧尸', desc:'击败3只丧尸', reward:60, target:'zombie', count:3 },
+      ];
+      const q = quests[rand(0, quests.length-1)];
+      state.questActive = q;
+      state.questProgress = 0;
+      addLog(`📋 接受任务: 【${q.name}】${q.desc}，完成奖励 ${q.reward} 金币`, 'event');
+      advanceTurns(1);
+      break;
+    }
+  }
+
+  render();
+  saveGame();
+}
+
+function travelTo(loc) {
+  if (!state.alive || loc === state.location) return;
+  const energyCost = 8;
+  if (state.energy < energyCost) {
+    addLog('精力不足，无法移动（需要8点精力）', 'system');
+    render();
+    return;
+  }
+  state.energy -= energyCost;
+  const prevLoc = LOCATIONS[state.location].name;
+  state.location = loc;
+  addLog(`🚶 从 ${prevLoc} 前往 ${LOCATIONS[loc].emoji}${LOCATIONS[loc].name}`, 'system');
+  advanceTurns(1);
+  render();
+  saveGame();
+}
+
+// ======================================================
+// ITEM USE
+// ======================================================
+function useItem(name) {
+  const def = ITEMS_DEF[name];
+  if (!def) return;
+
+  if (def.cat === 'food') {
+    state.hunger = clamp(state.hunger + (def.hunger||0), 0, 100);
+    removeItem(name);
+    addLog(`${def.emoji} 使用了 ${name}，饱食度 +${def.hunger}`, 'stat');
+  } else if (def.cat === 'drink') {
+    state.thirst = clamp(state.thirst + (def.thirst||0), 0, 100);
+    removeItem(name);
+    addLog(`${def.emoji} 喝了 ${name}，口渴度 +${def.thirst}`, 'stat');
+  } else if (def.cat === 'heal') {
+    const bonus = state.skills.medicine * 2;
+    const heal = (def.hp||0) + bonus;
+    state.hp = clamp(state.hp + heal, 0, 100);
+    removeItem(name);
+    addLog(`${def.emoji} 使用了 ${name}，生命 +${heal}`, 'stat');
+  } else if (def.cat === 'misc') {
+    if (def.morale) state.morale = clamp(state.morale + def.morale, 0, 100);
+    if (def.energy) state.energy = clamp(state.energy + def.energy, 0, 100);
+    if (def.gold)   { state.gold += def.gold; addLog(`${def.emoji} 使用了 ${name}，获得 ${def.gold} 金币！`, 'loot'); }
+    if (name === '火把') state.hasTorch = true;
+    if (!def.gold) addLog(`${def.emoji} 使用了 ${name}${def.morale?'，士气+'+def.morale:''}${def.energy?'，精力+'+def.energy:''}`, 'stat');
+    removeItem(name);
+  } else if (def.cat === 'weapon') {
+    equipItem(name, 'weapon');
+    return;
+  } else if (def.cat === 'armor') {
+    equipItem(name, 'armor');
+    return;
+  }
+  closeModal('modal-item');
+  render();
+  saveGame();
+}
+
+function equipItem(name, slot) {
+  const old = state[slot];
+  if (old) {
+    addItem(old);
+    addLog(`🔄 卸下了 ${ITEMS_DEF[old].emoji}${old}`, 'system');
+  }
+  if (removeItem(name)) {
+    state[slot] = name;
+    addLog(`✅ 装备了 ${ITEMS_DEF[name].emoji}${name}`, 'success');
+  }
+  closeModal('modal-item');
+  render();
+  saveGame();
+}
+
+function unequipItem(slot) {
+  const item = state[slot];
+  if (!item) return;
+  if (bagFull()) { addLog('背包已满，无法卸下装备', 'system'); render(); return; }
+  addItem(item);
+  state[slot] = null;
+  addLog(`🔄 卸下了 ${ITEMS_DEF[item].emoji}${item}`, 'system');
+  render();
+  saveGame();
+}
+
+function dropItem(name) {
+  removeItem(name);
+  addLog(`🗑 丢弃了 ${ITEMS_DEF[name]?.emoji||''}${name}`, 'system');
+  closeModal('modal-item');
+  render();
+  saveGame();
+}
+
+// ======================================================
+// CRAFTING
+// ======================================================
+function doCraft(recipeIdx) {
+  const r = CRAFT_RECIPES[recipeIdx];
+  if (state.skills.craft < r.requireCraft) {
+    addLog(`制作技能不足（需要Lv${r.requireCraft}）`, 'system');
+    return;
+  }
+  for (const [mat, cnt] of Object.entries(r.materials)) {
+    if (!hasItem(mat, cnt)) { addLog(`材料不足：需要 ${mat} ×${cnt}`, 'system'); return; }
+  }
+  for (const [mat, cnt] of Object.entries(r.materials)) removeItem(mat, cnt);
+  const got = addItem(r.result, r.count);
+  if (got > 0) addLog(`⚒ 制作成功：${ITEMS_DEF[r.result].emoji}${r.result} ×${got}`, 'success');
+  else addLog('背包已满，制作失败', 'system');
+  advanceTurns(1);
+  closeModal('modal-craft');
+  openCraftMenu();
+  render();
+  saveGame();
+}
+
+// ======================================================
+// SKILLS
+// ======================================================
+function upgradeSkill(key) {
+  const level = state.skills[key];
+  if (level >= 10) return;
+  const cost = (1 + level) * 50;
+  if (state.gold < cost) {
+    addLog(`金币不足！升级 ${key} 需要 ${cost} 金币`, 'system');
+    return;
+  }
+  state.gold -= cost;
+  state.skills[key]++;
+  addLog(`📈 技能升级：${skillLabel(key)} Lv${state.skills[key]}！（花费 ${cost} 金币）`, 'success');
+  closeModal('modal-skills');
+  openSkillMenu();
+  render();
+  saveGame();
+}
+
+function skillLabel(k) {
+  return {combat:'战斗',forage:'采集',craft:'制作',trade:'交易',medicine:'医术',stealth:'隐匿'}[k]||k;
+}
+
+// ======================================================
+// SHOP
+// ======================================================
+function buyItem(itemName) {
+  const entry = SHOP_STOCK.find(s => s.item === itemName);
+  if (!entry) return;
+  const price = shopPrice(entry.price);
+  if (state.gold < price) { addLog(`金币不足！购买 ${itemName} 需要 ${price} 金币`, 'system'); return; }
+  if (bagFull()) { addLog('背包已满！', 'system'); return; }
+  state.gold -= price;
+  addItem(itemName);
+  addLog(`🛒 购买了 ${ITEMS_DEF[itemName].emoji}${itemName}，花费 ${price} 金币`, 'loot');
+  state.totalGoldEarned;
+  showShopTab(currentShopTab);
+  render();
+  saveGame();
+}
+
+function sellItem(itemName) {
+  if (!hasItem(itemName)) return;
+  const entry = SHOP_STOCK.find(s => s.item === itemName);
+  const basePrice = entry ? entry.price : 5;
+  const price = sellPrice(basePrice);
+  removeItem(itemName);
+  state.gold += price;
+  addLog(`💵 出售了 ${ITEMS_DEF[itemName]?.emoji||''}${itemName}，获得 ${price} 金币`, 'loot');
+  showShopTab(currentShopTab);
+  render();
+  saveGame();
+}
+
+// ======================================================
+// MODALS
+// ======================================================
+function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+function openCraftMenu() {
+  const list = document.getElementById('craft-list');
+  list.innerHTML = '';
+  for (let i = 0; i < CRAFT_RECIPES.length; i++) {
+    const r = CRAFT_RECIPES[i];
+    const canCraft = state.skills.craft >= r.requireCraft &&
+      Object.entries(r.materials).every(([m,c]) => hasItem(m,c));
+    const row = document.createElement('div');
+    row.className = 'craft-row';
+    const matStr = Object.entries(r.materials).map(([m,c]) => `${m}×${c}`).join('+');
+    row.innerHTML = `
+      <div>
+        <div class="craft-result">${ITEMS_DEF[r.result].emoji} ${r.result} ×${r.count}</div>
+        <div class="craft-materials">${matStr}</div>
+      </div>
+      <button class="craft-btn" ${canCraft?'':'disabled'} onclick="doCraft(${i})">制作</button>
+    `;
+    list.appendChild(row);
+  }
+  openModal('modal-craft');
+}
+
+function openSkillMenu() {
+  const list = document.getElementById('skill-upgrade-list');
+  list.innerHTML = '';
+  const skills = ['combat','forage','craft','trade','medicine','stealth'];
+  for (const k of skills) {
+    const level = state.skills[k];
+    const cost = (1 + level) * 50;
+    const canUpgrade = level < 10 && state.gold >= cost;
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #1e1e38;font-size:0.8rem;';
+    const effects = {
+      combat:`战斗攻击力 +3/级`,
+      forage:`采集数量和成功率提升`,
+      craft:`解锁更多制作配方`,
+      trade:`商店折扣 4%/级`,
+      medicine:`治疗效果 +2HP/级，诊所费用折扣`,
+      stealth:`逃跑成功率 +10%/级`,
+    };
+    row.innerHTML = `
+      <div style="width:40px;color:#a0aec0;">${skillLabel(k)}</div>
+      <div style="flex:1;">
+        <div>Lv${level}/10</div>
+        <div style="font-size:0.68rem;color:#718096;">${effects[k]}</div>
+      </div>
+      <div style="color:#f6e05e;font-size:0.75rem;white-space:nowrap;">${level<10?cost+'g':'满级'}</div>
+      <button class="upgrade-btn" ${canUpgrade&&level<10?'':'disabled'} onclick="upgradeSkill('${k}')">升级</button>
+    `;
+    list.appendChild(row);
+  }
+  openModal('modal-skills');
+}
+
+function openItemModal(name) {
+  const def = ITEMS_DEF[name];
+  if (!def) return;
+  selectedItemKey = name;
+  document.getElementById('item-modal-title').textContent = `${def.emoji} ${name}`;
+  let descParts = [def.desc];
+  if (def.hunger)      descParts.push(`饥饿 +${def.hunger}`);
+  if (def.thirst)      descParts.push(`口渴 +${def.thirst}`);
+  if (def.hp)          descParts.push(`生命 +${def.hp}`);
+  if (def.morale)      descParts.push(`士气 +${def.morale}`);
+  if (def.energy)      descParts.push(`精力 +${def.energy}`);
+  if (def.combatBonus) descParts.push(`战斗 +${def.combatBonus}`);
+  if (def.defenseBonus)descParts.push(`防御 +${def.defenseBonus}`);
+  document.getElementById('item-modal-desc').textContent = descParts.join(' | ');
+
+  const actDiv = document.getElementById('item-modal-actions');
+  actDiv.innerHTML = '';
+  const addBtn = (label, fn, color='#2d2d4e') => {
+    const b = document.createElement('button');
+    b.className = 'modal-btn';
+    b.style.background = color;
+    b.style.fontSize = '0.82rem';
+    b.style.padding = '7px 20px';
+    b.textContent = label;
+    b.onclick = fn;
+    actDiv.appendChild(b);
+  };
+
+  if (def.cat === 'food')   addBtn('🍽 食用', () => useItem(name), 'linear-gradient(135deg,#dd6b20,#f6ad55)');
+  if (def.cat === 'drink')  addBtn('💧 饮用', () => useItem(name), 'linear-gradient(135deg,#2b6cb0,#63b3ed)');
+  if (def.cat === 'heal')   addBtn('💊 使用', () => useItem(name), 'linear-gradient(135deg,#276749,#68d391)');
+  if (def.cat === 'misc')   addBtn('✨ 使用', () => useItem(name), 'linear-gradient(135deg,#6b46c1,#b794f4)');
+  if (def.cat === 'weapon') {
+    if (state.weapon !== name) addBtn('⚔️ 装备', () => equipItem(name,'weapon'), 'linear-gradient(135deg,#c53030,#fc8181)');
+  }
+  if (def.cat === 'armor') {
+    if (state.armor !== name) addBtn('🛡 装备', () => equipItem(name,'armor'), 'linear-gradient(135deg,#2b6cb0,#63b3ed)');
+  }
+  addBtn('🗑 丢弃', () => dropItem(name), '#742a2a');
+  openModal('modal-item');
+}
+
+function showShopTab(tab) {
+  currentShopTab = tab;
+  document.getElementById('tab-buy').style.borderColor = tab==='buy'?'#667eea':'#2d2d4e';
+  document.getElementById('tab-sell').style.borderColor = tab==='sell'?'#667eea':'#2d2d4e';
+  const content = document.getElementById('shop-content');
+  content.innerHTML = '';
+
+  if (tab === 'buy') {
+    for (const entry of SHOP_STOCK) {
+      const price = shopPrice(entry.price);
+      const canBuy = state.gold >= price && !bagFull();
+      const row = document.createElement('div');
+      row.className = 'shop-row';
+      row.innerHTML = `
+        <span class="shop-item">${ITEMS_DEF[entry.item].emoji} ${entry.item}</span>
+        <span class="shop-price">${price}g</span>
+        <button class="shop-buy-btn" ${canBuy?'':'disabled'} onclick="buyItem('${entry.item}')">购买</button>
+      `;
+      content.appendChild(row);
+    }
+  } else {
+    const bagItems = Object.keys(state.bag);
+    if (bagItems.length === 0) {
+      content.innerHTML = '<p style="font-size:0.8rem;color:#718096;text-align:center;padding:20px;">背包为空</p>';
+    } else {
+      for (const name of bagItems) {
+        const entry = SHOP_STOCK.find(s => s.item === name);
+        const price = sellPrice(entry ? entry.price : 5);
+        const row = document.createElement('div');
+        row.className = 'shop-row';
+        row.innerHTML = `
+          <span class="shop-item">${ITEMS_DEF[name]?.emoji||'📦'} ${name} ×${state.bag[name]}</span>
+          <span class="shop-price">${price}g</span>
+          <button class="shop-buy-btn" onclick="sellItem('${name}')">出售</button>
+        `;
+        content.appendChild(row);
+      }
+    }
+  }
+}
+
+function openShopModal() {
+  showShopTab('buy');
+  openModal('modal-shop');
+}
+
+// ======================================================
+// GAME OVER / VICTORY
+// ======================================================
+function showGameOver() {
+  const el = document.getElementById('gameover-stats');
+  el.innerHTML = `
+    存活天数: <span>${state.day}天${state.turn}回合</span><br>
+    总行动次数: <span>${state.totalActions}</span><br>
+    战斗次数: <span>${state.totalFights}</span>（胜利 <span>${state.totalWins}</span>）<br>
+    金币: <span>${state.gold}g</span><br>
+    战斗技能: <span>Lv${state.skills.combat}</span>
+  `;
+  openModal('modal-gameover');
+}
+
+function showVictory() {
+  const el = document.getElementById('victory-stats');
+  el.innerHTML = `
+    存活天数: <span>30天（胜利！）</span><br>
+    总行动次数: <span>${state.totalActions}</span><br>
+    战斗胜利: <span>${state.totalWins}/${state.totalFights}</span><br>
+    积累金币: <span>${state.gold}g</span><br>
+    最高技能: <span>${Math.max(...Object.values(state.skills))}级</span>
+  `;
+  openModal('modal-victory');
+}
+
+function restartGame() {
+  localStorage.removeItem(SAVE_KEY);
+  state = defaultState();
+  logMessages = [];
+  closeModal('modal-gameover');
+  closeModal('modal-victory');
+  addLog('🌅 末日降临，生存之旅开始…', 'event');
+  addLog('💡 提示：先在营地休息和采集，储备物资后再外出探索', 'system');
+  render();
+  saveGame();
+}
+
+// ======================================================
+// RENDER
+// ======================================================
+function render() {
+  renderLeft();
+  renderCenter();
+  renderRight();
+  renderLog();
+}
+
+function renderBar(label, val, max, barClass) {
+  const pct = Math.round(clamp(val/max*100, 0, 100));
+  const color = pct <= 20 ? '#e53e3e' : pct <= 40 ? '#dd6b20' : '';
+  return `
+    <div class="stat-row">
+      <div class="stat-label">${label}</div>
+      <div class="stat-bar-bg">
+        <div class="stat-bar-fill ${barClass}" style="width:${pct}%;${color?'background:'+color:''}"></div>
+      </div>
+      <div class="stat-val">${Math.round(val)}</div>
+    </div>
+  `;
+}
+
+function renderLeft() {
+  const p = document.getElementById('left-panel');
+  const skills = state.skills;
+
+  let html = `
+    <div class="panel-section">
+      <h3>👤 人物状态</h3>
+      ${renderBar('❤️ 生命', state.hp, 100, 'bar-hp')}
+      ${renderBar('🍖 饥饿', state.hunger, 100, 'bar-hunger')}
+      ${renderBar('💧 口渴', state.thirst, 100, 'bar-thirst')}
+      ${renderBar('⚡ 精力', state.energy, 100, 'bar-energy')}
+      ${renderBar('😊 士气', state.morale, 100, 'bar-morale')}
+      <div class="gold-row">💰 金币 <span>${state.gold}g</span></div>
+    </div>
+
+    <div class="panel-section">
+      <h3>🎯 技能</h3>
+  `;
+
+  const skillDefs = [
+    { key:'combat',   label:'战斗', desc:'提升战斗攻击力' },
+    { key:'forage',   label:'采集', desc:'增加采集数量' },
+    { key:'craft',    label:'制作', desc:'解锁制作配方' },
+    { key:'trade',    label:'交易', desc:'降低商店价格' },
+    { key:'medicine', label:'医术', desc:'提升治疗效果' },
+    { key:'stealth',  label:'隐匿', desc:'提高逃跑成功率' },
+  ];
+
+  for (const s of skillDefs) {
+    const lv = skills[s.key];
+    const cost = (1+lv)*50;
+    const dots = Array.from({length:10}, (_,i) =>
+      `<div class="skill-dot${i<lv?' filled':''}"></div>`).join('');
+    html += `
+      <div class="skill-row" data-tip="${s.desc}">
+        <div class="skill-name">${s.label}</div>
+        <div class="skill-dots">${dots}</div>
+        <div class="skill-level">${lv}</div>
+      </div>
+    `;
+  }
+
+  html += `
+      <button class="action-btn" style="width:100%;margin-top:6px;font-size:0.75rem;" onclick="openSkillMenu()">📈 升级技能</button>
+    </div>
+  `;
+  p.innerHTML = html;
+}
+
+function renderCenter() {
+  // Location bar
+  const loc = LOCATIONS[state.location];
+  const locBar = document.getElementById('location-bar');
+  locBar.innerHTML = `
+    <div class="location-emoji">${loc.emoji}</div>
+    <div>
+      <div class="location-name">${loc.name}</div>
+      <div class="location-desc">${loc.desc}</div>
+    </div>
+    <div class="time-display">
+      <div>第 ${state.day} 天</div>
+      <div>第 ${state.turn} 回合</div>
+    </div>
+  `;
+
+  // Actions
+  const actArea = document.getElementById('actions-area');
+  const e = state.energy;
+  const g = state.gold;
+
+  let actHTML = '<div class="actions-title">⚡ 可用行动</div><div class="actions-grid">';
+
+  // Quest display
+  if (state.questActive) {
+    const q = state.questActive;
+    actHTML += `<div style="width:100%;padding:5px 8px;background:#12122a;border:1px solid #2d2d4e;border-radius:6px;font-size:0.72rem;color:#b794f4;">
+      📋 任务: ${q.name} (${state.questProgress}/${q.count}) — 奖励 ${q.reward}g
+    </div>`;
+  }
+
+  switch(state.location) {
+    case 'camp':
+      actHTML += btn('😴 休息', 'rest', e<5, '需要精力≥5') +
+                 btn('⚒ 制作道具', 'craft_menu', false) +
+                 btn('📈 升级技能', 'skill_menu', false);
+      break;
+    case 'forest':
+      actHTML += btn('🍎 采集食物', 'forage_food', e<10, '需要精力≥10') +
+                 btn('🪵 收集木材', 'collect_wood', e<8, '需要精力≥8') +
+                 btn('🏹 打猎', 'hunt', e<15||state.skills.combat<1, e<15?'需要精力≥15':'需要战斗Lv1') +
+                 btn('⚔️ 搜寻强盗', 'fight_bandit', e<15, '需要精力≥15') +
+                 btn('🌿 探索林地', 'forest_encounter', e<12, '需要精力≥12');
+      break;
+    case 'ruins':
+      actHTML += btn('🔦 搜索废墟', 'search_ruins', e<12, '需要精力≥12') +
+                 btn('💎 探索地下室', 'explore_basement', e<20, '需要精力≥20') +
+                 btn('🧟 清剿丧尸', 'fight_zombie', e<18, '需要精力≥18');
+      break;
+    case 'market':
+      actHTML += btn('🛒 购买/出售', 'open_shop', false) +
+                 btn('📋 接受任务', 'take_quest', !!state.questActive, state.questActive?'已有任务':'');
+      break;
+    case 'clinic':
+      actHTML += btn(`💊 治疗(全满 ${Math.max(10,Math.ceil((100-state.hp)*0.6*(1-state.skills.medicine*0.05)))}g)`,
+                     'clinic_heal', g<10||state.hp>=100, state.hp>=100?'生命已满':'金币不足') +
+                 btn('🛏 住院休息(25g)', 'clinic_rest', g<25, '需要25金币');
+      break;
+    case 'mine':
+      actHTML += btn('⛏ 挖矿', 'mine_ore', e<20, '需要精力≥20') +
+                 btn('💎 深层挖掘', 'deep_mine', e<30||state.skills.forage<2, e<30?'需要精力≥30':'需要采集Lv2');
+      break;
+  }
+
+  actHTML += '</div>';
+
+  // Travel
+  actHTML += '<div class="actions-title" style="margin-top:8px;">🗺 前往地点 (消耗8精力)</div><div class="travel-grid">';
+  for (const [key, locDef] of Object.entries(LOCATIONS)) {
+    const isCurrent = key === state.location;
+    const disabled = isCurrent || state.energy < 8;
+    actHTML += `<button class="action-btn travel-btn${isCurrent?' current-loc':''}"
+      ${disabled&&!isCurrent?'disabled':''}
+      ${!isCurrent?`onclick="travelTo('${key}')"`:''}
+      data-tip="${isCurrent?'当前位置':state.energy<8?'精力不足8':'前往'+locDef.name}">
+      ${locDef.emoji} ${locDef.name}
+    </button>`;
+  }
+  actHTML += '</div>';
+  actArea.innerHTML = actHTML;
+}
+
+function btn(label, action, disabled, tipText='') {
+  const tip = tipText ? ` data-tip="${tipText}"` : '';
+  return `<button class="action-btn" ${disabled?'disabled':''} onclick="doAction('${action}')"${tip}>${label}</button>`;
+}
+
+function renderRight() {
+  const p = document.getElementById('right-panel');
+  const def = state.weapon ? ITEMS_DEF[state.weapon] : null;
+  const adef = state.armor ? ITEMS_DEF[state.armor] : null;
+
+  let html = `
+    <div class="panel-section">
+      <h3>⚔️ 装备</h3>
+      <div class="equip-slot">
+        <span class="slot-label">武器</span>
+        <span class="slot-item">${def ? def.emoji+state.weapon : '—'}</span>
+        ${state.weapon ? `<button class="unequip-btn" onclick="unequipItem('weapon')">卸下</button>` : ''}
+      </div>
+      <div class="equip-slot">
+        <span class="slot-label">护甲</span>
+        <span class="slot-item">${adef ? adef.emoji+state.armor : '—'}</span>
+        ${state.armor ? `<button class="unequip-btn" onclick="unequipItem('armor')">卸下</button>` : ''}
+      </div>
+      <div style="font-size:0.68rem;color:#718096;margin-top:5px;">
+        攻击力: ${state.skills.combat*3+(def?def.combatBonus:0)} &nbsp;|&nbsp;
+        防御力: ${adef?adef.defenseBonus:0}
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <h3>🎒 背包</h3>
+      <div class="bag-capacity${bagFull()?' full':''}">${bagCount()}/20 格</div>
+      <div class="bag-grid">
+  `;
+
+  const items = Object.keys(state.bag);
+  if (items.length === 0) {
+    html += '<span style="font-size:0.75rem;color:#4a5568;">（空）</span>';
+  } else {
+    for (const name of items) {
+      const d = ITEMS_DEF[name];
+      const cnt = state.bag[name];
+      html += `<button class="item-btn" onclick="openItemModal('${name}')" data-tip="${d?d.desc:name}">
+        ${d?d.emoji:'📦'} ${name} <span class="item-count">×${cnt}</span>
+      </button>`;
+    }
+  }
+  html += '</div></div>';
+  p.innerHTML = html;
+}
+
+function renderLog() {
+  const el = document.getElementById('event-log');
+  const msgs = logMessages.slice(-20);
+  el.innerHTML = msgs.map(m =>
+    `<div class="log-entry log-${m.type}"><span class="log-time">${m.time}</span>${m.msg}</div>`
+  ).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+// ======================================================
+// INIT
+// ======================================================
+function init() {
+  const loaded = loadGame();
+  if (!loaded) {
+    state = defaultState();
+    logMessages = [];
+    addLog('🌅 末日降临，你在一片废墟中醒来…', 'event');
+    addLog('💡 提示：先在营地休息，储备物资后再外出探索', 'system');
+    addLog('💡 每20回合为一天，饥饿/口渴耗尽会损失生命值', 'system');
+  } else {
+    addLog('📂 读取存档成功', 'system');
+  }
+  render();
+}
+
+init();
+</script>
+</body>
+</html>
