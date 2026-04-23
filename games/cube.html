@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>魔方挑战 — 3D Rubik's Cube</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#000008;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+#c{display:block;width:100%;height:100%}
+/* Vignette */
+#vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,8,0.7) 100%);z-index:5}
+/* Flash overlay */
+#flash{position:fixed;inset:0;pointer-events:none;opacity:0;background:#fff;z-index:6;transition:opacity 0.08s}
+/* Topbar */
+#topbar{position:fixed;top:0;left:0;right:0;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:rgba(10,8,30,0.85);backdrop-filter:blur(12px);border-bottom:1px solid rgba(180,0,255,0.25);z-index:20}
+#topbar a{color:#00f5ff;text-decoration:none;font-size:0.9rem;font-weight:500;opacity:0.85;transition:opacity 0.2s;text-shadow:0 0 8px #00f5ff}
+#topbar a:hover{opacity:1}
+#topbar .title{font-size:1.25rem;font-weight:700;letter-spacing:0.05em;background:linear-gradient(90deg,#b400ff,#00f5ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-shadow:none;filter:drop-shadow(0 0 8px #b400ff)}
+#topbar .ver{font-size:0.75rem;color:rgba(255,255,255,0.35);letter-spacing:0.1em}
+/* HUD */
+#hud{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;padding:12px 24px;background:rgba(8,6,24,0.82);backdrop-filter:blur(16px);border:1px solid rgba(180,0,255,0.3);border-radius:50px;z-index:20;box-shadow:0 0 30px rgba(180,0,255,0.15),inset 0 1px 0 rgba(255,255,255,0.05)}
+.hud-stat{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:64px}
+.hud-label{font-size:0.6rem;color:rgba(255,255,255,0.4);letter-spacing:0.12em;text-transform:uppercase}
+.hud-val{font-size:1.05rem;font-weight:700;color:#00f5ff;text-shadow:0 0 10px #00f5ff,0 0 20px #00f5ff;font-variant-numeric:tabular-nums;letter-spacing:0.05em}
+.hud-sep{width:1px;height:36px;background:rgba(180,0,255,0.3)}
+.hud-btn{padding:9px 18px;border:1px solid rgba(180,0,255,0.5);border-radius:24px;background:rgba(180,0,255,0.12);color:#b400ff;font-size:0.82rem;font-weight:600;cursor:pointer;transition:all 0.2s;letter-spacing:0.05em;text-shadow:0 0 8px currentColor;white-space:nowrap}
+.hud-btn:hover{background:rgba(180,0,255,0.28);border-color:#b400ff;box-shadow:0 0 16px rgba(180,0,255,0.4)}
+.hud-btn:active{transform:scale(0.96)}
+.hud-btn.cyan{border-color:rgba(0,245,255,0.5);background:rgba(0,245,255,0.1);color:#00f5ff;text-shadow:0 0 8px #00f5ff}
+.hud-btn.cyan:hover{background:rgba(0,245,255,0.22);border-color:#00f5ff;box-shadow:0 0 16px rgba(0,245,255,0.4)}
+/* Solved banner */
+#solved-banner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);opacity:0;transition:all 0.5s cubic-bezier(0.34,1.56,0.64,1);z-index:30;text-align:center;pointer-events:none}
+#solved-banner.show{transform:translate(-50%,-50%) scale(1);opacity:1}
+#solved-banner .big{font-size:4rem;font-weight:900;background:linear-gradient(135deg,#ff006e,#b400ff,#00f5ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 20px rgba(180,0,255,0.8));line-height:1.1}
+#solved-banner .sub{font-size:1.1rem;color:rgba(255,255,255,0.8);margin-top:8px;text-shadow:0 0 10px rgba(0,245,255,0.5)}
+/* Keyboard hint */
+#kb-hint{position:fixed;right:16px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:6px;z-index:10;opacity:0.55}
+#kb-hint span{font-size:0.65rem;color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:4px;padding:3px 7px;letter-spacing:0.05em}
+@media(max-width:600px){
+  #hud{gap:8px;padding:10px 14px;bottom:16px}
+  .hud-btn{padding:7px 12px;font-size:0.75rem}
+  .hud-stat{min-width:50px}
+  .hud-val{font-size:0.9rem}
+  #kb-hint{display:none}
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="vignette"></div>
+<div id="flash"></div>
+<div id="topbar">
+  <a href="../index.html">&#8592; 返回</a>
+  <span class="title">魔方挑战</span>
+  <span class="ver">v1.0</span>
+</div>
+<div id="hud">
+  <div class="hud-stat">
+    <span class="hud-label">时间</span>
+    <span class="hud-val" id="timer">00:00.0</span>
+  </div>
+  <div class="hud-sep"></div>
+  <div class="hud-stat">
+    <span class="hud-label">步数</span>
+    <span class="hud-val" id="moves">0</span>
+  </div>
+  <div class="hud-sep"></div>
+  <div class="hud-stat">
+    <span class="hud-label">最佳</span>
+    <span class="hud-val" id="best">--</span>
+  </div>
+  <div class="hud-sep"></div>
+  <button class="hud-btn" id="btn-scramble">打乱</button>
+  <button class="hud-btn cyan" id="btn-reset">重置</button>
+</div>
+<div id="solved-banner">
+  <div class="big">🎉 已复原！</div>
+  <div class="sub" id="solved-sub"></div>
+</div>
+<div id="kb-hint">
+  <span>U/D/L/R/F/B 顺转</span>
+  <span>Shift+ 逆转</span>
+  <span>拖动背景旋转</span>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+'use strict';
+
+// ─── CONSTANTS ───────────────────────────────────────────────────────────────
+const FACE_COLORS = {
+  px: 0xff2d2d,  // Right  = Red
+  nx: 0xff8c00,  // Left   = Orange
+  py: 0xffd700,  // Top    = Yellow
+  ny: 0xf0f0f0,  // Bottom = White
+  pz: 0x00c853,  // Front  = Green
+  nz: 0x2d7fff   // Back   = Blue
+};
+const FACE_NAMES = ['px','nx','py','ny','pz','nz'];
+const GAP = 0.06;
+const CUBIE_SIZE = 0.94;
+const INNER_COLOR = 0x111118;
+const STICKER_INSET = 0.02;
+const ANIM_DURATION = 180; // ms
+
+// ─── RENDERER & SCENE ────────────────────────────────────────────────────────
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:false});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = false;
+renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 300);
+camera.position.set(4.5, 3.5, 6.5);
+camera.lookAt(0,0,0);
+
+window.addEventListener('resize', () => {
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+// ─── LIGHTING ────────────────────────────────────────────────────────────────
+const ambLight = new THREE.AmbientLight(0x334466, 0.9);
+scene.add(ambLight);
+const dirA = new THREE.DirectionalLight(0xffffff, 0.9);
+dirA.position.set(6,10,7);
+scene.add(dirA);
+const dirB = new THREE.DirectionalLight(0x8866ff, 0.4);
+dirB.position.set(-6,-5,-4);
+scene.add(dirB);
+const pulseLight = new THREE.PointLight(0xb400ff, 0.5, 8);
+scene.add(pulseLight);
+const spotLight = new THREE.SpotLight(0x00f5ff, 0.5, 30, Math.PI/8, 0.5);
+spotLight.position.set(0, 8, 0);
+scene.add(spotLight);
+scene.add(spotLight.target);
+
+// ─── CUBE GROUP ───────────────────────────────────────────────────────────────
+const cubeGroup = new THREE.Group();
+scene.add(cubeGroup);
+
+// ─── CUBIE FACTORY ───────────────────────────────────────────────────────────
+function makeCubieMaterials(gx, gy, gz) {
+  // Returns array[6] of materials: +x,-x,+y,-y,+z,-z
+  const dirs = [
+    {face:'px', nx:1,  ny:0,  nz:0},
+    {face:'nx', nx:-1, ny:0,  nz:0},
+    {face:'py', nx:0,  ny:1,  nz:0},
+    {face:'ny', nx:0,  ny:-1, nz:0},
+    {face:'pz', nx:0,  ny:0,  nz:1},
+    {face:'nz', nx:0,  ny:0,  nz:-1},
+  ];
+  return dirs.map(d => {
+    const isVisible = (d.nx===0 || (d.nx>0 && gx===1) || (d.nx<0 && gx===-1)) &&
+                      (d.ny===0 || (d.ny>0 && gy===1) || (d.ny<0 && gy===-1)) &&
+                      (d.nz===0 || (d.nz>0 && gz===1) || (d.nz<0 && gz===-1));
+    const exposed = (d.nx!==0 && ((d.nx>0 && gx===1)||(d.nx<0 && gx===-1))) ||
+                    (d.ny!==0 && ((d.ny>0 && gy===1)||(d.ny<0 && gy===-1))) ||
+                    (d.nz!==0 && ((d.nz>0 && gz===1)||(d.nz<0 && gz===-1)));
+    if (exposed) {
+      return new THREE.MeshStandardMaterial({
+        color: FACE_COLORS[d.face],
+        roughness: 0.12,
+        metalness: 0.25,
+      });
+    }
+    return new THREE.MeshStandardMaterial({
+      color: INNER_COLOR,
+      roughness: 0.8,
+      metalness: 0.1,
+    });
+  });
+}
+
+// ─── CUBE STATE ───────────────────────────────────────────────────────────────
+// cubies[i] = { mesh, gx, gy, gz, faceColors:{px,nx,py,ny,pz,nz} }
+let cubies = [];
+
+function buildCube() {
+  // Remove old cubies
+  for (const c of cubies) cubeGroup.remove(c.mesh);
+  cubies = [];
+
+  for (let gx=-1; gx<=1; gx++) {
+    for (let gy=-1; gy<=1; gy++) {
+      for (let gz=-1; gz<=1; gz++) {
+        const geo = new THREE.BoxGeometry(CUBIE_SIZE, CUBIE_SIZE, CUBIE_SIZE);
+        const mats = makeCubieMaterials(gx, gy, gz);
+        const mesh = new THREE.Mesh(geo, mats);
+        mesh.position.set(gx*(1+GAP), gy*(1+GAP), gz*(1+GAP));
+        mesh.userData.gx = gx;
+        mesh.userData.gy = gy;
+        mesh.userData.gz = gz;
+        cubeGroup.add(mesh);
+
+        // Store face colors for solve detection
+        const faceColors = {
+          px: gx===1  ? 'R' : null,
+          nx: gx===-1 ? 'O' : null,
+          py: gy===1  ? 'Y' : null,
+          ny: gy===-1 ? 'W' : null,
+          pz: gz===1  ? 'G' : null,
+          nz: gz===-1 ? 'B' : null,
+        };
+
+        cubies.push({mesh, gx, gy, gz, faceColors});
+      }
+    }
+  }
+}
+
+buildCube();
+
+// ─── EDGE GLOW ────────────────────────────────────────────────────────────────
+const edgeGlowMeshes = [];
+function buildEdgeGlows() {
+  for (const m of edgeGlowMeshes) cubeGroup.remove(m);
+  edgeGlowMeshes.length = 0;
+  for (const c of cubies) {
+    const edges = new THREE.EdgesGeometry(c.mesh.geometry);
+    const lineMat = new THREE.LineBasicMaterial({
+      color: 0xb400ff, transparent: true, opacity: 0.25,
+      blending: THREE.AdditiveBlending, depthWrite: false
+    });
+    const line = new THREE.LineSegments(edges, lineMat);
+    line.position.copy(c.mesh.position);
+    cubeGroup.add(line);
+    edgeGlowMeshes.push(line);
+  }
+}
+buildEdgeGlows();
+
+// ─── MOVE SYSTEM ─────────────────────────────────────────────────────────────
+let moveQueue = [];
+let animating = false;
+let moveCount = 0;
+let timerRunning = false;
+let timerStart = 0;
+let timerElapsed = 0;
+let scrambling = false;
+let solved = false;
+let hasBeenScrambled = false;
+let idleTime = 0;
+let autoRotating = false;
+const FACES = {
+  U: {axis:'y', slice:1,  dir:1},
+  D: {axis:'y', slice:-1, dir:-1},
+  R: {axis:'x', slice:1,  dir:1},
+  L: {axis:'x', slice:-1, dir:-1},
+  F: {axis:'z', slice:1,  dir:1},
+  B: {axis:'z', slice:-1, dir:-1},
+};
+
+function queueMove(face, cw) {
+  moveQueue.push({face, cw});
+  if (!animating) processQueue();
+}
+
+function processQueue() {
+  if (moveQueue.length === 0) { animating = false; return; }
+  const item = moveQueue[0];
+  if (item.face === '__done__') {
+    moveQueue.shift();
+    animating = false;
+    scrambling = false;
+    return;
+  }
+  animating = true;
+  const {face, cw} = moveQueue.shift();
+  executeMove(face, cw);
+}
+
+// pivot group for animation
+const pivot = new THREE.Group();
+scene.add(pivot);
+
+function executeMove(face, cw) {
+  const {axis, slice, dir} = FACES[face];
+  const sign = cw ? dir : -dir;
+
+  // Gather cubies on this slice
+  const sliceCubies = cubies.filter(c => {
+    if (axis==='x') return c.gx === slice;
+    if (axis==='y') return c.gy === slice;
+    return c.gz === slice;
+  });
+
+  // Reparent to pivot
+  pivot.rotation.set(0,0,0);
+  cubeGroup.updateMatrixWorld(true);
+  for (const c of sliceCubies) {
+    // Capture world matrix before reparenting
+    c.mesh.updateMatrixWorld();
+    const savedWorldMat = c.mesh.matrixWorld.clone();
+    cubeGroup.remove(c.mesh);
+    pivot.add(c.mesh);
+    // Set position in pivot-local space (pivot is at scene origin, so pivot-local = world)
+    // Decompose the saved world matrix to get position
+    const p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3();
+    savedWorldMat.decompose(p, q, s);
+    c.mesh.position.copy(p);
+    c.mesh.quaternion.copy(q);
+    c.mesh.scale.copy(s);
+    c.mesh._savedWorldMat = savedWorldMat;
+  }
+
+  // Animate
+  const targetAngle = sign * Math.PI/2;
+  const startTime = performance.now();
+
+  // Flare edge glows for this slice
+  for (const em of edgeGlowMeshes) {
+    // find if this glow corresponds to a slice cubie
+  }
+  flashCanvas();
+
+  function animFrame(now) {
+    const t = Math.min((now - startTime) / ANIM_DURATION, 1);
+    const ease = t < 0.5 ? 2*t*t : -1+(4-2*t)*t; // ease-in-out
+    if (axis==='x') pivot.rotation.x = targetAngle * ease;
+    else if (axis==='y') pivot.rotation.y = targetAngle * ease;
+    else pivot.rotation.z = targetAngle * ease;
+
+    if (t < 1) {
+      requestAnimationFrame(animFrame);
+    } else {
+      // Snap to exact angle
+      if (axis==='x') pivot.rotation.x = targetAngle;
+      else if (axis==='y') pivot.rotation.y = targetAngle;
+      else pivot.rotation.z = targetAngle;
+
+      // Apply transform to each cubie and reparent
+      pivot.updateMatrixWorld(true);
+      cubeGroup.updateMatrixWorld(true);
+      const invParent = new THREE.Matrix4().copy(cubeGroup.matrixWorld).invert();
+      for (const c of sliceCubies) {
+        c.mesh.updateMatrixWorld();
+        const worldMat = c.mesh.matrixWorld.clone();
+
+        cubeGroup.add(c.mesh); // removes from pivot automatically
+        // Compute local matrix in cubeGroup space
+        const localMat = new THREE.Matrix4().copy(invParent).multiply(worldMat);
+        localMat.decompose(c.mesh.position, c.mesh.quaternion, c.mesh.scale);
+
+        // Snap position to grid
+        c.mesh.position.x = Math.round(c.mesh.position.x / (1+GAP)) * (1+GAP);
+        c.mesh.position.y = Math.round(c.mesh.position.y / (1+GAP)) * (1+GAP);
+        c.mesh.position.z = Math.round(c.mesh.position.z / (1+GAP)) * (1+GAP);
+
+        // Update logical grid coords
+        c.gx = Math.round(c.mesh.position.x / (1+GAP));
+        c.gy = Math.round(c.mesh.position.y / (1+GAP));
+        c.gz = Math.round(c.mesh.position.z / (1+GAP));
+
+        // Rotate face colors
+        updateFaceColors(c, axis, sign);
+      }
+
+      // Clear pivot
+      while (pivot.children.length > 0) pivot.remove(pivot.children[0]);
+      pivot.rotation.set(0,0,0);
+
+      // Update edge glow positions
+      for (let i=0; i<cubies.length; i++) {
+        if (edgeGlowMeshes[i]) {
+          edgeGlowMeshes[i].position.copy(cubies[i].mesh.position);
+          edgeGlowMeshes[i].quaternion.copy(cubies[i].mesh.quaternion);
+        }
+      }
+
+      if (!scrambling) {
+        moveCount++;
+        document.getElementById('moves').textContent = moveCount;
+        if (!timerRunning) { timerRunning = true; timerStart = performance.now() - timerElapsed; }
+        checkSolved();
+      }
+      spawnRibbons(face);
+      processQueue();
+    }
+  }
+  requestAnimationFrame(animFrame);
+}
+
+function updateFaceColors(c, axis, sign) {
+  // sign +1 = CW looking from + direction
+  const fc = c.faceColors;
+  if (axis === 'x') {
+    if (sign > 0) {
+      // CW around +X: y→z, z→-y, -y→-z, -z→y
+      const tmp = fc.py; fc.py = fc.nz; fc.nz = fc.ny; fc.ny = fc.pz; fc.pz = tmp;
+    } else {
+      const tmp = fc.py; fc.py = fc.pz; fc.pz = fc.ny; fc.ny = fc.nz; fc.nz = tmp;
+    }
+  } else if (axis === 'y') {
+    if (sign > 0) {
+      // CW around +Y: z→x, x→-z, -z→-x, -x→z
+      const tmp = fc.pz; fc.pz = fc.nx; fc.nx = fc.nz; fc.nz = fc.px; fc.px = tmp;
+    } else {
+      const tmp = fc.pz; fc.pz = fc.px; fc.px = fc.nz; fc.nz = fc.nx; fc.nx = tmp;
+    }
+  } else { // z
+    if (sign > 0) {
+      // CW around +Z: y→-x, x→y, -y→x, -x→-y  wait let me redo
+      // CW around +Z (looking from front): top→left, left→bottom, bottom→right, right→top
+      // +y→-x, -x→-y, -y→+x, +x→+y
+      const tmp = fc.py; fc.py = fc.px; fc.px = fc.ny; fc.ny = fc.nx; fc.nx = tmp;
+    } else {
+      const tmp = fc.py; fc.py = fc.nx; fc.nx = fc.ny; fc.ny = fc.px; fc.px = tmp;
+    }
+  }
+}
+
+// ─── SOLVE CHECK ─────────────────────────────────────────────────────────────
+function checkSolved() {
+  // For each of 6 faces, collect all 9 sticker colors
+  const faceMap = {py:[],ny:[],px:[],nx:[],pz:[],nz:[]};
+  for (const c of cubies) {
+    for (const fn of FACE_NAMES) {
+      if (c.faceColors[fn] !== null) {
+        // determine which face this sticker currently shows on
+        faceMap[fn].push(c.faceColors[fn]);
+      }
+    }
+  }
+  let ok = true;
+  for (const fn of FACE_NAMES) {
+    const arr = faceMap[fn];
+    if (arr.length === 0) continue;
+    if (arr.some(v => v !== arr[0])) { ok = false; break; }
+  }
+  if (ok && !solved && hasBeenScrambled) {
+    solved = true;
+    timerRunning = false;
+    timerElapsed = performance.now() - timerStart;
+    showSolved();
+    celebrateSolve();
+  }
+}
+
+function showSolved() {
+  const banner = document.getElementById('solved-banner');
+  const sub = document.getElementById('solved-sub');
+  const elapsed = timerElapsed;
+  const secs = elapsed/1000;
+  const mm = String(Math.floor(secs/60)).padStart(2,'0');
+  const ss = String(Math.floor(secs%60)).padStart(2,'0');
+  const ds = String(Math.floor((secs%1)*10));
+  sub.textContent = `用时 ${mm}:${ss}.${ds}，共 ${moveCount} 步`;
+
+  // Save best
+  const key = 'cube_best_ms';
+  const prev = parseInt(localStorage.getItem(key)||'999999999');
+  if (elapsed < prev) {
+    localStorage.setItem(key, String(Math.floor(elapsed)));
+    updateBestDisplay();
+  }
+  banner.classList.add('show');
+  setTimeout(() => banner.classList.remove('show'), 4000);
+}
+
+function updateBestDisplay() {
+  const key = 'cube_best_ms';
+  const best = parseInt(localStorage.getItem(key)||'0');
+  if (!best) { document.getElementById('best').textContent = '--'; return; }
+  const secs = best/1000;
+  const mm = String(Math.floor(secs/60)).padStart(2,'0');
+  const ss = String(Math.floor(secs%60)).padStart(2,'0');
+  document.getElementById('best').textContent = `${mm}:${ss}`;
+}
+updateBestDisplay();
+
+// ─── SCRAMBLE / RESET ─────────────────────────────────────────────────────────
+const FACE_KEYS = Object.keys(FACES);
+
+document.getElementById('btn-scramble').addEventListener('click', doScramble);
+document.getElementById('btn-reset').addEventListener('click', doReset);
+
+function doScramble() {
+  if (animating && !scrambling) return;
+  doReset();
+  solved = false;
+  scrambling = true;
+  moveCount = 0;
+  timerRunning = false;
+  timerElapsed = 0;
+  document.getElementById('moves').textContent = '0';
+  const moves = 20;
+  let prev = '';
+  for (let i=0; i<moves; i++) {
+    let f;
+    do { f = FACE_KEYS[Math.floor(Math.random()*6)]; } while(f===prev);
+    prev = f;
+    const cw = Math.random() > 0.5;
+    moveQueue.push({face:f, cw});
+  }
+  moveQueue.push({face:'__done__'});
+  hasBeenScrambled = true;
+  if (!animating) processQueue();
+}
+
+
+// (processQueue already handles scramble via the scrambling flag above)
+
+function doReset() {
+  moveQueue = [];
+  animating = false;
+  scrambling = false;
+  solved = false;
+  hasBeenScrambled = false;
+  moveCount = 0;
+  timerRunning = false;
+  timerElapsed = 0;
+  document.getElementById('moves').textContent = '0';
+  document.getElementById('timer').textContent = '00:00.0';
+  // Clear pivot
+  while (pivot.children.length > 0) pivot.remove(pivot.children[0]);
+  pivot.rotation.set(0,0,0);
+  // Rebuild
+  buildCube();
+  buildEdgeGlows();
+}
+
+// ─── KEYBOARD CONTROLS ────────────────────────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+  if (e.repeat) return;
+  const k = e.key.toUpperCase();
+  if (!['U','D','L','R','F','B'].includes(k)) return;
+  const cw = !e.shiftKey;
+  queueMove(k, cw);
+  idleTime = 0;
+});
+
+// ─── MOUSE / TOUCH ORBIT ─────────────────────────────────────────────────────
+let orbitDragging = false;
+let orbitStart = {x:0, y:0};
+let spherical = {theta: 0.72, phi: 0.52}; // initial angles
+const ORBIT_SPEED = 0.005;
+const MIN_ZOOM = 4, MAX_ZOOM = 14;
+let camDist = 7.5;
+
+// Update camera from spherical
+function updateCamera() {
+  camera.position.x = camDist * Math.sin(spherical.phi) * Math.sin(spherical.theta);
+  camera.position.y = camDist * Math.cos(spherical.phi);
+  camera.position.z = camDist * Math.sin(spherical.phi) * Math.cos(spherical.theta);
+  camera.lookAt(0,0,0);
+}
+updateCamera();
+
+// Face drag detection
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+let faceDownInfo = null; // {cubie, faceIndex, faceNormal, screenX, screenY}
+let draggingFace = false;
+let orbitMode = false;
+
+function getEventXY(e) {
+  if (e.touches) return {x: e.touches[0].clientX, y: e.touches[0].clientY};
+  return {x: e.clientX, y: e.clientY};
+}
+
+canvas.addEventListener('mousedown', onDown);
+canvas.addEventListener('touchstart', onDown, {passive:false});
+
+function onDown(e) {
+  if (e.cancelable) e.preventDefault();
+  const {x, y} = getEventXY(e);
+  mouse.x = (x/innerWidth)*2-1;
+  mouse.y = -(y/innerHeight)*2+1;
+  raycaster.setFromCamera(mouse, camera);
+
+  // Check intersection with cubies
+  const meshes = cubies.map(c=>c.mesh);
+  const hits = raycaster.intersectObjects(meshes);
+  if (hits.length > 0) {
+    const hit = hits[0];
+    const cubie = cubies.find(c => c.mesh === hit.object);
+    faceDownInfo = {
+      cubie,
+      faceIndex: hit.face.materialIndex,
+      faceNormal: hit.face.normal.clone().transformDirection(hit.object.matrixWorld),
+      screenX: x, screenY: y,
+      point: hit.point.clone()
+    };
+    draggingFace = true;
+    orbitMode = false;
+  } else {
+    orbitMode = true;
+    draggingFace = false;
+    orbitStart = {x, y};
+    orbitDragging = true;
+  }
+  idleTime = 0;
+}
+
+window.addEventListener('mousemove', onMove);
+window.addEventListener('touchmove', onMove, {passive:false});
+
+function onMove(e) {
+  if (e.cancelable) e.preventDefault();
+  const {x, y} = getEventXY(e);
+
+  if (orbitDragging && orbitMode) {
+    const dx = x - orbitStart.x;
+    const dy = y - orbitStart.y;
+    spherical.theta -= dx * ORBIT_SPEED;
+    spherical.phi = Math.max(0.1, Math.min(Math.PI-0.1, spherical.phi + dy * ORBIT_SPEED));
+    orbitStart = {x, y};
+    updateCamera();
+    idleTime = 0;
+  }
+
+  if (draggingFace && faceDownInfo) {
+    const dx = x - faceDownInfo.screenX;
+    const dy = y - faceDownInfo.screenY;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    if (dist > 15) {
+      // Determine move from drag
+      const move = interpretDrag(faceDownInfo, dx, dy);
+      if (move) {
+        queueMove(move.face, move.cw);
+        draggingFace = false;
+        faceDownInfo = null;
+      }
+    }
+    idleTime = 0;
+  }
+}
+
+window.addEventListener('mouseup', onUp);
+window.addEventListener('touchend', onUp);
+function onUp() {
+  orbitDragging = false;
+  draggingFace = false;
+  faceDownInfo = null;
+}
+
+// Pinch zoom
+let pinchDist0 = 0;
+canvas.addEventListener('touchstart', (e) => {
+  if (e.touches.length === 2) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    pinchDist0 = Math.sqrt(dx*dx+dy*dy);
+  }
+}, {passive:true});
+canvas.addEventListener('touchmove', (e) => {
+  if (e.touches.length === 2) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    const dist = Math.sqrt(dx*dx+dy*dy);
+    camDist *= pinchDist0/dist;
+    camDist = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, camDist));
+    pinchDist0 = dist;
+    updateCamera();
+  }
+}, {passive:true});
+
+canvas.addEventListener('wheel', (e) => {
+  camDist += e.deltaY * 0.01;
+  camDist = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, camDist));
+  updateCamera();
+  idleTime = 0;
+});
+
+function interpretDrag(info, dx, dy) {
+  // Face normal tells us which face was clicked
+  // Project drag onto the face's tangent plane
+  const n = info.faceNormal;
+  const absN = {x: Math.abs(n.x), y: Math.abs(n.y), z: Math.abs(n.z)};
+  const c = info.cubie;
+
+  // Screen drag → world direction (approximate using camera orientation)
+  const right = new THREE.Vector3();
+  const up = new THREE.Vector3();
+  camera.getWorldDirection(new THREE.Vector3()); // dummy
+  right.setFromMatrixColumn(camera.matrixWorld, 0).normalize();
+  up.setFromMatrixColumn(camera.matrixWorld, 1).normalize();
+
+  const worldDrag = new THREE.Vector3().addScaledVector(right, dx).addScaledVector(up, -dy);
+
+  // Remove component along face normal
+  worldDrag.addScaledVector(n, -worldDrag.dot(n));
+
+  // Dominant axis of worldDrag
+  const ax = Math.abs(worldDrag.x), ay = Math.abs(worldDrag.y), az = Math.abs(worldDrag.z);
+
+  if (absN.x > 0.5) {
+    // Clicked on X face — drag Y rotates U/D, drag Z rotates F/B
+    if (ay > az) {
+      const f = c.gy===1?'U':(c.gy===-1?'D':'U');
+      return {face: f, cw: (n.x>0 ? worldDrag.y>0 : worldDrag.y<0)};
+    } else {
+      const f = c.gz===1?'F':(c.gz===-1?'B':'F');
+      return {face: f, cw: (n.x>0 ? worldDrag.z<0 : worldDrag.z>0)};
+    }
+  } else if (absN.y > 0.5) {
+    // Clicked on Y face — drag X rotates R/L, drag Z rotates F/B
+    if (ax > az) {
+      const f = c.gx===1?'R':(c.gx===-1?'L':'R');
+      return {face: f, cw: (n.y>0 ? worldDrag.x>0 : worldDrag.x<0)};
+    } else {
+      const f = c.gz===1?'F':(c.gz===-1?'B':'F');
+      return {face: f, cw: (n.y>0 ? worldDrag.z>0 : worldDrag.z<0)};
+    }
+  } else {
+    // Clicked on Z face — drag X rotates U/D, drag Y rotates R/L
+    if (ax > ay) {
+      const f = c.gy===1?'U':(c.gy===-1?'D':'U');
+      return {face: f, cw: (n.z>0 ? worldDrag.x>0 : worldDrag.x<0)};
+    } else {
+      const f = c.gx===1?'R':(c.gx===-1?'L':'R');
+      return {face: f, cw: (n.z>0 ? worldDrag.y<0 : worldDrag.y>0)};
+    }
+  }
+}
+
+// ─── VISUAL EFFECTS ──────────────────────────────────────────────────────────
+
+// 1. STARFIELD
+const starGeo = new THREE.BufferGeometry();
+const starCount = 2000;
+const starPos = new Float32Array(starCount * 3);
+const starAlpha = new Float32Array(starCount);
+for (let i=0; i<starCount; i++) {
+  const theta = Math.random()*Math.PI*2;
+  const phi = Math.acos(2*Math.random()-1);
+  const r = 70 + Math.random()*30;
+  starPos[i*3]   = r * Math.sin(phi) * Math.cos(theta);
+  starPos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+  starPos[i*3+2] = r * Math.cos(phi);
+  starAlpha[i] = 0.3 + Math.random()*0.7;
+}
+starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+starGeo.setAttribute('alpha', new THREE.BufferAttribute(starAlpha, 1));
+const starMat = new THREE.PointsMaterial({
+  color: 0xaaccff, size: 0.18, transparent: true, opacity: 0.7,
+  sizeAttenuation: true, blending: THREE.AdditiveBlending, depthWrite: false
+});
+const stars = new THREE.Points(starGeo, starMat);
+scene.add(stars);
+
+// 2. PARTICLES (200 floating color dust)
+const PART_COUNT = 200;
+const partGeo = new THREE.BufferGeometry();
+const partPos = new Float32Array(PART_COUNT * 3);
+const partVel = new Float32Array(PART_COUNT * 3);
+const partCol = new Float32Array(PART_COUNT * 3);
+const partLife = new Float32Array(PART_COUNT);
+const PART_COLORS_RGB = [
+  [1.0,0.18,0.18], [0.18,0.5,1.0], [1.0,0.85,0.0],
+  [0.94,0.94,0.94],[1.0,0.55,0.0], [0.0,0.78,0.33]
+];
+function initParticle(i) {
+  const r = 2.5 + Math.random()*2;
+  const theta = Math.random()*Math.PI*2;
+  const phi = Math.acos(2*Math.random()-1);
+  partPos[i*3]   = r * Math.sin(phi)*Math.cos(theta);
+  partPos[i*3+1] = r * Math.sin(phi)*Math.sin(theta);
+  partPos[i*3+2] = r * Math.cos(phi);
+  const speed = 0.003 + Math.random()*0.005;
+  partVel[i*3]   = (Math.random()-0.5)*speed;
+  partVel[i*3+1] = (Math.random()-0.5)*speed + speed*0.3;
+  partVel[i*3+2] = (Math.random()-0.5)*speed;
+  const col = PART_COLORS_RGB[Math.floor(Math.random()*6)];
+  partCol[i*3] = col[0]; partCol[i*3+1] = col[1]; partCol[i*3+2] = col[2];
+  partLife[i] = 0.5 + Math.random()*0.5;
+}
+for (let i=0; i<PART_COUNT; i++) initParticle(i);
+partGeo.setAttribute('position', new THREE.BufferAttribute(partPos, 3));
+partGeo.setAttribute('color', new THREE.BufferAttribute(partCol, 3));
+const partMat = new THREE.PointsMaterial({
+  size: 0.07, vertexColors: true, transparent: true, opacity: 0.65,
+  blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true
+});
+const particles = new THREE.Points(partGeo, partMat);
+scene.add(particles);
+
+// 3. NEBULA BACKGROUND
+const nebulaMat = new THREE.ShaderMaterial({
+  uniforms: { uTime: {value:0} },
+  side: THREE.BackSide,
+  transparent: true,
+  depthWrite: false,
+  vertexShader: `
+    varying vec2 vUv;
+    varying vec3 vPos;
+    void main(){
+      vUv = uv;
+      vPos = position;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform float uTime;
+    varying vec2 vUv;
+    varying vec3 vPos;
+    float noise(vec2 p){
+      return sin(p.x*2.1+uTime*0.3)*cos(p.y*1.8+uTime*0.2)*0.5+0.5;
+    }
+    float fbm(vec2 p){
+      float v=0.0; float a=0.5;
+      for(int i=0;i<4;i++){
+        v+=a*noise(p);
+        p=p*2.1+vec2(1.7,9.2);
+        a*=0.5;
+      }
+      return v;
+    }
+    void main(){
+      vec2 uv = vUv * 3.0 - 1.5;
+      float f = fbm(uv + uTime*0.05);
+      float f2 = fbm(uv*1.5 + vec2(f) + uTime*0.03);
+      vec3 col1 = vec3(0.08, 0.0, 0.18); // deep purple
+      vec3 col2 = vec3(0.0, 0.05, 0.22); // deep blue
+      vec3 col3 = vec3(0.12, 0.0, 0.08); // dark magenta
+      vec3 col = mix(col1, col2, f);
+      col = mix(col, col3, f2*f2);
+      float alpha = 0.85;
+      gl_FragColor = vec4(col, alpha);
+    }
+  `
+});
+const nebulaSphere = new THREE.Mesh(new THREE.SphereGeometry(90, 32, 32), nebulaMat);
+scene.add(nebulaSphere);
+
+// 4. RIBBON PARTICLES (for move effect)
+const ribbons = [];
+function spawnRibbons(face) {
+  const count = 10;
+  const faceData = FACES[face];
+  if (!faceData) return;
+  for (let i=0; i<count; i++) {
+    const geo = new THREE.SphereGeometry(0.04, 4, 4);
+    const mat = new THREE.MeshBasicMaterial({
+      color: Object.values(FACE_COLORS)[Math.floor(Math.random()*6)],
+      transparent: true, opacity: 1.0,
+      blending: THREE.AdditiveBlending, depthWrite: false
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    // Spawn near the rotating face
+    const axis = faceData.axis;
+    const slice = faceData.slice;
+    const pos = new THREE.Vector3(
+      axis==='x'? slice*1.5 : (Math.random()-0.5)*3,
+      axis==='y'? slice*1.5 : (Math.random()-0.5)*3,
+      axis==='z'? slice*1.5 : (Math.random()-0.5)*3
+    );
+    mesh.position.copy(pos);
+    scene.add(mesh);
+    const vel = new THREE.Vector3(
+      (Math.random()-0.5)*0.12,
+      (Math.random()-0.5)*0.12 + 0.04,
+      (Math.random()-0.5)*0.12
+    );
+    ribbons.push({mesh, vel, life:1.0, decay: 0.025 + Math.random()*0.02});
+  }
+}
+
+// 5. CANVAS FLASH
+function flashCanvas() {
+  const el = document.getElementById('flash');
+  el.style.opacity = '0.08';
+  setTimeout(() => { el.style.opacity = '0'; }, 80);
+}
+
+// 6. CELEBRATE (rainbow on solve)
+let celebrating = false;
+let celebrateTime = 0;
+function celebrateSolve() {
+  celebrating = true;
+  celebrateTime = 0;
+  // Big flash
+  const el = document.getElementById('flash');
+  el.style.transition = 'opacity 0.3s';
+  el.style.opacity = '0.25';
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.08s'; }, 300);
+  // Spawn lots of ribbons
+  for (const fk of FACE_KEYS) spawnRibbons(fk);
+}
+
+// ─── TIMER DISPLAY ───────────────────────────────────────────────────────────
+function formatTime(ms) {
+  const s = ms/1000;
+  const mm = String(Math.floor(s/60)).padStart(2,'0');
+  const ss = String(Math.floor(s%60)).padStart(2,'0');
+  const ds = String(Math.floor((s%1)*10));
+  return `${mm}:${ss}.${ds}`;
+}
+
+// ─── MAIN ANIMATION LOOP ─────────────────────────────────────────────────────
+let lastTime = 0;
+let frameCount = 0;
+
+renderer.setAnimationLoop(function(now) {
+  const dt = now - lastTime;
+  lastTime = now;
+  frameCount++;
+
+  // Timer
+  if (timerRunning) {
+    timerElapsed = now - timerStart;
+    document.getElementById('timer').textContent = formatTime(timerElapsed);
+  }
+
+  // Idle auto-rotate
+  idleTime += dt;
+  if (idleTime > 5000 && !animating) {
+    cubeGroup.rotation.y += 0.002;
+    cubeGroup.rotation.x += 0.0005;
+  }
+
+  // Pulse light
+  const t = now * 0.001;
+  pulseLight.intensity = 0.3 + Math.sin(t * Math.PI) * 0.5;
+  pulseLight.position.set(Math.sin(t*0.5)*3, Math.cos(t*0.3)*2, Math.sin(t*0.4)*3);
+
+  // Spot orbit
+  spotLight.position.set(
+    Math.sin(t/8*Math.PI*2)*6,
+    5,
+    Math.cos(t/8*Math.PI*2)*6
+  );
+
+  // Nebula time
+  nebulaMat.uniforms.uTime.value = t;
+
+  // Star rotation
+  stars.rotation.y += 0.0001;
+  stars.rotation.x += 0.00003;
+  // Star twinkle
+  const alpha = starGeo.attributes.alpha.array;
+  for (let i=0; i<starCount; i+=7) {
+    alpha[i] = 0.3 + 0.7 * (0.5 + 0.5*Math.sin(t*2 + i*0.137));
+  }
+  starGeo.attributes.alpha.needsUpdate = true;
+  starMat.opacity = 0.5 + 0.2*Math.sin(t*0.5);
+
+  // Particles
+  for (let i=0; i<PART_COUNT; i++) {
+    partPos[i*3]   += partVel[i*3];
+    partPos[i*3+1] += partVel[i*3+1];
+    partPos[i*3+2] += partVel[i*3+2];
+    partLife[i] -= 0.003;
+    if (partLife[i] <= 0 || Math.sqrt(partPos[i*3]**2 + partPos[i*3+1]**2 + partPos[i*3+2]**2) > 6) {
+      initParticle(i);
+    }
+  }
+  partGeo.attributes.position.needsUpdate = true;
+
+  // Edge glow pulse
+  const glowHue = (t*0.1) % 1;
+  const glowCol = new THREE.Color().setHSL(glowHue, 1.0, 0.6);
+  for (let i=0; i<edgeGlowMeshes.length; i++) {
+    const m = edgeGlowMeshes[i];
+    m.material.color.copy(glowCol);
+    m.material.opacity = 0.15 + 0.1*Math.sin(t*2 + i*0.3);
+  }
+
+  // Ribbons
+  for (let i=ribbons.length-1; i>=0; i--) {
+    const r = ribbons[i];
+    r.life -= r.decay;
+    r.mesh.position.addScaledVector(r.vel, 1);
+    r.vel.multiplyScalar(0.96);
+    r.mesh.material.opacity = r.life;
+    r.mesh.scale.setScalar(1 + (1-r.life)*3);
+    if (r.life <= 0) {
+      scene.remove(r.mesh);
+      r.mesh.geometry.dispose();
+      r.mesh.material.dispose();
+      ribbons.splice(i,1);
+    }
+  }
+
+  // Celebrate rainbow
+  if (celebrating) {
+    celebrateTime += dt;
+    const hue = (celebrateTime/3000) % 1;
+    for (const c of cubies) {
+      for (const mat of c.mesh.material) {
+        if (mat.color.r < 0.2 && mat.color.g < 0.2 && mat.color.b < 0.2) continue;
+        mat.color.setHSL(hue, 1, 0.6);
+        mat.emissive = mat.color.clone().multiplyScalar(0.3);
+      }
+    }
+    if (celebrateTime > 3000) {
+      celebrating = false;
+      // Rebuild to restore original colors
+      buildCube();
+      buildEdgeGlows();
+    }
+  }
+
+  renderer.render(scene, camera);
+});
+})();
+</script>
+</body>
+</html>
