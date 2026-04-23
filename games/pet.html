@@ -2,483 +2,616 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>电子宠物乐园</title>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-  font-family: 'Comic Sans MS', 'Chalkboard SE', cursive, system-ui;
-  background: linear-gradient(160deg, #fdf6ff 0%, #f0f9ff 50%, #fff9f0 100%);
-  min-height: 100vh;
-  color: #374151;
-}
-.topbar {
-  background: #fff;
-  height: 52px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-.topbar a {
-  text-decoration: none;
-  color: #c084fc;
-  font-size: 14px;
-  font-weight: 600;
-}
-.topbar-title {
-  flex: 1;
-  text-align: center;
-  font-size: 18px;
-  font-weight: 700;
-  background: linear-gradient(135deg, #c084fc, #f472b6);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-.topbar-right {
-  width: 60px;
-  display: flex;
-  justify-content: flex-end;
-}
-.photo-btn {
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  transition: transform 0.2s;
-}
-.photo-btn:hover { transform: scale(1.2); }
-.main {
-  max-width: 480px;
-  margin: 0 auto;
-  padding: 16px;
-}
-.card {
-  background: #fff;
-  border-radius: 24px;
-  box-shadow: 0 8px 32px rgba(180,140,255,0.12);
-  padding: 20px;
-  margin-bottom: 16px;
-}
-/* Pet display */
-.pet-display {
-  border-radius: 24px;
-  padding: 24px 20px 16px;
-  text-align: center;
-  transition: background 0.5s ease;
-  position: relative;
-  overflow: hidden;
-  margin-bottom: 16px;
-  box-shadow: 0 8px 32px rgba(180,140,255,0.12);
-}
-.thought-bubble {
-  display: inline-block;
-  background: #fff;
-  border-radius: 20px;
-  padding: 6px 14px;
-  font-size: 13px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  margin-bottom: 12px;
-  position: relative;
-  color: #374151;
-  min-height: 28px;
-}
-.thought-bubble::after {
-  content: '';
-  position: absolute;
-  bottom: -8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 8px;
-  height: 8px;
-  background: #fff;
-  border-radius: 50%;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-}
-.pet-emoji {
-  font-size: 120px;
-  line-height: 1;
-  display: block;
-  margin: 0 auto 12px;
-  cursor: default;
-  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
-}
-.pet-name {
-  font-size: 22px;
-  font-weight: 700;
-  color: #374151;
-  margin-bottom: 10px;
-}
-.status-badges {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 6px;
-}
-.badge {
-  padding: 3px 10px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-}
-.badge-age { background: #e0e7ff; color: #4338ca; }
-.badge-mood { background: #fce7f3; color: #be185d; }
-.badge-breed { background: #d1fae5; color: #065f46; }
-.badge-level { background: #fef3c7; color: #92400e; }
-.badge-tag { background: #ede9fe; color: #5b21b6; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: system-ui,sans-serif; background:linear-gradient(160deg,#fdf6ff,#f0f9ff,#fff9f0); min-height:100vh; color:#374151; }
+.topbar { background:#fff; height:52px; box-shadow:0 2px 12px rgba(0,0,0,.06); display:flex; align-items:center; padding:0 16px; position:sticky; top:0; z-index:100; }
+.topbar a { text-decoration:none; color:#c084fc; font-size:14px; font-weight:600; }
+.topbar-title { flex:1; text-align:center; font-size:18px; font-weight:700; background:linear-gradient(135deg,#c084fc,#f472b6); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.photo-btn { background:none; border:none; font-size:20px; cursor:pointer; transition:transform .2s; }
+.photo-btn:hover { transform:scale(1.2); }
+.wrap { max-width:500px; margin:0 auto; padding:12px; }
 
-/* Animations */
-@keyframes floatNormal {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
+/* SCENE */
+.scene {
+  position:relative; width:100%; height:300px;
+  border-radius:20px; overflow:hidden;
+  margin-bottom:10px;
+  box-shadow:0 4px 20px rgba(0,0,0,.1);
+  cursor:crosshair;
+  user-select:none;
 }
-@keyframes bounceHappy {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
+.scene-bg { position:absolute; inset:0; transition:opacity .5s; }
+
+/* ROOM scene */
+.scene-room .scene-bg {
+  background:linear-gradient(180deg, #fce7f3 0%, #fce7f3 55%, #f5deb3 55%);
 }
-@keyframes wiggleExcited {
-  0%, 100% { transform: rotate(-5deg); }
-  50% { transform: rotate(5deg); }
-}
-@keyframes swaySad {
-  0%, 100% { transform: translateX(-4px) rotate(-2deg); }
-  50% { transform: translateX(4px) rotate(2deg); }
-}
-@keyframes pulseSick {
-  0%, 100% { opacity: 0.7; transform: scale(0.97); }
-  50% { opacity: 1; transform: scale(1); }
-}
-@keyframes toastUp {
-  0% { opacity: 1; transform: translateY(0); }
-  100% { opacity: 0; transform: translateY(-60px); }
-}
-@keyframes warningPulse {
-  0%, 100% { box-shadow: 0 0 0 rgba(239,68,68,0); }
-  50% { box-shadow: 0 0 8px rgba(239,68,68,0.4); }
-}
-@keyframes levelUpBounce {
-  0%, 100% { transform: scale(1) rotate(0deg); }
-  25% { transform: scale(1.2) rotate(-5deg); }
-  75% { transform: scale(1.2) rotate(5deg); }
-}
-@keyframes sparkle {
-  0% { opacity: 0; transform: scale(0) rotate(0deg); }
-  50% { opacity: 1; transform: scale(1) rotate(180deg); }
-  100% { opacity: 0; transform: scale(0) rotate(360deg); }
-}
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+.scene-room::before {
+  content:""; position:absolute; inset:0;
+  background:
+    repeating-linear-gradient(90deg, rgba(0,0,0,.04) 0px, rgba(0,0,0,.04) 1px, transparent 1px, transparent 60px),
+    repeating-linear-gradient(0deg, rgba(0,0,0,.03) 0px, rgba(0,0,0,.03) 1px, transparent 1px, transparent 40px);
+  top:55%;
 }
 
-.anim-normal { animation: floatNormal 2s ease-in-out infinite; }
-.anim-happy { animation: bounceHappy 0.6s ease-in-out infinite; }
-.anim-excited { animation: wiggleExcited 0.3s ease-in-out infinite; }
-.anim-sad { animation: swaySad 2s ease-in-out infinite; }
-.anim-sick { animation: pulseSick 2s ease-in-out infinite; }
+/* GARDEN scene */
+.scene-garden .scene-bg {
+  background:linear-gradient(180deg, #bfdbfe 0%, #bfdbfe 50%, #86efac 50%);
+}
+/* BATH scene */
+.scene-bath .scene-bg { background:linear-gradient(180deg,#e0f2fe,#bae6fd); }
+/* BEDROOM scene */
+.scene-bedroom .scene-bg { background:linear-gradient(180deg,#1e1b4b,#312e81,#4338ca); }
+/* PLAYROOM scene */
+.scene-playroom .scene-bg { background:linear-gradient(180deg,#fef3c7,#fde68a,#a7f3d0); }
+/* SHOP scene */
+.scene-shop .scene-bg { background:linear-gradient(180deg,#ede9fe,#ddd6fe,#c4b5fd); }
 
-/* Stats */
-.stats-grid { display: flex; flex-direction: column; gap: 10px; }
+/* SCENE DECORATIONS */
+.scene-deco { position:absolute; pointer-events:none; }
+/* window */
+.deco-window {
+  right:16px; top:20px; width:70px; height:70px;
+  background:linear-gradient(135deg,#bfdbfe,#93c5fd);
+  border-radius:8px; border:4px solid #f9fafb;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.5);
+}
+.deco-window::before,.deco-window::after {
+  content:""; position:absolute; background:rgba(255,255,255,.5);
+}
+.deco-window::before { left:50%; top:0; bottom:0; width:2px; transform:translateX(-50%); }
+.deco-window::after { top:50%; left:0; right:0; height:2px; transform:translateY(-50%); }
+/* bookshelf */
+.deco-shelf {
+  left:12px; top:30px; width:52px; height:70px;
+  background:#92400e; border-radius:4px;
+}
+.deco-shelf::before {
+  content:""; position:absolute;
+  left:4px; top:10px; right:4px;
+  height:8px; background:#fbbf24; border-radius:2px;
+  box-shadow: 0 14px 0 #34d399, 0 28px 0 #60a5fa, 0 42px 0 #f472b6;
+}
+/* rug */
+.deco-rug {
+  bottom:30px; left:50%; transform:translateX(-50%);
+  width:160px; height:40px;
+  background:#fde68a; border-radius:50%;
+  border:6px solid #fbbf24;
+  box-shadow:0 0 0 3px #fde68a, 0 0 0 6px #fbbf24;
+}
+/* food bowl */
+.deco-bowl {
+  bottom:24px; left:60px; width:36px; height:22px;
+  background:#e5e7eb; border-radius:0 0 20px 20px;
+  border:3px solid #9ca3af;
+  cursor:pointer; pointer-events:all;
+  transition:transform .15s;
+}
+.deco-bowl:hover { transform:scale(1.15); }
+.deco-bowl::before {
+  content:"🍖"; position:absolute;
+  font-size:12px; top:-14px; left:50%; transform:translateX(-50%);
+}
+/* bed cushion */
+.deco-bed {
+  bottom:20px; right:50px; width:60px; height:32px;
+  background:#fce7f3; border-radius:16px;
+  border:3px solid #f9a8d4;
+  cursor:pointer; pointer-events:all;
+  transition:transform .15s;
+}
+.deco-bed:hover { transform:scale(1.1); }
+.deco-bed::before { content:"💤"; position:absolute; font-size:14px; top:-18px; left:50%; transform:translateX(-50%); }
+/* toy ball */
+.deco-ball {
+  bottom:28px; left:50%; margin-left:20px;
+  width:28px; height:28px;
+  background:radial-gradient(circle at 35% 35%, #f87171, #b91c1c);
+  border-radius:50%;
+  cursor:pointer; pointer-events:all;
+  transition:transform .15s;
+}
+.deco-ball:hover { transform:scale(1.2) rotate(20deg); }
+.deco-ball::before { content:"🎾"; position:absolute; font-size:10px; top:-16px; left:50%; transform:translateX(-50%); }
+
+/* GARDEN DECO */
+.deco-sun {
+  right:20px; top:15px; width:44px; height:44px;
+  background:#fbbf24; border-radius:50%;
+  box-shadow:0 0 0 6px #fde68a;
+}
+.deco-cloud {
+  position:absolute; background:#fff; border-radius:20px;
+  opacity:.9;
+}
+.deco-flower {
+  position:absolute; bottom:55%; font-size:28px; pointer-events:none;
+}
+/* BATH DECO */
+.deco-tub {
+  bottom:20px; left:50%; transform:translateX(-50%);
+  width:180px; height:70px;
+  background:#fff; border-radius:0 0 50px 50px;
+  border:4px solid #bae6fd;
+}
+.deco-tub::before {
+  content:""; position:absolute; inset:8px 20px;
+  background:linear-gradient(180deg,#e0f2fe,#bae6fd);
+  border-radius:0 0 40px 40px;
+}
+.deco-bubble {
+  position:absolute; background:rgba(255,255,255,.7);
+  border-radius:50%; border:1px solid rgba(255,255,255,.9);
+  animation:bubbleRise 2s ease-in infinite;
+}
+@keyframes bubbleRise {
+  0% { transform:translateY(0) scale(1); opacity:.7; }
+  100% { transform:translateY(-60px) scale(.5); opacity:0; }
+}
+/* BEDROOM DECO */
+.deco-moon {
+  right:24px; top:20px; width:40px; height:40px;
+  background:#fde68a; border-radius:50%;
+  box-shadow:0 0 16px #fde68a;
+}
+.deco-star {
+  position:absolute; background:#fde68a; border-radius:50%;
+  animation:twinkle 2s ease-in-out infinite;
+}
+@keyframes twinkle {
+  0%,100% { opacity:1; } 50% { opacity:.3; }
+}
+.deco-zz {
+  position:absolute; font-size:18px; color:#a5b4fc;
+  animation:floatZz 3s ease-in-out infinite;
+  pointer-events:none;
+}
+@keyframes floatZz {
+  0% { transform:translateY(0) rotate(-10deg); opacity:0; }
+  30% { opacity:1; }
+  100% { transform:translateY(-50px) rotate(10deg); opacity:0; }
+}
+
+/* PET WRAPPER - draggable */
+.pet-wrapper {
+  position:absolute;
+  width:90px; height:110px;
+  cursor:grab;
+  transition:filter .3s;
+  z-index:10;
+}
+.pet-wrapper:active { cursor:grabbing; }
+.pet-wrapper.is-clicked { animation:petClick .3s ease; }
+@keyframes petClick {
+  0%,100% { transform:scale(1); }
+  50% { transform:scale(1.18) translateY(-6px); }
+}
+.pet-wrapper.is-happy { filter:drop-shadow(0 0 8px rgba(251,191,36,.7)); }
+.pet-wrapper.is-sad { filter:grayscale(40%); }
+.pet-wrapper.is-sick { filter:hue-rotate(60deg) saturate(.6); }
+.pet-wrapper.is-excited { filter:drop-shadow(0 0 10px rgba(244,114,182,.8)); }
+
+/* floating heart on click */
+.float-heart {
+  position:absolute; pointer-events:none; font-size:20px; z-index:20;
+  animation:heartFloat 1.2s ease forwards;
+}
+@keyframes heartFloat {
+  0% { transform:translateY(0) scale(1); opacity:1; }
+  100% { transform:translateY(-60px) scale(.5); opacity:0; }
+}
+
+/* THOUGHT BUBBLE */
+.thought {
+  position:absolute; background:#fff; border-radius:14px;
+  padding:4px 10px; font-size:12px; white-space:nowrap;
+  box-shadow:0 2px 8px rgba(0,0,0,.12); pointer-events:none;
+  z-index:15; transition:opacity .4s; top:-32px; left:50%;
+  transform:translateX(-50%);
+}
+.thought::after {
+  content:""; position:absolute; bottom:-6px; left:50%;
+  transform:translateX(-50%);
+  border:4px solid transparent; border-top-color:#fff;
+}
+
+/* SCENE LABEL */
+.scene-label {
+  position:absolute; bottom:8px; right:10px;
+  background:rgba(255,255,255,.7); border-radius:12px;
+  padding:2px 8px; font-size:11px; color:#374151;
+  pointer-events:none; z-index:12;
+}
+
+/* ============ CSS PET ART ============ */
+/* Shared pet parts */
+.pet-figure { position:relative; width:90px; height:110px; }
+
+/* --- CAT --- */
+.breed-cat .pet-ear-l, .breed-cat .pet-ear-r {
+  position:absolute; top:2px; width:0; height:0;
+  border-left:10px solid transparent; border-right:10px solid transparent;
+  border-bottom:22px solid #f4a0a0;
+}
+.breed-cat .pet-ear-l { left:8px; transform:rotate(-10deg); }
+.breed-cat .pet-ear-r { right:8px; transform:rotate(10deg); }
+.breed-cat .pet-head {
+  position:absolute; top:14px; left:10px;
+  width:70px; height:62px;
+  background:#fde8d0; border-radius:50%;
+}
+.breed-cat .pet-body {
+  position:absolute; top:62px; left:12px;
+  width:66px; height:52px;
+  background:#fde8d0; border-radius:28px 28px 22px 22px;
+}
+.breed-cat .pet-tail {
+  position:absolute; bottom:18px; right:2px;
+  width:12px; height:44px;
+  background:#f4a0a0; border-radius:6px;
+  transform:rotate(25deg); transform-origin:bottom center;
+}
+.breed-cat .pet-limb-l, .breed-cat .pet-limb-r {
+  position:absolute; bottom:0; width:18px; height:16px;
+  background:#fde8d0; border-radius:0 0 10px 10px;
+}
+.breed-cat .pet-limb-l { left:10px; }
+.breed-cat .pet-limb-r { right:10px; }
+
+/* --- DOG --- */
+.breed-dog .pet-ear-l, .breed-dog .pet-ear-r {
+  position:absolute; top:18px; width:24px; height:34px;
+  background:#d4956a; border-radius:4px 4px 12px 12px;
+}
+.breed-dog .pet-ear-l { left:3px; transform:rotate(-8deg); }
+.breed-dog .pet-ear-r { right:3px; transform:rotate(8deg); }
+.breed-dog .pet-head {
+  position:absolute; top:10px; left:8px;
+  width:74px; height:66px;
+  background:#f5deb3; border-radius:50%;
+}
+.breed-dog .pet-snout {
+  position:absolute; top:44px; left:50%; transform:translateX(-50%);
+  width:36px; height:24px;
+  background:#e8c49a; border-radius:12px;
+}
+.breed-dog .pet-snout::before {
+  content:""; position:absolute; top:4px; left:50%;
+  transform:translateX(-50%);
+  width:10px; height:7px;
+  background:#8B4513; border-radius:50%;
+}
+.breed-dog .pet-body {
+  position:absolute; top:62px; left:8px;
+  width:74px; height:52px;
+  background:#f5deb3; border-radius:28px 28px 22px 22px;
+}
+.breed-dog .pet-tail {
+  position:absolute; bottom:22px; right:0;
+  width:10px; height:36px;
+  background:#e8c49a; border-radius:6px;
+  transform:rotate(30deg); transform-origin:bottom;
+}
+.breed-dog .pet-limb-l, .breed-dog .pet-limb-r {
+  position:absolute; bottom:0; width:18px; height:16px;
+  background:#f5deb3; border-radius:0 0 10px 10px;
+}
+.breed-dog .pet-limb-l { left:10px; }
+.breed-dog .pet-limb-r { right:10px; }
+
+/* --- RABBIT --- */
+.breed-rabbit .pet-ear-l, .breed-rabbit .pet-ear-r {
+  position:absolute; top:-20px; width:14px; height:52px;
+  background:#fff; border-radius:7px;
+  border:2px solid #ffb3d1;
+}
+.breed-rabbit .pet-ear-l { left:16px; transform:rotate(-8deg); }
+.breed-rabbit .pet-ear-r { right:16px; transform:rotate(8deg); }
+.breed-rabbit .pet-ear-l::before, .breed-rabbit .pet-ear-r::before {
+  content:""; position:absolute; inset:4px 3px;
+  background:#ffb3d1; border-radius:5px;
+}
+.breed-rabbit .pet-head {
+  position:absolute; top:16px; left:8px;
+  width:74px; height:68px;
+  background:#fff; border-radius:50%;
+  border:2px solid #f3e8ff;
+}
+.breed-rabbit .pet-body {
+  position:absolute; top:68px; left:10px;
+  width:70px; height:50px;
+  background:#fff; border-radius:28px 28px 24px 24px;
+  border:2px solid #f3e8ff;
+}
+.breed-rabbit .pet-tail {
+  position:absolute; bottom:10px; right:2px;
+  width:14px; height:14px;
+  background:#f3e8ff; border-radius:50%;
+}
+.breed-rabbit .pet-limb-l, .breed-rabbit .pet-limb-r {
+  position:absolute; bottom:0; width:18px; height:16px;
+  background:#fff; border-radius:0 0 10px 10px;
+  border:2px solid #f3e8ff;
+}
+.breed-rabbit .pet-limb-l { left:10px; }
+.breed-rabbit .pet-limb-r { right:10px; }
+
+/* --- PANDA --- */
+.breed-panda .pet-ear-l, .breed-panda .pet-ear-r {
+  position:absolute; top:8px; width:22px; height:22px;
+  background:#2d2d2d; border-radius:50%;
+}
+.breed-panda .pet-ear-l { left:10px; }
+.breed-panda .pet-ear-r { right:10px; }
+.breed-panda .pet-head {
+  position:absolute; top:16px; left:8px;
+  width:74px; height:66px;
+  background:#fff; border-radius:50%;
+}
+.breed-panda .pet-eye-patch-l, .breed-panda .pet-eye-patch-r {
+  position:absolute; width:20px; height:16px;
+  background:#2d2d2d; border-radius:50%; top:22px;
+}
+.breed-panda .pet-eye-patch-l { left:12px; transform:rotate(-10deg); }
+.breed-panda .pet-eye-patch-r { right:12px; transform:rotate(10deg); }
+.breed-panda .pet-body {
+  position:absolute; top:68px; left:8px;
+  width:74px; height:52px;
+  background:#fff; border-radius:28px 28px 22px 22px;
+  border:2px solid #e5e7eb;
+}
+.breed-panda .pet-limb-l, .breed-panda .pet-limb-r {
+  position:absolute; bottom:0; width:20px; height:18px;
+  background:#2d2d2d; border-radius:0 0 10px 10px;
+}
+.breed-panda .pet-limb-l { left:8px; }
+.breed-panda .pet-limb-r { right:8px; }
+
+/* --- HAMSTER --- */
+.breed-hamster .pet-head {
+  position:absolute; top:8px; left:4px;
+  width:82px; height:72px;
+  background:#f4c88e; border-radius:50%;
+}
+.breed-hamster .pet-cheek-l, .breed-hamster .pet-cheek-r {
+  position:absolute; width:28px; height:26px;
+  background:#ff9999; border-radius:50%; top:36px; opacity:.7;
+}
+.breed-hamster .pet-cheek-l { left:6px; }
+.breed-hamster .pet-cheek-r { right:6px; }
+.breed-hamster .pet-ear-l, .breed-hamster .pet-ear-r {
+  position:absolute; top:4px; width:18px; height:18px;
+  background:#f4c88e; border-radius:50%;
+  border:3px solid #ffbb77;
+}
+.breed-hamster .pet-ear-l { left:10px; }
+.breed-hamster .pet-ear-r { right:10px; }
+.breed-hamster .pet-body {
+  position:absolute; top:64px; left:8px;
+  width:74px; height:50px;
+  background:#f4c88e; border-radius:28px 28px 24px 24px;
+}
+.breed-hamster .pet-limb-l, .breed-hamster .pet-limb-r {
+  position:absolute; bottom:0; width:18px; height:14px;
+  background:#f4c88e; border-radius:0 0 10px 10px;
+}
+.breed-hamster .pet-limb-l { left:10px; }
+.breed-hamster .pet-limb-r { right:10px; }
+
+/* --- CHINCHILLA --- */
+.breed-chinchilla .pet-ear-l, .breed-chinchilla .pet-ear-r {
+  position:absolute; top:0; width:22px; height:26px;
+  background:#d4c5e2; border-radius:50% 50% 0 0;
+}
+.breed-chinchilla .pet-ear-l { left:12px; }
+.breed-chinchilla .pet-ear-r { right:12px; }
+.breed-chinchilla .pet-head {
+  position:absolute; top:16px; left:8px;
+  width:74px; height:66px;
+  background:#d4c5e2; border-radius:50%;
+}
+.breed-chinchilla .pet-body {
+  position:absolute; top:66px; left:6px;
+  width:78px; height:54px;
+  background:#d4c5e2; border-radius:28px 28px 24px 24px;
+}
+.breed-chinchilla .pet-tail {
+  position:absolute; bottom:14px; right:-2px;
+  width:20px; height:40px;
+  background:#c4b3d4; border-radius:10px;
+  transform:rotate(20deg);
+}
+.breed-chinchilla .pet-limb-l, .breed-chinchilla .pet-limb-r {
+  position:absolute; bottom:0; width:18px; height:16px;
+  background:#d4c5e2; border-radius:0 0 10px 10px;
+}
+.breed-chinchilla .pet-limb-l { left:10px; }
+.breed-chinchilla .pet-limb-r { right:10px; }
+
+/* SHARED EYE / NOSE / MOUTH - positioned on head */
+.pet-eye-l, .pet-eye-r {
+  position:absolute; width:10px; height:10px;
+  background:#2d2d2d; border-radius:50%;
+  top:26px;
+}
+.pet-eye-l { left:18px; }
+.pet-eye-r { right:18px; }
+.pet-eye-l::after, .pet-eye-r::after {
+  content:""; position:absolute;
+  width:3px; height:3px; background:#fff;
+  border-radius:50%; top:1px; right:1px;
+}
+/* sad eyes - droopy */
+.mood-sad .pet-eye-l, .mood-sad .pet-eye-r { border-radius:50% 50% 0 0; height:8px; }
+/* excited eyes - big sparkle */
+.mood-excited .pet-eye-l, .mood-excited .pet-eye-r {
+  width:12px; height:12px;
+  box-shadow:0 0 0 2px rgba(251,191,36,.5);
+}
+.pet-nose {
+  position:absolute; width:8px; height:6px;
+  background:#f4a0a0; border-radius:50%; top:36px; left:50%;
+  transform:translateX(-50%);
+}
+.breed-dog .pet-nose { width:12px; height:9px; background:#8B4513; top:10px; }
+.pet-mouth {
+  position:absolute; width:16px; height:6px;
+  border-bottom:2px solid #d97706; border-radius:0 0 8px 8px;
+  top:44px; left:50%; transform:translateX(-50%);
+}
+.mood-sad .pet-mouth {
+  border-bottom:none; border-top:2px solid #6b7280;
+  border-radius:8px 8px 0 0; top:46px;
+}
+.mood-excited .pet-mouth {
+  width:20px; height:9px; border-bottom-width:3px; border-color:#f472b6;
+}
+/* whiskers for cat */
+.breed-cat .whisker {
+  position:absolute; height:1px; background:#9ca3af; top:36px;
+}
+.breed-cat .whisker-l1 { left:4px; width:22px; transform:rotate(-10deg); }
+.breed-cat .whisker-l2 { left:4px; width:22px; transform:rotate(10deg); top:40px; }
+.breed-cat .whisker-r1 { right:4px; width:22px; transform:rotate(10deg); }
+.breed-cat .whisker-r2 { right:4px; width:22px; transform:rotate(-10deg); top:40px; }
+
+/* mood idle animations */
+@keyframes bobNormal { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+@keyframes bounceHappy { 0%,100%{transform:scale(1) translateY(0)} 50%{transform:scale(1.08) translateY(-8px)} }
+@keyframes wiggleExcited { 0%,100%{transform:rotate(-6deg)} 50%{transform:rotate(6deg)} }
+@keyframes swaySad { 0%,100%{transform:translateX(-3px) rotate(-2deg)} 50%{transform:translateX(3px) rotate(2deg)} }
+@keyframes pulseSick { 0%,100%{transform:scale(1)} 50%{transform:scale(.96)} }
+
+.pet-figure.mood-normal { animation:bobNormal 2s ease-in-out infinite; }
+.pet-figure.mood-happy { animation:bounceHappy .8s ease-in-out infinite; }
+.pet-figure.mood-excited { animation:wiggleExcited .35s ease-in-out infinite; }
+.pet-figure.mood-sad { animation:swaySad 2.5s ease-in-out infinite; }
+.pet-figure.mood-sick { animation:pulseSick 2s ease-in-out infinite; }
+
+/* COSTUME overlay emoji */
+.pet-costume {
+  position:absolute; top:-8px; left:50%; transform:translateX(-50%);
+  font-size:22px; z-index:5; pointer-events:none;
+}
+
+/* INFO BAR */
+.info-bar {
+  display:flex; gap:6px; flex-wrap:wrap; align-items:center;
+  padding:6px 10px; background:#fff; border-radius:14px;
+  box-shadow:0 2px 10px rgba(0,0,0,.06); margin-bottom:10px;
+  font-size:12px;
+}
+.info-name { font-weight:700; color:#374151; font-size:14px; }
+.badge { padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; }
+.badge-mood { background:#fce7f3; color:#be185d; }
+.badge-breed { background:#d1fae5; color:#065f46; }
+.badge-level { background:#fef3c7; color:#92400e; }
+.badge-age { background:#e0e7ff; color:#4338ca; }
+.badge-tag { background:#ede9fe; color:#5b21b6; }
+
+/* STATS compact 2-col grid */
+.stats-card {
+  background:#fff; border-radius:14px;
+  box-shadow:0 2px 10px rgba(0,0,0,.06);
+  padding:10px 12px; margin-bottom:10px;
+}
+.stats-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:6px 12px;
+}
 .stat-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  display:flex; align-items:center; gap:5px;
 }
-.stat-label {
-  font-size: 13px;
-  min-width: 80px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.stat-value {
-  font-size: 12px;
-  font-weight: 700;
-  min-width: 28px;
-  text-align: right;
-  color: #9ca3af;
-}
+.stat-row.full { grid-column:1/-1; }
+.stat-icon { font-size:12px; width:16px; text-align:center; }
 .stat-bar-bg {
-  flex: 1;
-  height: 10px;
-  background: #f3f4f6;
-  border-radius: 10px;
-  overflow: hidden;
+  flex:1; height:7px; background:#f3f4f6;
+  border-radius:6px; overflow:hidden; min-width:40px;
 }
-.stat-bar {
-  height: 100%;
-  border-radius: 10px;
-  transition: width 0.4s ease;
-}
-.stat-row.critical { animation: warningPulse 1.5s ease-in-out infinite; border-radius: 8px; padding: 2px 4px; }
-.stat-hunger .stat-bar { background: linear-gradient(90deg, #f87171, #fb923c); }
-.stat-thirst .stat-bar { background: linear-gradient(90deg, #60a5fa, #38bdf8); }
-.stat-mood .stat-bar { background: linear-gradient(90deg, #f9a8d4, #fbbf24); }
-.stat-energy .stat-bar { background: linear-gradient(90deg, #34d399, #86efac); }
-.stat-clean .stat-bar { background: linear-gradient(90deg, #67e8f9, #a5f3fc); }
-.stat-affection .stat-bar { background: linear-gradient(90deg, #f472b6, #fb7185); }
-.stat-growth .stat-bar { background: linear-gradient(90deg, #a78bfa, #c084fc); }
+.stat-bar { height:100%; border-radius:6px; transition:width .4s ease; }
+.stat-val { font-size:10px; font-weight:700; color:#9ca3af; width:22px; text-align:right; }
+.stat-row.critical .stat-bar-bg { animation:warnPulse 1.5s infinite; }
+@keyframes warnPulse { 0%,100%{box-shadow:0 0 0 rgba(239,68,68,0)} 50%{box-shadow:0 0 5px rgba(239,68,68,.5)} }
 
-.stats-info {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid #f3f4f6;
-  font-size: 12px;
-  color: #9ca3af;
-}
-.stats-info span strong { color: #374151; }
+.bar-hunger { background:linear-gradient(90deg,#f87171,#fb923c); }
+.bar-thirst { background:linear-gradient(90deg,#60a5fa,#38bdf8); }
+.bar-mood { background:linear-gradient(90deg,#f9a8d4,#fbbf24); }
+.bar-energy { background:linear-gradient(90deg,#34d399,#86efac); }
+.bar-clean { background:linear-gradient(90deg,#67e8f9,#a5f3fc); }
+.bar-affection { background:linear-gradient(90deg,#f472b6,#fb7185); }
+.bar-growth { background:linear-gradient(90deg,#a78bfa,#c084fc); }
 
-/* Tabs */
-.tabs {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 12px;
-  background: #f9fafb;
-  border-radius: 16px;
-  padding: 4px;
-}
-.tab-btn {
-  flex: 1;
-  padding: 8px 4px;
-  border: none;
-  border-radius: 12px;
-  background: transparent;
-  font-family: inherit;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-  color: #9ca3af;
-  font-weight: 600;
-}
-.tab-btn.active {
-  background: #fff;
-  color: #374151;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-}
-.tab-content { display: none; }
-.tab-content.active { display: block; animation: fadeIn 0.2s ease; }
-.actions-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
+/* TABS */
+.card { background:#fff; border-radius:14px; box-shadow:0 2px 10px rgba(0,0,0,.06); padding:10px; margin-bottom:10px; }
+.tabs { display:flex; gap:3px; background:#f9fafb; border-radius:12px; padding:3px; margin-bottom:8px; }
+.tab-btn { flex:1; padding:6px 2px; border:none; border-radius:10px; background:transparent; font-size:11px; cursor:pointer; transition:all .2s; color:#9ca3af; font-weight:600; font-family:inherit; }
+.tab-btn.active { background:#fff; color:#374151; box-shadow:0 1px 6px rgba(0,0,0,.08); }
+.tab-content { display:none; }
+.tab-content.active { display:block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+.tab-content.active { animation:fadeIn .15s ease; }
+.actions-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
 .action-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 12px 8px;
-  border: none;
-  border-radius: 16px;
-  font-family: inherit;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s;
-  text-align: center;
-  line-height: 1.3;
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+  padding:8px 4px; border:none; border-radius:12px; font-family:inherit;
+  font-size:10px; font-weight:600; cursor:pointer;
+  transition:transform .12s, box-shadow .12s; text-align:center; line-height:1.3;
 }
-.action-btn:hover { transform: scale(1.04); }
-.action-btn:active { transform: scale(0.95); }
-.action-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  transform: none;
-}
-.action-btn .btn-emoji { font-size: 24px; }
-.tab-feed .action-btn { background: linear-gradient(135deg, #fff7ed, #fef3c7); color: #92400e; }
-.tab-play .action-btn { background: linear-gradient(135deg, #ede9fe, #e0e7ff); color: #4338ca; }
-.tab-care .action-btn { background: linear-gradient(135deg, #d1fae5, #e0f2fe); color: #065f46; }
-.tab-bond .action-btn { background: linear-gradient(135deg, #fce7f3, #fdf2f8); color: #9d174d; }
+.action-btn:hover { transform:scale(1.05); box-shadow:0 2px 8px rgba(0,0,0,.1); }
+.action-btn:active { transform:scale(.94); }
+.action-btn:disabled { opacity:.4; cursor:not-allowed; transform:none; }
+.btn-emoji { font-size:20px; }
+.tab-feed .action-btn { background:linear-gradient(135deg,#fff7ed,#fef3c7); color:#92400e; }
+.tab-play .action-btn { background:linear-gradient(135deg,#ede9fe,#e0e7ff); color:#4338ca; }
+.tab-care .action-btn { background:linear-gradient(135deg,#d1fae5,#e0f2fe); color:#065f46; }
+.tab-bond .action-btn { background:linear-gradient(135deg,#fce7f3,#fdf2f8); color:#9d174d; }
 
-/* Toast */
-.toast-container {
-  position: fixed;
-  bottom: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  flex-direction: column-reverse;
-  align-items: center;
-  gap: 8px;
-  z-index: 999;
-  pointer-events: none;
-}
-.toast {
-  background: #fff;
-  border-radius: 20px;
-  padding: 8px 16px;
-  font-size: 14px;
-  font-weight: 700;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-  animation: toastUp 1.5s ease forwards;
-  white-space: nowrap;
-}
+/* TOAST */
+.toast-container { position:fixed; bottom:70px; left:50%; transform:translateX(-50%); display:flex; flex-direction:column-reverse; align-items:center; gap:6px; z-index:999; pointer-events:none; }
+.toast { background:#fff; border-radius:16px; padding:6px 14px; font-size:13px; font-weight:700; box-shadow:0 3px 12px rgba(0,0,0,.12); animation:toastUp 1.5s ease forwards; white-space:nowrap; }
+@keyframes toastUp { 0%{opacity:1;transform:translateY(0)} 100%{opacity:0;transform:translateY(-50px)} }
 
-/* Modals */
-.overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.4);
-  backdrop-filter: blur(4px);
-  z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-}
-.overlay.hidden { display: none; }
-.modal-card {
-  background: #fff;
-  border-radius: 28px;
-  padding: 28px 24px;
-  max-width: 360px;
-  width: 100%;
-  box-shadow: 0 16px 48px rgba(0,0,0,0.15);
-  animation: fadeIn 0.2s ease;
-  text-align: center;
-}
-.modal-emoji { font-size: 64px; margin-bottom: 12px; }
-.modal-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
-.modal-text { font-size: 14px; color: #6b7280; margin-bottom: 20px; line-height: 1.5; }
-.modal-btn {
-  display: inline-block;
-  padding: 10px 24px;
-  border: none;
-  border-radius: 20px;
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: transform 0.15s;
-  margin: 4px;
-}
-.modal-btn:active { transform: scale(0.95); }
-.modal-btn-primary { background: linear-gradient(135deg, #c084fc, #f472b6); color: #fff; }
-.modal-btn-secondary { background: #f3f4f6; color: #374151; }
+/* MODALS */
+.overlay { position:fixed; inset:0; background:rgba(0,0,0,.4); backdrop-filter:blur(4px); z-index:200; display:flex; align-items:center; justify-content:center; padding:16px; }
+.overlay.hidden { display:none; }
+.modal-card { background:#fff; border-radius:24px; padding:24px 20px; max-width:340px; width:100%; box-shadow:0 12px 40px rgba(0,0,0,.15); animation:fadeIn .2s ease; text-align:center; }
+.modal-emoji { font-size:56px; margin-bottom:10px; }
+.modal-title { font-size:18px; font-weight:700; margin-bottom:6px; }
+.modal-text { font-size:13px; color:#6b7280; margin-bottom:16px; line-height:1.5; }
+.modal-btn { display:inline-block; padding:9px 20px; border:none; border-radius:16px; font-family:inherit; font-size:13px; font-weight:700; cursor:pointer; transition:transform .12s; margin:3px; }
+.modal-btn:active { transform:scale(.95); }
+.modal-btn-primary { background:linear-gradient(135deg,#c084fc,#f472b6); color:#fff; }
+.modal-btn-secondary { background:#f3f4f6; color:#374151; }
+.name-input { width:100%; padding:9px 14px; border:2px solid #e0e7ff; border-radius:12px; font-family:inherit; font-size:15px; text-align:center; outline:none; margin-bottom:14px; transition:border-color .2s; }
+.name-input:focus { border-color:#c084fc; }
+.breed-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-bottom:16px; }
+.breed-btn { padding:10px 6px; border:2px solid #e0e7ff; border-radius:14px; background:#fafafa; font-family:inherit; cursor:pointer; transition:all .2s; text-align:center; }
+.breed-btn:hover, .breed-btn.selected { background:#ede9fe; border-color:#c084fc; }
+.breed-btn .b-emoji { font-size:28px; display:block; }
+.breed-btn .b-name { font-size:10px; font-weight:600; color:#374151; }
+.event-actions { display:flex; flex-direction:column; gap:7px; }
 
-/* Naming modal */
-.name-input {
-  width: 100%;
-  padding: 10px 16px;
-  border: 2px solid #e0e7ff;
-  border-radius: 16px;
-  font-family: inherit;
-  font-size: 16px;
-  text-align: center;
-  outline: none;
-  margin-bottom: 16px;
-  transition: border-color 0.2s;
-}
-.name-input:focus { border-color: #c084fc; }
-.breed-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-bottom: 20px;
-}
-.breed-btn {
-  padding: 12px 8px;
-  border: 2px solid #e0e7ff;
-  border-radius: 16px;
-  background: #fafafa;
-  font-family: inherit;
-  cursor: pointer;
-  transition: all 0.2s;
-  text-align: center;
-}
-.breed-btn:hover { background: #ede9fe; border-color: #c084fc; }
-.breed-btn.selected { background: #ede9fe; border-color: #c084fc; }
-.breed-btn .b-emoji { font-size: 32px; display: block; }
-.breed-btn .b-name { font-size: 11px; font-weight: 600; color: #374151; }
+/* LEVEL UP */
+#levelup-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:500; display:flex; align-items:center; justify-content:center; }
+#levelup-overlay.hidden { display:none; }
+.levelup-card { background:#fff; border-radius:28px; padding:28px 24px; text-align:center; box-shadow:0 16px 50px rgba(0,0,0,.2); }
+.levelup-pet { font-size:70px; display:block; animation:lvlBounce .6s ease-in-out infinite; }
+@keyframes lvlBounce { 0%,100%{transform:scale(1) rotate(0)} 25%{transform:scale(1.2) rotate(-5deg)} 75%{transform:scale(1.2) rotate(5deg)} }
+.levelup-title { font-size:26px; font-weight:700; background:linear-gradient(135deg,#c084fc,#f472b6,#fbbf24); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin:10px 0 6px; }
+.levelup-bonuses { font-size:13px; color:#6b7280; margin:8px 0; }
 
-/* Level up overlay */
-#levelup-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.6);
-  z-index: 500;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-#levelup-overlay.hidden { display: none; }
-.levelup-card {
-  background: #fff;
-  border-radius: 32px;
-  padding: 32px 28px;
-  text-align: center;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-}
-.levelup-emoji {
-  font-size: 80px;
-  display: block;
-  animation: levelUpBounce 0.6s ease-in-out infinite;
-}
-.levelup-title {
-  font-size: 28px;
-  font-weight: 700;
-  background: linear-gradient(135deg, #c084fc, #f472b6, #fbbf24);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin: 12px 0 8px;
-}
-.sparkles {
-  font-size: 24px;
-  letter-spacing: 4px;
-}
-.levelup-bonuses {
-  font-size: 14px;
-  color: #6b7280;
-  margin: 12px 0;
-}
+/* PHOTO GALLERY */
+.photo-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px; }
+.polaroid { background:#fff; border-radius:10px; padding:6px 6px 20px; box-shadow:0 3px 10px rgba(0,0,0,.1); text-align:center; transform:rotate(var(--rot,0deg)); }
+.polaroid-emoji { font-size:28px; }
+.polaroid-info { font-size:8px; color:#9ca3af; margin-top:3px; line-height:1.4; }
 
-/* Photo gallery */
-.photo-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-top: 12px;
-}
-.polaroid {
-  background: #fff;
-  border-radius: 12px;
-  padding: 8px 8px 24px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  text-align: center;
-  transform: rotate(var(--rot, 0deg));
-}
-.polaroid-emoji { font-size: 32px; }
-.polaroid-info { font-size: 9px; color: #9ca3af; margin-top: 4px; line-height: 1.4; }
-
-/* Event modal */
-.event-actions { display: flex; flex-direction: column; gap: 8px; }
-
-/* Reset area */
-.reset-area {
-  text-align: center;
-  padding: 8px;
-}
-.reset-btn {
-  background: none;
-  border: 1px solid #fca5a5;
-  color: #ef4444;
-  border-radius: 12px;
-  padding: 6px 16px;
-  font-family: inherit;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.reset-btn:hover { background: #fef2f2; }
+.reset-area { text-align:center; padding:6px; }
+.reset-btn { background:none; border:1px solid #fca5a5; color:#ef4444; border-radius:10px; padding:5px 14px; font-family:inherit; font-size:11px; cursor:pointer; }
+.reset-btn:hover { background:#fef2f2; }
 </style>
 </head>
 <body>
@@ -487,184 +620,118 @@ body {
 <div class="topbar">
   <a href="../index.html">← 返回</a>
   <div class="topbar-title">电子宠物乐园 🐾</div>
-  <div class="topbar-right">
-    <button class="photo-btn" onclick="openPhotoGallery()" title="相册">📷</button>
+  <div style="width:60px;display:flex;justify-content:flex-end">
+    <button class="photo-btn" onclick="openPhotoGallery()">📷</button>
   </div>
 </div>
 
-<!-- MAIN -->
-<div class="main">
+<div class="wrap">
 
-  <!-- PET DISPLAY -->
-  <div class="pet-display card" id="pet-display">
-    <div class="thought-bubble" id="thought-bubble">在想什么呢…</div>
-    <span class="pet-emoji anim-normal" id="pet-emoji">🐱</span>
-    <div class="pet-name" id="pet-name">我的宠物</div>
-    <div class="status-badges" id="status-badges">
-      <span class="badge badge-age" id="badge-age">年龄 0天</span>
-      <span class="badge badge-mood" id="badge-mood">普通</span>
-      <span class="badge badge-breed" id="badge-breed">猫咪</span>
-      <span class="badge badge-level" id="badge-level">Lv.1</span>
+<!-- SCENE -->
+<div class="scene scene-room" id="scene">
+  <div class="scene-bg"></div>
+  <!-- Room decorations -->
+  <div id="scene-decos"></div>
+  <!-- Pet -->
+  <div class="pet-wrapper" id="pet-wrapper" style="left:160px;top:150px">
+    <div class="thought" id="thought">在想什么呢…</div>
+    <div class="pet-figure breed-cat mood-normal" id="pet-figure">
+      <div class="pet-ear-l"></div>
+      <div class="pet-ear-r"></div>
+      <div class="pet-head">
+        <div class="pet-eye-l"></div>
+        <div class="pet-eye-r"></div>
+        <div class="pet-nose"></div>
+        <div class="pet-mouth"></div>
+        <div class="whisker whisker-l1"></div>
+        <div class="whisker whisker-l2"></div>
+        <div class="whisker whisker-r1"></div>
+        <div class="whisker whisker-r2"></div>
+      </div>
+      <div class="pet-body">
+        <div class="pet-limb-l"></div>
+        <div class="pet-limb-r"></div>
+      </div>
     </div>
+    <div class="pet-costume" id="pet-costume"></div>
   </div>
+  <div class="scene-label" id="scene-label">🏠 我的房间</div>
+</div>
 
-  <!-- STATS PANEL -->
-  <div class="card">
-    <div class="stats-grid" id="stats-grid">
-      <div class="stat-row stat-hunger" id="row-hunger">
-        <span class="stat-label">🍖 饱食度</span>
-        <div class="stat-bar-bg"><div class="stat-bar" id="bar-hunger" style="width:80%"></div></div>
-        <span class="stat-value" id="val-hunger">80</span>
-      </div>
-      <div class="stat-row stat-thirst" id="row-thirst">
-        <span class="stat-label">💧 口渴度</span>
-        <div class="stat-bar-bg"><div class="stat-bar" id="bar-thirst" style="width:80%"></div></div>
-        <span class="stat-value" id="val-thirst">80</span>
-      </div>
-      <div class="stat-row stat-mood" id="row-mood">
-        <span class="stat-label">😊 心情值</span>
-        <div class="stat-bar-bg"><div class="stat-bar" id="bar-mood" style="width:80%"></div></div>
-        <span class="stat-value" id="val-mood">80</span>
-      </div>
-      <div class="stat-row stat-energy" id="row-energy">
-        <span class="stat-label">⚡ 精力值</span>
-        <div class="stat-bar-bg"><div class="stat-bar" id="bar-energy" style="width:80%"></div></div>
-        <span class="stat-value" id="val-energy">80</span>
-      </div>
-      <div class="stat-row stat-clean" id="row-clean">
-        <span class="stat-label">🧼 清洁度</span>
-        <div class="stat-bar-bg"><div class="stat-bar" id="bar-clean" style="width:80%"></div></div>
-        <span class="stat-value" id="val-clean">80</span>
-      </div>
-      <div class="stat-row stat-affection" id="row-affection">
-        <span class="stat-label">💕 亲密度</span>
-        <div class="stat-bar-bg"><div class="stat-bar" id="bar-affection" style="width:80%"></div></div>
-        <span class="stat-value" id="val-affection">80</span>
-      </div>
-      <div class="stat-row stat-growth" id="row-growth">
-        <span class="stat-label">🌱 成长点</span>
-        <div class="stat-bar-bg"><div class="stat-bar" id="bar-growth" style="width:0%"></div></div>
-        <span class="stat-value" id="val-growth">0</span>
-      </div>
-    </div>
-    <div class="stats-info" id="stats-info">
-      <span>年龄 <strong id="info-age">0</strong>天</span>
-      <span>等级 <strong id="info-level">1</strong></span>
-      <span>互动 <strong id="info-interactions">0</strong>次</span>
-      <span>品种 <strong id="info-breed">猫咪</strong></span>
-    </div>
-  </div>
+<!-- INFO BAR -->
+<div class="info-bar" id="info-bar">
+  <span class="info-name" id="info-name">我的宠物</span>
+  <span class="badge badge-breed" id="badge-breed">猫咪</span>
+  <span class="badge badge-age" id="badge-age">0天</span>
+  <span class="badge badge-level" id="badge-level">Lv.1</span>
+  <span class="badge badge-mood" id="badge-mood">普通</span>
+</div>
 
-  <!-- ACTIONS TABS -->
-  <div class="card">
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('feed')">🍽️ 喂食</button>
-      <button class="tab-btn" onclick="switchTab('play')">🎮 玩耍</button>
-      <button class="tab-btn" onclick="switchTab('care')">🛁 护理</button>
-      <button class="tab-btn" onclick="switchTab('bond')">💬 互动</button>
-    </div>
-
-    <!-- FEED -->
-    <div class="tab-content tab-feed active" id="tab-feed">
-      <div class="actions-grid">
-        <button class="action-btn" id="btn-fruit" onclick="doAction('fruit')">
-          <span class="btn-emoji">🍎</span>喂水果
-        </button>
-        <button class="action-btn" id="btn-meat" onclick="doAction('meat')">
-          <span class="btn-emoji">🍖</span>喂肉肉
-        </button>
-        <button class="action-btn" id="btn-cake" onclick="doAction('cake')">
-          <span class="btn-emoji">🍰</span>喂蛋糕
-        </button>
-        <button class="action-btn" id="btn-water" onclick="doAction('water')">
-          <span class="btn-emoji">💧</span>喂水
-        </button>
-        <button class="action-btn" id="btn-meal" onclick="doAction('meal')">
-          <span class="btn-emoji">🍵</span>喂营养餐
-        </button>
-        <button class="action-btn" id="btn-snack" onclick="doAction('snack')">
-          <span class="btn-emoji">🍬</span>喂零食
-        </button>
-      </div>
-    </div>
-
-    <!-- PLAY -->
-    <div class="tab-content tab-play" id="tab-play">
-      <div class="actions-grid">
-        <button class="action-btn" id="btn-ball" onclick="doAction('ball')">
-          <span class="btn-emoji">🎾</span>扔球玩
-        </button>
-        <button class="action-btn" id="btn-puzzle" onclick="doAction('puzzle')">
-          <span class="btn-emoji">🧩</span>益智游戏
-        </button>
-        <button class="action-btn" id="btn-walk" onclick="doAction('walk')">
-          <span class="btn-emoji">🌿</span>户外散步
-        </button>
-        <button class="action-btn" id="btn-perform" onclick="doAction('perform')">
-          <span class="btn-emoji">🎪</span>表演才艺
-        </button>
-        <button class="action-btn" id="btn-paint" onclick="doAction('paint')">
-          <span class="btn-emoji">🎨</span>一起画画
-        </button>
-        <button class="action-btn" id="btn-run" onclick="doAction('run')">
-          <span class="btn-emoji">🏃</span>跑步锻炼
-        </button>
-      </div>
-    </div>
-
-    <!-- CARE -->
-    <div class="tab-content tab-care" id="tab-care">
-      <div class="actions-grid">
-        <button class="action-btn" id="btn-bath" onclick="doAction('bath')">
-          <span class="btn-emoji">🛁</span>洗澡
-        </button>
-        <button class="action-btn" id="btn-sleep" onclick="doAction('sleep')">
-          <span class="btn-emoji">💤</span>哄睡觉
-        </button>
-        <button class="action-btn" id="btn-medicine" onclick="doAction('medicine')">
-          <span class="btn-emoji">💊</span>喂药
-        </button>
-        <button class="action-btn" id="btn-groom" onclick="doAction('groom')">
-          <span class="btn-emoji">💇</span>梳毛发型
-        </button>
-        <button class="action-btn" id="btn-temp" onclick="doAction('temp')">
-          <span class="btn-emoji">🌡️</span>量体温
-        </button>
-      </div>
-    </div>
-
-    <!-- BOND -->
-    <div class="tab-content tab-bond" id="tab-bond">
-      <div class="actions-grid">
-        <button class="action-btn" id="btn-hug" onclick="doAction('hug')">
-          <span class="btn-emoji">🤗</span>抱一抱
-        </button>
-        <button class="action-btn" id="btn-sing" onclick="doAction('sing')">
-          <span class="btn-emoji">🎵</span>唱歌给它听
-        </button>
-        <button class="action-btn" id="btn-story" onclick="doAction('story')">
-          <span class="btn-emoji">📚</span>讲故事
-        </button>
-        <button class="action-btn" id="btn-photo" onclick="doAction('photo')">
-          <span class="btn-emoji">🪞</span>拍照留念
-        </button>
-        <button class="action-btn" id="btn-dress" onclick="doAction('dress')">
-          <span class="btn-emoji">👗</span>换装扮
-        </button>
-        <button class="action-btn" id="btn-diary" onclick="doAction('diary')">
-          <span class="btn-emoji">💌</span>写日记
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- RESET -->
-  <div class="reset-area">
-    <button class="reset-btn" onclick="confirmReset()">🔄 重置宠物</button>
+<!-- STATS -->
+<div class="stats-card">
+  <div class="stats-grid">
+    <div class="stat-row" id="row-hunger"><span class="stat-icon">🍖</span><div class="stat-bar-bg"><div class="stat-bar bar-hunger" id="bar-hunger"></div></div><span class="stat-val" id="val-hunger">80</span></div>
+    <div class="stat-row" id="row-thirst"><span class="stat-icon">💧</span><div class="stat-bar-bg"><div class="stat-bar bar-thirst" id="bar-thirst"></div></div><span class="stat-val" id="val-thirst">80</span></div>
+    <div class="stat-row" id="row-mood"><span class="stat-icon">😊</span><div class="stat-bar-bg"><div class="stat-bar bar-mood" id="bar-mood"></div></div><span class="stat-val" id="val-mood">80</span></div>
+    <div class="stat-row" id="row-energy"><span class="stat-icon">⚡</span><div class="stat-bar-bg"><div class="stat-bar bar-energy" id="bar-energy"></div></div><span class="stat-val" id="val-energy">80</span></div>
+    <div class="stat-row" id="row-clean"><span class="stat-icon">🧼</span><div class="stat-bar-bg"><div class="stat-bar bar-clean" id="bar-clean"></div></div><span class="stat-val" id="val-clean">80</span></div>
+    <div class="stat-row" id="row-affection"><span class="stat-icon">💕</span><div class="stat-bar-bg"><div class="stat-bar bar-affection" id="bar-affection"></div></div><span class="stat-val" id="val-affection">50</span></div>
+    <div class="stat-row full" id="row-growth"><span class="stat-icon">🌱</span><div class="stat-bar-bg"><div class="stat-bar bar-growth" id="bar-growth"></div></div><span class="stat-val" id="val-growth">0</span></div>
   </div>
 </div>
 
-<!-- TOAST CONTAINER -->
+<!-- ACTIONS -->
+<div class="card">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('feed')">🍽️喂食</button>
+    <button class="tab-btn" onclick="switchTab('play')">🎮玩耍</button>
+    <button class="tab-btn" onclick="switchTab('care')">🛁护理</button>
+    <button class="tab-btn" onclick="switchTab('bond')">💬互动</button>
+  </div>
+  <div class="tab-content tab-feed active" id="tab-feed">
+    <div class="actions-grid">
+      <button class="action-btn" id="btn-fruit" onclick="doAction('fruit')"><span class="btn-emoji">🍎</span>喂水果</button>
+      <button class="action-btn" id="btn-meat" onclick="doAction('meat')"><span class="btn-emoji">🍖</span>喂肉肉</button>
+      <button class="action-btn" id="btn-cake" onclick="doAction('cake')"><span class="btn-emoji">🍰</span>喂蛋糕</button>
+      <button class="action-btn" id="btn-water" onclick="doAction('water')"><span class="btn-emoji">💧</span>喂水</button>
+      <button class="action-btn" id="btn-meal" onclick="doAction('meal')"><span class="btn-emoji">🍵</span>营养餐</button>
+      <button class="action-btn" id="btn-snack" onclick="doAction('snack')"><span class="btn-emoji">🍬</span>喂零食</button>
+    </div>
+  </div>
+  <div class="tab-content tab-play" id="tab-play">
+    <div class="actions-grid">
+      <button class="action-btn" id="btn-ball" onclick="doAction('ball')"><span class="btn-emoji">🎾</span>扔球玩</button>
+      <button class="action-btn" id="btn-puzzle" onclick="doAction('puzzle')"><span class="btn-emoji">🧩</span>益智游戏</button>
+      <button class="action-btn" id="btn-walk" onclick="doAction('walk')"><span class="btn-emoji">🌿</span>户外散步</button>
+      <button class="action-btn" id="btn-perform" onclick="doAction('perform')"><span class="btn-emoji">🎪</span>表演才艺</button>
+      <button class="action-btn" id="btn-paint" onclick="doAction('paint')"><span class="btn-emoji">🎨</span>一起画画</button>
+      <button class="action-btn" id="btn-run" onclick="doAction('run')"><span class="btn-emoji">🏃</span>跑步锻炼</button>
+    </div>
+  </div>
+  <div class="tab-content tab-care" id="tab-care">
+    <div class="actions-grid">
+      <button class="action-btn" id="btn-bath" onclick="doAction('bath')"><span class="btn-emoji">🛁</span>洗澡</button>
+      <button class="action-btn" id="btn-sleep" onclick="doAction('sleep')"><span class="btn-emoji">💤</span>哄睡觉</button>
+      <button class="action-btn" id="btn-medicine" onclick="doAction('medicine')"><span class="btn-emoji">💊</span>喂药</button>
+      <button class="action-btn" id="btn-groom" onclick="doAction('groom')"><span class="btn-emoji">💇</span>梳毛发型</button>
+      <button class="action-btn" id="btn-temp" onclick="doAction('temp')"><span class="btn-emoji">🌡️</span>量体温</button>
+    </div>
+  </div>
+  <div class="tab-content tab-bond" id="tab-bond">
+    <div class="actions-grid">
+      <button class="action-btn" id="btn-hug" onclick="doAction('hug')"><span class="btn-emoji">🤗</span>抱一抱</button>
+      <button class="action-btn" id="btn-sing" onclick="doAction('sing')"><span class="btn-emoji">🎵</span>唱歌</button>
+      <button class="action-btn" id="btn-story" onclick="doAction('story')"><span class="btn-emoji">📚</span>讲故事</button>
+      <button class="action-btn" id="btn-photo" onclick="doAction('photo')"><span class="btn-emoji">📸</span>拍照留念</button>
+      <button class="action-btn" id="btn-dress" onclick="doAction('dress')"><span class="btn-emoji">👗</span>换装扮</button>
+      <button class="action-btn" id="btn-diary" onclick="doAction('diary')"><span class="btn-emoji">💌</span>写日记</button>
+    </div>
+  </div>
+</div>
+
+<div class="reset-area"><button class="reset-btn" onclick="confirmReset()">🔄 重置宠物</button></div>
+</div>
+
 <div class="toast-container" id="toast-container"></div>
 
 <!-- NAMING MODAL -->
@@ -672,27 +739,15 @@ body {
   <div class="modal-card">
     <div class="modal-emoji">🐾</div>
     <div class="modal-title">欢迎来到宠物乐园！</div>
-    <div class="modal-text">给你的宠物起个名字，然后选择品种吧~</div>
+    <div class="modal-text">给你的宠物起个名字，选择品种吧~</div>
     <input class="name-input" id="pet-name-input" type="text" placeholder="输入宠物名字..." maxlength="12">
     <div class="breed-grid" id="breed-grid">
-      <button class="breed-btn selected" onclick="selectBreed(0)">
-        <span class="b-emoji">🐱</span><span class="b-name">猫咪</span>
-      </button>
-      <button class="breed-btn" onclick="selectBreed(1)">
-        <span class="b-emoji">🐶</span><span class="b-name">犬犬</span>
-      </button>
-      <button class="breed-btn" onclick="selectBreed(2)">
-        <span class="b-emoji">🐰</span><span class="b-name">兔子</span>
-      </button>
-      <button class="breed-btn" onclick="selectBreed(3)">
-        <span class="b-emoji">🐼</span><span class="b-name">熊猫</span>
-      </button>
-      <button class="breed-btn" onclick="selectBreed(4)">
-        <span class="b-emoji">🐭</span><span class="b-name">龙猫</span>
-      </button>
-      <button class="breed-btn" onclick="selectBreed(5)">
-        <span class="b-emoji">🐹</span><span class="b-name">仓鼠</span>
-      </button>
+      <button class="breed-btn selected" onclick="selectBreed(0)"><span class="b-emoji">🐱</span><span class="b-name">猫咪</span></button>
+      <button class="breed-btn" onclick="selectBreed(1)"><span class="b-emoji">🐶</span><span class="b-name">犬犬</span></button>
+      <button class="breed-btn" onclick="selectBreed(2)"><span class="b-emoji">🐰</span><span class="b-name">兔子</span></button>
+      <button class="breed-btn" onclick="selectBreed(3)"><span class="b-emoji">🐼</span><span class="b-name">熊猫</span></button>
+      <button class="breed-btn" onclick="selectBreed(4)"><span class="b-emoji">🐹</span><span class="b-name">仓鼠</span></button>
+      <button class="breed-btn" onclick="selectBreed(5)"><span class="b-emoji">🐭</span><span class="b-name">龙猫</span></button>
     </div>
     <button class="modal-btn modal-btn-primary" onclick="confirmNaming()">开始养宠 💕</button>
   </div>
@@ -702,240 +757,442 @@ body {
 <div class="overlay hidden" id="event-overlay">
   <div class="modal-card">
     <div class="modal-emoji" id="event-emoji">🌧️</div>
-    <div class="modal-title" id="event-title">事件标题</div>
-    <div class="modal-text" id="event-text">事件描述</div>
+    <div class="modal-title" id="event-title">事件</div>
+    <div class="modal-text" id="event-text">描述</div>
     <div class="event-actions" id="event-actions"></div>
   </div>
 </div>
 
-<!-- LEVEL UP OVERLAY -->
+<!-- LEVEL UP -->
 <div id="levelup-overlay" class="hidden">
   <div class="levelup-card">
-    <span class="sparkles">✨ ✨ ✨</span>
-    <span class="levelup-emoji" id="levelup-pet-emoji">🐱</span>
+    <span style="font-size:22px;letter-spacing:4px">✨ ✨ ✨</span>
+    <span class="levelup-pet" id="levelup-pet">🎉</span>
     <div class="levelup-title" id="levelup-title">升级啦！Lv.2</div>
-    <div class="levelup-bonuses" id="levelup-bonuses">能力提升中…</div>
-    <span class="sparkles">🌟 🎉 🌟</span>
+    <div class="levelup-bonuses" id="levelup-bonuses"></div>
+    <span style="font-size:22px;letter-spacing:4px">🌟 🎉 🌟</span>
   </div>
 </div>
 
-<!-- PHOTO GALLERY OVERLAY -->
+<!-- PHOTO GALLERY -->
 <div class="overlay hidden" id="gallery-overlay">
-  <div class="modal-card" style="max-width:400px">
+  <div class="modal-card" style="max-width:380px">
     <div class="modal-title">📷 照片相册</div>
     <div class="photo-grid" id="photo-grid"></div>
-    <div style="margin-top:16px">
-      <button class="modal-btn modal-btn-secondary" onclick="closeGallery()">关闭</button>
-    </div>
+    <div style="margin-top:14px"><button class="modal-btn modal-btn-secondary" onclick="closeGallery()">关闭</button></div>
   </div>
 </div>
 
-
 <script>
-// === STATE ===
+// ===== BREEDS =====
 const BREEDS = [
-  {name:'猫咪', emoji:['😸','🐱','😿','🤒','😻']},
-  {name:'犬犬', emoji:['😄','🐶','😢','🤕','🤩']},
-  {name:'兔子', emoji:['🥰','🐰','🥺','😷','🥳']},
-  {name:'熊猫', emoji:['🐼','🐼','😔','😵','🎉']},
-  {name:'龙猫', emoji:['🐭','🐭','😞','🤢','😍']},
-  {name:'仓鼠', emoji:['🐹','🐹','😟','🤧','🤭']}
+  {name:'猫咪', cls:'breed-cat'},
+  {name:'犬犬', cls:'breed-dog'},
+  {name:'兔子', cls:'breed-rabbit'},
+  {name:'熊猫', cls:'breed-panda'},
+  {name:'仓鼠', cls:'breed-hamster'},
+  {name:'龙猫', cls:'breed-chinchilla'}
 ];
+const BREED_EMOJIS = ['🐱','🐶','🐰','🐼','🐹','🐭'];
 const MOODS = ['happy','normal','sad','sick','excited'];
-const MOOD_LABELS = {happy:'开心✨',normal:'普通',sad:'难过',sick:'生病',excited:'兴奋🎉'};
-const MOOD_BG = {
-  happy:'linear-gradient(135deg,#fef3c7,#fed7aa)',
-  normal:'linear-gradient(135deg,#e0e7ff,#ede9fe)',
-  sad:'linear-gradient(135deg,#dbeafe,#e0e7ff)',
-  sick:'linear-gradient(135deg,#d1fae5,#a7f3d0)',
-  excited:'linear-gradient(135deg,#fce7f3,#fdf2f8)'
-};
-
+const MOOD_LABELS = {happy:'开心✨',normal:'普通',sad:'难过',sick:'生病😷',excited:'兴奋🎉'};
+const COSTUMES = ['','🎩','🎀','👑','🎓','🌸'];
 const THOUGHTS = {
-  normal:['在想什么呢…','好无聊哦~','主人在吗？','饿了吗…','要不要玩点什么？'],
-  happy:['好开心呀！','今天真棒！','主人最好了💕','嘿嘿嘿~','哇哦！'],
-  sad:['好难过…','不开心了…','呜呜呜…','想要抱抱…','没精神…'],
-  excited:['哇哇哇！','超兴奋！','快来快来！','好期待好期待！','啊啊啊！'],
-  sick:['头好晕…','不舒服…','好难受哦…','想睡觉…','需要吃药了吗？']
+  normal:['在想什么呢…','好无聊哦~','主人在吗？','饿了吗…','要不要玩？'],
+  happy:['好开心呀！','今天真棒！','主人最好了','嘿嘿~','哇哦！'],
+  sad:['好难过…','不开心了…','呜呜…','想要抱抱…','没精神…'],
+  excited:['哇哇哇！','超兴奋！','快来快来！','好期待！'],
+  sick:['头好晕…','不舒服…','好难受哦…','想睡觉…']
 };
-const IDLE_THOUGHTS = ['咕~咕咕~','有没有零食？','今天天气真好呀','主人去哪了？','想出去玩！','肚子唱歌了…','困了~','好想被夸夸','这是什么气味？'];
+const IDLE_THOUGHTS = ['咕~咕咕~','有没有零食？','今天天气真好','主人去哪了？','想出去玩！','困了~','好想被夸夸'];
 
-let S; // state
+// ===== STATE =====
+let S;
 const DEFAULT_STATE = () => ({
   name:'',breed:0,age:0,level:1,interactions:0,
   hunger:80,thirst:80,mood:80,energy:80,clean:80,affection:50,growth:0,
-  moodState:'normal',sick:false,
-  costume:0,
+  moodState:'normal',sick:false,costume:0,
   growthTags:{athletic:0,scholar:0,gourmet:0,social:0,cozy:0},
-  photos:[],diary:[],
-  lastDecay: Date.now(),
-  named:false
+  photos:[],diary:[],lastDecay:Date.now(),named:false,
+  petX:160,petY:150
 });
 
 function load(){
-  try{ S=JSON.parse(localStorage.getItem('petgame_v1'))||DEFAULT_STATE(); }
+  try{ S=JSON.parse(localStorage.getItem('petgame_v2'))||DEFAULT_STATE(); }
   catch(e){ S=DEFAULT_STATE(); }
-  if(!S.photos) S.photos=[];
-  if(!S.diary) S.diary=[];
+  ['photos','diary'].forEach(k=>{ if(!S[k]) S[k]=[]; });
   if(!S.growthTags) S.growthTags={athletic:0,scholar:0,gourmet:0,social:0,cozy:0};
+  if(S.petX===undefined){ S.petX=160; S.petY=150; }
 }
-function save(){ localStorage.setItem('petgame_v1',JSON.stringify(S)); }
-
+function save(){ localStorage.setItem('petgame_v2',JSON.stringify(S)); }
 function clamp(v,mn=0,mx=100){ return Math.max(mn,Math.min(mx,v)); }
-function stat(key,delta){
-  S[key]=clamp(S[key]+(delta||0));
-}
+function stat(k,d){ S[k]=clamp(S[k]+(d||0)); }
 
-// === MOOD CALCULATION ===
 function recalcMood(){
   if(S.sick){ S.moodState='sick'; return; }
-  let m=S.mood;
-  if(m>=80) S.moodState='excited';
-  else if(m>=60) S.moodState='happy';
-  else if(m>=40) S.moodState='normal';
-  else if(m>=20) S.moodState='sad';
-  else S.moodState='sad';
+  const m=S.mood;
+  S.moodState = m>=80?'excited': m>=60?'happy': m>=35?'normal':'sad';
 }
 
-// === RENDER ===
+// ===== SCENE =====
+let currentScene='room', lastTab='feed', lastAction='';
+const SCENES = {
+  room:    {cls:'scene-room',    label:'🏠 我的房间'},
+  garden:  {cls:'scene-garden',  label:'🌸 花园'},
+  bath:    {cls:'scene-bath',    label:'🛁 浴室'},
+  bedroom: {cls:'scene-bedroom', label:'🌙 卧室'},
+  playroom:{cls:'scene-playroom',label:'🎮 游乐室'},
+  shop:    {cls:'scene-shop',    label:'🛍️ 小卖部'}
+};
+
+function updateScene(){
+  if(lastAction==='sleep'||S.energy<20) currentScene='bedroom';
+  else if(lastAction==='bath'||lastAction==='groom') currentScene='bath';
+  else if(lastTab==='play') currentScene='playroom';
+  else if(lastTab==='feed'&&S.interactions>3) currentScene='shop';
+  else if(S.age>=3) currentScene='garden';
+  else currentScene='room';
+
+  const sceneEl=document.getElementById('scene');
+  Object.values(SCENES).forEach(s=>sceneEl.classList.remove(s.cls));
+  sceneEl.classList.add(SCENES[currentScene].cls);
+  document.getElementById('scene-label').textContent=SCENES[currentScene].label;
+  buildSceneDecos();
+}
+
+function buildSceneDecos(){
+  const el=document.getElementById('scene-decos');
+  if(currentScene==='room'){
+    el.innerHTML=`
+      <div class="scene-deco deco-window"></div>
+      <div class="scene-deco deco-shelf"></div>
+      <div class="scene-deco deco-rug"></div>
+      <div class="scene-deco deco-bowl" onclick="doAction('fruit')"></div>
+      <div class="scene-deco deco-bed" onclick="doAction('sleep')"></div>
+      <div class="scene-deco deco-ball" onclick="doAction('ball')"></div>`;
+  } else if(currentScene==='garden'){
+    el.innerHTML=`
+      <div style="position:absolute;bottom:0;left:0;right:0;height:50%;background:linear-gradient(180deg,#86efac,#4ade80);border-radius:0 0 20px 20px"></div>
+      <div class="scene-deco deco-sun"></div>
+      <div class="scene-deco deco-cloud" style="left:30px;top:30px;width:70px;height:22px"></div>
+      <div class="scene-deco deco-cloud" style="left:160px;top:18px;width:50px;height:18px"></div>
+      <div class="scene-deco deco-flower" style="left:30px">🌸</div>
+      <div class="scene-deco deco-flower" style="left:80px">🌼</div>
+      <div class="scene-deco deco-flower" style="right:60px">🌺</div>
+      <div class="scene-deco deco-flower" style="right:20px">🌻</div>`;
+  } else if(currentScene==='bath'){
+    el.innerHTML=`
+      <div class="scene-deco deco-tub"></div>
+      <div class="scene-deco deco-bubble" style="left:30%;bottom:40%;width:12px;height:12px;animation-delay:.3s"></div>
+      <div class="scene-deco deco-bubble" style="left:50%;bottom:35%;width:8px;height:8px;animation-delay:.8s"></div>
+      <div class="scene-deco deco-bubble" style="left:65%;bottom:42%;width:14px;height:14px;animation-delay:.1s"></div>`;
+  } else if(currentScene==='bedroom'){
+    el.innerHTML=`
+      <div class="scene-deco deco-moon"></div>
+      <div class="scene-deco deco-star" style="left:20%;top:15%;width:5px;height:5px;animation-delay:.5s"></div>
+      <div class="scene-deco deco-star" style="left:50%;top:10%;width:4px;height:4px;animation-delay:1s"></div>
+      <div class="scene-deco deco-star" style="left:70%;top:20%;width:6px;height:6px"></div>
+      <div class="scene-deco deco-star" style="left:30%;top:25%;width:3px;height:3px;animation-delay:1.5s"></div>
+      <div style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);width:160px;height:60px;background:#4338ca;border-radius:14px 14px 6px 6px">
+        <div style="position:absolute;top:6px;left:8px;right:8px;height:20px;background:#818cf8;border-radius:8px"></div>
+      </div>
+      <div class="scene-deco deco-zz" style="left:55%;top:30%">z</div>
+      <div class="scene-deco deco-zz" style="left:62%;top:20%;animation-delay:1s;font-size:14px">z</div>`;
+  } else if(currentScene==='playroom'){
+    el.innerHTML=`
+      <div style="position:absolute;inset:0;background:radial-gradient(circle at 20% 80%,#fde68a,transparent 40%),radial-gradient(circle at 80% 70%,#a7f3d0,transparent 40%)"></div>
+      <div style="position:absolute;bottom:20px;left:10px;font-size:28px">🎲</div>
+      <div style="position:absolute;bottom:20px;left:60px;font-size:28px">🎯</div>
+      <div style="position:absolute;bottom:20px;right:20px;font-size:28px">🎮</div>
+      <div style="position:absolute;top:20px;left:20px;font-size:22px">⭐</div>
+      <div style="position:absolute;top:30px;right:30px;font-size:18px">🌟</div>`;
+  } else if(currentScene==='shop'){
+    el.innerHTML=`
+      <div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);background:#f472b6;color:#fff;padding:4px 16px;border-radius:8px;font-size:13px;font-weight:700">🛍️ 宠物零食铺</div>
+      <div style="position:absolute;bottom:20px;left:0;right:0;height:80px;background:#c4b5fd;border-radius:0 0 20px 20px;display:flex;align-items:center;justify-content:space-around;padding:0 20px;font-size:26px">🍰 🍖 🍬 💧 🍎</div>`;
+  }
+}
+
+// ===== RENDER PET FIGURE =====
+function renderPetFigure(){
+  const fig = document.getElementById('pet-figure');
+  const breed = BREEDS[S.breed];
+  // Set breed class + mood class
+  fig.className = 'pet-figure ' + breed.cls + ' mood-' + S.moodState;
+
+  // Build inner HTML based on breed
+  let inner = '';
+  // Ears
+  inner += '<div class="pet-ear-l"></div><div class="pet-ear-r"></div>';
+
+  // Head
+  let headInner = '';
+  if(breed.cls === 'breed-panda'){
+    headInner += '<div class="pet-eye-patch-l"></div><div class="pet-eye-patch-r"></div>';
+  }
+  if(breed.cls === 'breed-hamster'){
+    headInner += '<div class="pet-cheek-l"></div><div class="pet-cheek-r"></div>';
+  }
+  headInner += '<div class="pet-eye-l"></div><div class="pet-eye-r"></div>';
+  if(breed.cls !== 'breed-dog'){
+    headInner += '<div class="pet-nose"></div><div class="pet-mouth"></div>';
+  }
+  if(breed.cls === 'breed-cat'){
+    headInner += '<div class="whisker whisker-l1"></div><div class="whisker whisker-l2"></div>';
+    headInner += '<div class="whisker whisker-r1"></div><div class="whisker whisker-r2"></div>';
+  }
+  inner += '<div class="pet-head">' + headInner + '</div>';
+
+  // Dog snout
+  if(breed.cls === 'breed-dog'){
+    inner += '<div class="pet-snout"></div>';
+  }
+
+  // Body
+  inner += '<div class="pet-body"><div class="pet-limb-l"></div><div class="pet-limb-r"></div></div>';
+
+  // Tail
+  if(['breed-cat','breed-dog','breed-rabbit','breed-chinchilla'].includes(breed.cls)){
+    inner += '<div class="pet-tail"></div>';
+  }
+
+  fig.innerHTML = inner;
+
+  // Costume
+  const costumeEl = document.getElementById('pet-costume');
+  costumeEl.textContent = COSTUMES[S.costume % COSTUMES.length];
+
+  // Position pet wrapper
+  const w = document.getElementById('pet-wrapper');
+  w.style.left = S.petX + 'px';
+  w.style.top  = S.petY + 'px';
+}
+
+// ===== RENDER =====
 function render(){
   recalcMood();
-  // Pet emoji & animation
-  const breedData=BREEDS[S.breed];
-  const moodIdx=MOODS.indexOf(S.moodState);
-  let emoji=breedData.emoji[moodIdx>=0?moodIdx:1];
-  // Costume overlay
-  const costumes=['','🎩','🎀','👑','🎓','🌸'];
-  const costume=costumes[S.costume%costumes.length];
-  document.getElementById('pet-emoji').textContent=emoji+(costume?' '+costume:'');
-  document.getElementById('pet-emoji').className='pet-emoji anim-'+S.moodState;
-  document.getElementById('pet-name').textContent=S.name;
-  document.getElementById('pet-display').style.background=MOOD_BG[S.moodState]||MOOD_BG.normal;
+  renderPetFigure();
+  updateScene();
 
-  // Badges
-  document.getElementById('badge-age').textContent='年龄 '+S.age+'天';
-  document.getElementById('badge-mood').textContent=MOOD_LABELS[S.moodState]||'普通';
-  document.getElementById('badge-breed').textContent=breedData.name;
-  document.getElementById('badge-level').textContent='Lv.'+S.level;
+  const breed = BREEDS[S.breed];
+  document.getElementById('info-name').textContent = S.name;
+  document.getElementById('badge-breed').textContent = breed.name;
+  document.getElementById('badge-age').textContent = S.age + '天';
+  document.getElementById('badge-level').textContent = 'Lv.' + S.level;
+  document.getElementById('badge-mood').textContent = MOOD_LABELS[S.moodState];
 
   // Growth tags
-  const tags=getGrowthTags();
-  const badgesEl=document.getElementById('status-badges');
-  // Remove old tag badges
-  badgesEl.querySelectorAll('.badge-tag').forEach(e=>e.remove());
-  tags.forEach(t=>{
-    const b=document.createElement('span');
-    b.className='badge badge-tag';
-    b.textContent=t;
-    badgesEl.appendChild(b);
+  const infoBar = document.getElementById('info-bar');
+  infoBar.querySelectorAll('.badge-tag').forEach(e=>e.remove());
+  getGrowthTags().forEach(t=>{
+    const b = document.createElement('span');
+    b.className = 'badge badge-tag';
+    b.textContent = t;
+    infoBar.appendChild(b);
   });
 
-  // Stats bars
-  const bars={hunger:'bar-hunger',thirst:'bar-thirst',mood:'bar-mood',energy:'bar-energy',clean:'bar-clean',affection:'bar-affection'};
-  for(const[key,id] of Object.entries(bars)){
-    document.getElementById(id).style.width=S[key]+'%';
-    document.getElementById('val-'+key).textContent=Math.round(S[key]);
-    const row=document.getElementById('row-'+key.replace('clean','clean'));
-    if(row) row.classList.toggle('critical',S[key]<30);
+  // Stat bars
+  const barMap = {hunger:'hunger',thirst:'thirst',mood:'mood',energy:'energy',clean:'clean',affection:'affection'};
+  for(const [k] of Object.entries(barMap)){
+    const bar = document.getElementById('bar-'+k);
+    const val = document.getElementById('val-'+k);
+    const row = document.getElementById('row-'+k);
+    if(bar) bar.style.width = S[k] + '%';
+    if(val) val.textContent = Math.round(S[k]);
+    if(row) row.classList.toggle('critical', S[k]<30);
   }
-  // Fix row IDs
-  document.getElementById('row-clean').classList.toggle('critical',S.clean<30);
-  document.getElementById('bar-growth').style.width=S.growth+'%';
-  document.getElementById('val-growth').textContent=Math.round(S.growth);
+  document.getElementById('bar-growth').style.width = S.growth + '%';
+  document.getElementById('val-growth').textContent = Math.round(S.growth);
 
-  // Stats info
-  document.getElementById('info-age').textContent=S.age;
-  document.getElementById('info-level').textContent=S.level;
-  document.getElementById('info-interactions').textContent=S.interactions;
-  document.getElementById('info-breed').textContent=breedData.name;
-
-  // Disable buttons
   updateButtons();
   save();
 }
 
 function getGrowthTags(){
-  const tags=[];
-  const g=S.growthTags;
+  const g = S.growthTags, tags = [];
   if(g.athletic>=15) tags.push('+运动🏃');
-  if(g.scholar>=15) tags.push('+学霸📚');
-  if(g.gourmet>=15) tags.push('+吃货🍰');
-  if(g.social>=15) tags.push('+社牛🎉');
-  if(g.cozy>=15) tags.push('+宅宝💤');
+  if(g.scholar>=15)  tags.push('+学霸📚');
+  if(g.gourmet>=15)  tags.push('+吃货🍰');
+  if(g.social>=15)   tags.push('+社牛🎉');
+  if(g.cozy>=15)     tags.push('+宅宝💤');
   return tags;
 }
 
 function updateButtons(){
-  const lowEnergy=S.energy<10;
-  // All buttons disabled if low energy (except free ones)
-  const freeActions=['water','sleep','temp','medicine'];
+  const lowEnergy = S.energy < 10;
+  const freeActions = ['water','sleep','temp','medicine'];
   document.querySelectorAll('.action-btn').forEach(btn=>{
-    const id=btn.id.replace('btn-','');
-    btn.disabled=false;
+    btn.disabled = false;
   });
   if(lowEnergy){
     document.querySelectorAll('.action-btn').forEach(btn=>{
-      const id=btn.id.replace('btn-','');
-      if(!freeActions.includes(id)) btn.disabled=true;
+      const id = btn.id.replace('btn-','');
+      if(!freeActions.includes(id)) btn.disabled = true;
     });
   }
-  // Perform requires affection>=30
-  const performBtn=document.getElementById('btn-perform');
-  if(performBtn && S.affection<30) performBtn.disabled=true;
-  // Sleep requires energy<40
-  const sleepBtn=document.getElementById('btn-sleep');
-  if(sleepBtn) sleepBtn.disabled=S.energy>=40;
-  // Medicine only useful when sick
-  const medBtn=document.getElementById('btn-medicine');
-  if(medBtn) medBtn.disabled=!S.sick;
+  const performBtn = document.getElementById('btn-perform');
+  if(performBtn && S.affection < 30) performBtn.disabled = true;
+  const sleepBtn = document.getElementById('btn-sleep');
+  if(sleepBtn) sleepBtn.disabled = S.energy >= 40;
+  const medBtn = document.getElementById('btn-medicine');
+  if(medBtn) medBtn.disabled = !S.sick;
 }
 
-// === ACTIONS ===
+// ===== DRAG & CLICK =====
+let isDragging = false, dragOX = 0, dragOY = 0, didDrag = false;
+const SCENE_W = 500, SCENE_H = 300, PET_W = 90, PET_H = 110;
+
+function initDrag(){
+  const wrapper = document.getElementById('pet-wrapper');
+  const scene   = document.getElementById('scene');
+
+  wrapper.addEventListener('mousedown', e=>{
+    isDragging = true; didDrag = false;
+    const rect = wrapper.getBoundingClientRect();
+    dragOX = e.clientX - rect.left;
+    dragOY = e.clientY - rect.top;
+    wrapper.style.transition = 'none';
+    e.preventDefault();
+  });
+
+  wrapper.addEventListener('touchstart', e=>{
+    isDragging = true; didDrag = false;
+    const t = e.touches[0];
+    const rect = wrapper.getBoundingClientRect();
+    dragOX = t.clientX - rect.left;
+    dragOY = t.clientY - rect.top;
+    wrapper.style.transition = 'none';
+    e.preventDefault();
+  }, {passive:false});
+
+  document.addEventListener('mousemove', e=>{
+    if(!isDragging) return;
+    didDrag = true;
+    const scRect = scene.getBoundingClientRect();
+    let x = e.clientX - scRect.left - dragOX;
+    let y = e.clientY - scRect.top  - dragOY;
+    x = Math.max(0, Math.min(x, scRect.width  - PET_W));
+    y = Math.max(0, Math.min(y, scRect.height - PET_H));
+    wrapper.style.left = x + 'px';
+    wrapper.style.top  = y + 'px';
+    S.petX = x; S.petY = y;
+    checkHotspots(x, y);
+  });
+
+  document.addEventListener('touchmove', e=>{
+    if(!isDragging) return;
+    didDrag = true;
+    const t = e.touches[0];
+    const scRect = scene.getBoundingClientRect();
+    let x = t.clientX - scRect.left - dragOX;
+    let y = t.clientY - scRect.top  - dragOY;
+    x = Math.max(0, Math.min(x, scRect.width  - PET_W));
+    y = Math.max(0, Math.min(y, scRect.height - PET_H));
+    wrapper.style.left = x + 'px';
+    wrapper.style.top  = y + 'px';
+    S.petX = x; S.petY = y;
+    checkHotspots(x, y);
+    e.preventDefault();
+  }, {passive:false});
+
+  const stopDrag = () => {
+    if(!isDragging) return;
+    isDragging = false;
+    wrapper.style.transition = '';
+    if(!didDrag) petClick();
+  };
+  document.addEventListener('mouseup', stopDrag);
+  document.addEventListener('touchend', stopDrag);
+}
+
+let lastHotspotAction = null, hotspotCooldown = false;
+function checkHotspots(px, py){
+  if(hotspotCooldown || currentScene !== 'room') return;
+  const hotspots = [
+    {x:44,  y:220, action:'fruit', label:'食物'},
+    {x:200, y:210, action:'sleep', label:'床铺'},
+    {x:170, y:218, action:'ball',  label:'球球'}
+  ];
+  for(const h of hotspots){
+    const dx = px + PET_W/2 - h.x;
+    const dy = py + PET_H/2 - h.y;
+    if(Math.sqrt(dx*dx + dy*dy) < 45){
+      hotspotCooldown = true;
+      showToast('靠近了' + h.label + '！', '#fbbf24');
+      setTimeout(()=>{
+        doAction(h.action);
+        hotspotCooldown = false;
+      }, 600);
+      break;
+    }
+  }
+}
+
+function petClick(){
+  const wrapper = document.getElementById('pet-wrapper');
+  wrapper.classList.add('is-clicked');
+  setTimeout(()=>wrapper.classList.remove('is-clicked'), 350);
+
+  // Floating heart
+  const heart = document.createElement('div');
+  heart.className = 'float-heart';
+  heart.textContent = '❤️';
+  heart.style.left = (PET_W/2 - 10) + 'px';
+  heart.style.top = '0px';
+  wrapper.appendChild(heart);
+  setTimeout(()=>heart.remove(), 1300);
+
+  stat('affection', 2);
+  stat('mood', 3);
+  showToast('+2亲密 💕', '#f472b6');
+  save();
+  // Update bars without full render to avoid flicker
+  document.getElementById('bar-affection').style.width = S.affection + '%';
+  document.getElementById('val-affection').textContent = Math.round(S.affection);
+  document.getElementById('bar-mood').style.width = S.mood + '%';
+  document.getElementById('val-mood').textContent = Math.round(S.mood);
+}
+
+// ===== ACTIONS =====
 const ACTIONS = {
-  // FEED
-  fruit:{cost:5,fn(){ stat('hunger',15);stat('mood',5);stat('thirst',5);S.growthTags.gourmet+=1; return ['+15饱食🍎','+5心情','+5解渴']; }},
-  meat:{cost:3,fn(){ stat('hunger',30);stat('energy',10);S.growthTags.athletic+=2; return ['+30饱食🍖','+10精力']; }},
-  cake:{cost:3,fn(){ stat('hunger',20);stat('mood',20);stat('affection',5);S.growthTags.gourmet+=2; return ['+20饱食🍰','+20心情','+5亲密']; }},
-  water:{cost:2,fn(){ stat('thirst',30);stat('clean',5); return ['+30解渴💧','+5清洁']; }},
-  meal:{cost:5,fn(){ stat('hunger',25);stat('thirst',10);stat('energy',15);['hunger','thirst','mood','energy','clean','affection'].forEach(k=>stat(k,3)); return ['+25饱食🍵','+15精力','全属性+3']; }},
-  snack:{cost:2,fn(){ stat('hunger',10);stat('mood',15);stat('affection',5);S.growthTags.gourmet+=1; return ['+10饱食🍬','+15心情']; }},
-  // PLAY
-  ball:{cost:15,fn(){ stat('mood',20);stat('energy',-15);stat('affection',10);S.growthTags.athletic+=2; return ['+20心情🎾','+10亲密','-15精力']; }},
-  puzzle:{cost:10,fn(){ stat('mood',15);stat('energy',-10);S.growthTags.scholar+=3; return ['+15心情🧩','学者+3']; }},
-  walk:{cost:20,fn(){ stat('mood',25);stat('hunger',-5);stat('energy',-20);stat('clean',-10);S.growthTags.athletic+=2; return ['+25心情🌿','-20精力','-10清洁']; }},
-  perform:{cost:15,req(){return S.affection>=30;},fn(){ stat('mood',30);stat('affection',15);stat('energy',-15);S.growthTags.social+=2; return ['+30心情🎪','+15亲密']; }},
-  paint:{cost:10,fn(){ stat('mood',20);stat('affection',20);S.growthTags.scholar+=2;S.growthTags.social+=1; return ['+20心情🎨','+20亲密']; }},
-  run:{cost:25,fn(){ stat('hunger',-10);S.growthTags.athletic+=3;S._runBonus=true; return ['🏃跑步完成！','下次睡觉恢复+20','运动+3']; }},
-  // CARE
-  bath:{cost:10,fn(){ stat('clean',40);stat('mood',10); return ['+40清洁🛁','+10心情']; }},
-  sleep:{cost:0,req(){return S.energy<40;},fn(){
-    let bonus=S._runBonus?70:50;
-    S._runBonus=false;
+  fruit:  {cost:5,  fn(){ stat('hunger',15);stat('mood',5);stat('thirst',5);S.growthTags.gourmet+=1; return ['+15饱食🍎','+5心情']; }},
+  meat:   {cost:3,  fn(){ stat('hunger',30);stat('energy',10);S.growthTags.athletic+=2; return ['+30饱食🍖','+10精力']; }},
+  cake:   {cost:3,  fn(){ stat('hunger',20);stat('mood',20);stat('affection',5);S.growthTags.gourmet+=2; return ['+20饱食🍰','+20心情']; }},
+  water:  {cost:2,  fn(){ stat('thirst',30);stat('clean',5); return ['+30解渴💧']; }},
+  meal:   {cost:5,  fn(){ stat('hunger',25);stat('thirst',10);stat('energy',15);['hunger','thirst','mood','energy','clean','affection'].forEach(k=>stat(k,3)); return ['+25饱食🍵','全属性+3']; }},
+  snack:  {cost:2,  fn(){ stat('hunger',10);stat('mood',15);stat('affection',5);S.growthTags.gourmet+=1; return ['+10饱食🍬','+15心情']; }},
+  ball:   {cost:15, fn(){ stat('mood',20);stat('energy',-15);stat('affection',10);S.growthTags.athletic+=2; return ['+20心情🎾','+10亲密']; }},
+  puzzle: {cost:10, fn(){ stat('mood',15);stat('energy',-10);S.growthTags.scholar+=3; return ['+15心情🧩','学者+3']; }},
+  walk:   {cost:20, fn(){ stat('mood',25);stat('hunger',-5);stat('energy',-20);stat('clean',-10);S.growthTags.athletic+=2; return ['+25心情🌿','-20精力']; }},
+  perform:{cost:15, req(){return S.affection>=30;}, fn(){ stat('mood',30);stat('affection',15);stat('energy',-15);S.growthTags.social+=2; return ['+30心情🎪','+15亲密']; }},
+  paint:  {cost:10, fn(){ stat('mood',20);stat('affection',20);S.growthTags.scholar+=2;S.growthTags.social+=1; return ['+20心情🎨','+20亲密']; }},
+  run:    {cost:25, fn(){ stat('hunger',-10);S.growthTags.athletic+=3;S._runBonus=true; return ['🏃跑步完成！','运动+3']; }},
+  bath:   {cost:10, fn(){ stat('clean',40);stat('mood',10); return ['+40清洁🛁','+10心情']; }},
+  sleep:  {cost:0,  req(){return S.energy<40;}, fn(){
+    const bonus = S._runBonus ? 70 : 50;
+    S._runBonus = false;
     stat('energy',bonus);stat('hunger',-10);stat('thirst',-10);S.growthTags.cozy+=2;
-    return ['+'+bonus+'精力💤','-10饱食','-10解渴'];
+    return ['+'+bonus+'精力💤','-10饱食'];
   }},
-  medicine:{cost:5,req(){return S.sick;},fn(){ S.sick=false;S.moodState='normal';stat('mood',10); return ['💊药效发挥！','治愈疾病','+10心情']; }},
-  groom:{cost:5,fn(){ stat('clean',15);stat('mood',10);stat('affection',5);S.growthTags.social+=1; return ['+15清洁💇','+10心情','+5亲密']; }},
-  temp:{cost:0,fn(){
-    const s=S.sick?'😷发烧了！要吃药哦':'💚体温正常';
-    const e=S.energy<20?'⚡精力不足':'';
-    return ['🌡️测温完成',s,e].filter(Boolean);
+  medicine:{cost:5, req(){return S.sick;}, fn(){ S.sick=false;S.moodState='normal';stat('mood',10); return ['💊治愈疾病！','+10心情']; }},
+  groom:  {cost:5,  fn(){ stat('clean',15);stat('mood',10);stat('affection',5);S.growthTags.social+=1; return ['+15清洁💇','+10心情']; }},
+  temp:   {cost:0,  fn(){
+    const s = S.sick ? '😷发烧！要吃药' : '💚体温正常';
+    return ['🌡️测温完成', s];
   }},
-  // BOND
-  hug:{cost:5,fn(){ stat('affection',20);stat('mood',15);stat('energy',-5); return ['+20亲密🤗','+15心情']; }},
-  sing:{cost:8,fn(){ stat('mood',25);stat('affection',15);S.growthTags.social+=2; return ['+25心情🎵','+15亲密']; }},
-  story:{cost:5,fn(){ stat('mood',20);stat('affection',10);S.growthTags.scholar+=2;stat('energy',-5); return ['+20心情📚','+10亲密']; }},
-  photo:{cost:3,fn(){
-    const now=new Date();
-    const p={breed:S.breed,moodEmoji:BREEDS[S.breed].emoji[MOODS.indexOf(S.moodState)||1],age:S.age,level:S.level,date:now.toLocaleDateString('zh-CN'),rot:(Math.random()*6-3).toFixed(1)};
-    S.photos.unshift(p); if(S.photos.length>6) S.photos.pop();
+  hug:    {cost:5,  fn(){ stat('affection',20);stat('mood',15);stat('energy',-5); return ['+20亲密🤗','+15心情']; }},
+  sing:   {cost:8,  fn(){ stat('mood',25);stat('affection',15);S.growthTags.social+=2; return ['+25心情🎵','+15亲密']; }},
+  story:  {cost:5,  fn(){ stat('mood',20);stat('affection',10);S.growthTags.scholar+=2;stat('energy',-5); return ['+20心情📚','+10亲密']; }},
+  photo:  {cost:3,  fn(){
+    const now = new Date();
+    S.photos.unshift({breed:S.breed,emoji:BREED_EMOJIS[S.breed],age:S.age,level:S.level,date:now.toLocaleDateString('zh-CN'),rot:(Math.random()*6-3).toFixed(1)});
+    if(S.photos.length>6) S.photos.pop();
     stat('affection',10);stat('mood',10);S.growthTags.social+=1;
     return ['+10亲密📸','照片已存入相册！'];
   }},
-  dress:{cost:5,fn(){ S.costume=(S.costume+1)%6;stat('mood',20);stat('affection',10);S.growthTags.social+=2; return ['+20心情👗','换了新装扮！']; }},
-  diary:{cost:3,fn(){
-    const now=new Date();
-    S.diary.unshift({date:now.toLocaleDateString('zh-CN'),text:'今天和'+S.name+'互动了~'});
+  dress:  {cost:5,  fn(){ S.costume=(S.costume+1)%COSTUMES.length;stat('mood',20);stat('affection',10);S.growthTags.social+=2; return ['+20心情👗','换了新装扮！']; }},
+  diary:  {cost:3,  fn(){
+    S.diary.unshift({date:new Date().toLocaleDateString('zh-CN'),text:'今天和'+S.name+'互动了~'});
     if(S.diary.length>20) S.diary.pop();
     stat('affection',5);S.growthTags.scholar+=1;
     return ['+5亲密💌','写进日记啦！'];
@@ -943,99 +1200,48 @@ const ACTIONS = {
 };
 
 function doAction(id){
-  const act=ACTIONS[id];
+  const act = ACTIONS[id];
   if(!act) return;
-  // Check requirement
   if(act.req && !act.req()){ showToast('条件不满足哦~','#fbbf24'); return; }
-  // Deduct energy cost
-  if(act.cost) stat('energy',-act.cost);
-  // Execute
-  const msgs=act.fn();
+  if(act.cost) stat('energy', -act.cost);
+  const msgs = act.fn();
   S.interactions++;
-  // Growth points
+  lastAction = id;
   addGrowthPoints(3);
-  // Show toasts
-  msgs.forEach((m,i)=>setTimeout(()=>showToast(m),i*200));
+  msgs.forEach((m,i)=>setTimeout(()=>showToast(m),i*220));
   render();
 }
 
 function addGrowthPoints(pts){
-  S.growth=clamp(S.growth+pts);
-  if(S.growth>=100){
-    S.growth=0;
-    levelUp();
-  }
+  S.growth = clamp(S.growth + pts);
+  if(S.growth >= 100){ S.growth = 0; levelUp(); }
 }
 
 function levelUp(){
   S.level++;
-  const statKeys=['hunger','thirst','mood','energy','clean','affection'];
-  const chosen=[];
+  const keys = ['hunger','thirst','mood','energy','clean','affection'];
+  const labels = {hunger:'饱食',thirst:'解渴',mood:'心情',energy:'精力',clean:'清洁',affection:'亲密'};
+  const chosen = [];
   for(let i=0;i<2;i++){
-    const k=statKeys[Math.floor(Math.random()*statKeys.length)];
-    stat(k,5);
-    const labels={hunger:'饱食',thirst:'解渴',mood:'心情',energy:'精力',clean:'清洁',affection:'亲密'};
-    chosen.push(labels[k]+'上限+5');
+    const k = keys[Math.floor(Math.random()*keys.length)];
+    stat(k,5); chosen.push(labels[k]+'+5');
   }
-  // Show overlay
-  document.getElementById('levelup-pet-emoji').textContent=BREEDS[S.breed].emoji[MOODS.indexOf('excited')];
-  document.getElementById('levelup-title').textContent='升级啦！Lv.'+S.level+' 🎉';
-  document.getElementById('levelup-bonuses').textContent=chosen.join(' · ');
-  document.getElementById('levelup-overlay').classList.remove('hidden');
-  setTimeout(()=>document.getElementById('levelup-overlay').classList.add('hidden'),3000);
+  document.getElementById('levelup-pet').textContent = BREED_EMOJIS[S.breed];
+  document.getElementById('levelup-title').textContent = '升级啦！Lv.'+S.level+' 🎉';
+  document.getElementById('levelup-bonuses').textContent = chosen.join(' · ');
+  const ov = document.getElementById('levelup-overlay');
+  ov.classList.remove('hidden');
+  setTimeout(()=>ov.classList.add('hidden'), 3000);
 }
 
-// === TIME DECAY ===
-let decayInterval, eventInterval, thoughtInterval;
-function startTimers(){
-  decayInterval=setInterval(()=>{
-    const now=Date.now();
-    const elapsed=(now-S.lastDecay)/1000;
-    S.lastDecay=now;
-    // Scale decay by elapsed time (normalize to 30s tick)
-    const ticks=elapsed/30;
-    S.hunger=clamp(S.hunger-3*ticks);
-    S.thirst=clamp(S.thirst-4*ticks);
-    S.clean=clamp(S.clean-2*ticks);
-    S.energy=clamp(S.energy+1*ticks);
-    if(S.hunger<20) S.mood=clamp(S.mood-5*ticks);
-    if(S.thirst<20) S.mood=clamp(S.mood-5*ticks);
-    if(S.clean<20) S.mood=clamp(S.mood-10*ticks);
-    render();
-  },30000);
-
-  // Age: +1 day every 5 minutes
-  setInterval(()=>{ S.age++; save(); },300000);
-
-  // Random events every 60s (30% chance)
-  eventInterval=setInterval(()=>{
-    if(Math.random()<0.3 && document.getElementById('event-overlay').classList.contains('hidden')){
-      triggerRandomEvent();
-    }
-  },60000);
-
-  // Thought bubble every 8s
-  thoughtInterval=setInterval(updateThought,8000);
-  updateThought();
-}
-
-function updateThought(){
-  const pool=THOUGHTS[S.moodState]||THOUGHTS.normal;
-  const all=[...pool,...IDLE_THOUGHTS];
-  const t=all[Math.floor(Math.random()*all.length)];
-  const el=document.getElementById('thought-bubble');
-  el.style.opacity='0';
-  setTimeout(()=>{ el.textContent=t; el.style.opacity='1'; el.style.transition='opacity 0.5s'; },300);
-}
-
-// === RANDOM EVENTS ===
+// ===== RANDOM EVENTS =====
 const EVENTS = [
   {emoji:'🌧️',title:'下雨了！',text:'宠物淋湿了，清洁度下降~',
    effect(){stat('clean',-20);stat('mood',-10);},
    actions:[{label:'快去擦干 🧴',fn(){stat('clean',15);closeEvent();render();}}]},
   {emoji:'😴',title:'宠物打了个大哈欠…',text:'看起来有点困了',
    effect(){stat('energy',-15);},
-   actions:[{label:'哄它睡觉 💤',fn(){if(S.energy<40){doAction('sleep');}closeEvent();render();}},{label:'没关系~',fn(){closeEvent();}}]},
+   actions:[{label:'哄它睡觉 💤',fn(){if(S.energy<40)doAction('sleep');closeEvent();}},{label:'没关系~',fn(){closeEvent();}}]},
   {emoji:'🍭',title:'发现了神秘零食！',text:'宠物开心地吃掉了~',
    effect(){stat('hunger',10);stat('mood',20);},
    actions:[{label:'好棒！',fn(){closeEvent();}}]},
@@ -1045,12 +1251,12 @@ const EVENTS = [
   {emoji:'🌟',title:'宠物做了个好梦！',text:'醒来心情超好~',
    effect(){stat('mood',15);stat('energy',10);},
    actions:[{label:'哇真棒！',fn(){closeEvent();}}]},
-  {emoji:'🤒',title:'宠物好像有点不舒服',text:'需要吃药治疗！',
+  {emoji:'🤒',title:'宠物好像不舒服',text:'需要吃药治疗！',
    effect(){S.sick=true;stat('energy',-20);},
    actions:[{label:'快去喂药 💊',fn(){closeEvent();switchTab('care');}},{label:'等等再说',fn(){closeEvent();}}]},
   {emoji:'🎉',title:'今天是宠物的生日！',text:'生日快乐~！',
    effect(){stat('mood',30);stat('affection',20);},
-   actions:[{label:'庆祝！🎂',fn(){closeEvent();showToast('🎂 生日快乐！',  '#f472b6');}}]},
+   actions:[{label:'庆祝！🎂',fn(){closeEvent();showToast('🎂 生日快乐！','#f472b6');}}]},
   {emoji:'🐛',title:'发现了小虫子！',text:'宠物被吓到了！',
    effect(){stat('clean',-15);stat('mood',-15);},
    actions:[{label:'帮它捉虫 🦋',fn(){stat('clean',20);stat('affection',10);closeEvent();render();}}]},
@@ -1060,8 +1266,7 @@ const EVENTS = [
   {emoji:'📦',title:'神秘礼物到来！',text:'随机获得一项属性提升~',
    effect(){
      const keys=['hunger','thirst','mood','energy','clean','affection'];
-     const k=keys[Math.floor(Math.random()*keys.length)];
-     stat(k,20);
+     stat(keys[Math.floor(Math.random()*keys.length)],20);
    },
    actions:[{label:'拆开礼物！🎁',fn(){closeEvent();render();}}]},
   {emoji:'🥱',title:'宠物无聊了…',text:'需要玩耍和陪伴',
@@ -1073,18 +1278,18 @@ const EVENTS = [
 ];
 
 function triggerRandomEvent(){
-  const ev=EVENTS[Math.floor(Math.random()*EVENTS.length)];
+  const ev = EVENTS[Math.floor(Math.random()*EVENTS.length)];
   ev.effect();
-  document.getElementById('event-emoji').textContent=ev.emoji;
-  document.getElementById('event-title').textContent=ev.title;
-  document.getElementById('event-text').textContent=ev.text;
-  const actEl=document.getElementById('event-actions');
-  actEl.innerHTML='';
+  document.getElementById('event-emoji').textContent = ev.emoji;
+  document.getElementById('event-title').textContent = ev.title;
+  document.getElementById('event-text').textContent  = ev.text;
+  const actEl = document.getElementById('event-actions');
+  actEl.innerHTML = '';
   ev.actions.forEach(a=>{
-    const btn=document.createElement('button');
-    btn.className='modal-btn modal-btn-primary';
-    btn.textContent=a.label;
-    btn.onclick=a.fn;
+    const btn = document.createElement('button');
+    btn.className = 'modal-btn modal-btn-primary';
+    btn.textContent = a.label;
+    btn.onclick = a.fn;
     actEl.appendChild(btn);
   });
   document.getElementById('event-overlay').classList.remove('hidden');
@@ -1092,89 +1297,121 @@ function triggerRandomEvent(){
 }
 function closeEvent(){ document.getElementById('event-overlay').classList.add('hidden'); }
 
-// === TOAST ===
-function showToast(msg, color='#c084fc'){
-  const tc=document.getElementById('toast-container');
-  const div=document.createElement('div');
-  div.className='toast';
-  div.textContent=msg;
-  div.style.color=color;
-  div.style.borderLeft='3px solid '+color;
-  tc.appendChild(div);
-  setTimeout(()=>div.remove(),1600);
+// ===== TIMERS =====
+function startTimers(){
+  setInterval(()=>{
+    const now = Date.now();
+    const ticks = (now - S.lastDecay) / 30000;
+    S.lastDecay = now;
+    S.hunger = clamp(S.hunger - 3*ticks);
+    S.thirst = clamp(S.thirst - 4*ticks);
+    S.clean  = clamp(S.clean  - 2*ticks);
+    S.energy = clamp(S.energy + 1*ticks);
+    if(S.hunger<20) S.mood = clamp(S.mood - 5*ticks);
+    if(S.thirst<20) S.mood = clamp(S.mood - 5*ticks);
+    if(S.clean <20) S.mood = clamp(S.mood - 10*ticks);
+    render();
+  }, 30000);
+
+  setInterval(()=>{ S.age++; save(); }, 300000);
+
+  setInterval(()=>{
+    if(Math.random()<0.3 && document.getElementById('event-overlay').classList.contains('hidden')){
+      triggerRandomEvent();
+    }
+  }, 60000);
+
+  setInterval(updateThought, 8000);
+  updateThought();
 }
 
-// === TABS ===
-let currentTab='feed';
+function updateThought(){
+  const pool = THOUGHTS[S.moodState] || THOUGHTS.normal;
+  const all = [...pool, ...IDLE_THOUGHTS];
+  const t = all[Math.floor(Math.random()*all.length)];
+  const el = document.getElementById('thought');
+  el.style.opacity = '0';
+  setTimeout(()=>{ el.textContent = t; el.style.opacity = '1'; el.style.transition = 'opacity .5s'; }, 300);
+}
+
+// ===== TOAST =====
+function showToast(msg, color='#c084fc'){
+  const tc = document.getElementById('toast-container');
+  const div = document.createElement('div');
+  div.className = 'toast';
+  div.textContent = msg;
+  div.style.color = color;
+  div.style.borderLeft = '3px solid ' + color;
+  tc.appendChild(div);
+  setTimeout(()=>div.remove(), 1600);
+}
+
+// ===== TABS =====
+let currentTab = 'feed';
 function switchTab(tab){
-  currentTab=tab;
+  currentTab = tab;
+  lastTab = tab;
   document.querySelectorAll('.tab-btn').forEach((b,i)=>{
-    const tabs=['feed','play','care','bond'];
-    b.classList.toggle('active',tabs[i]===tab);
+    b.classList.toggle('active', ['feed','play','care','bond'][i]===tab);
   });
   document.querySelectorAll('.tab-content').forEach(c=>{
-    c.classList.toggle('active',c.id==='tab-'+tab);
+    c.classList.toggle('active', c.id==='tab-'+tab);
   });
+  updateScene();
 }
 
-// === NAMING ===
-let selectedBreed=0;
+// ===== NAMING =====
+let selectedBreed = 0;
 function selectBreed(idx){
-  selectedBreed=idx;
+  selectedBreed = idx;
   document.querySelectorAll('.breed-btn').forEach((b,i)=>b.classList.toggle('selected',i===idx));
 }
 function confirmNaming(){
-  const n=document.getElementById('pet-name-input').value.trim();
+  const n = document.getElementById('pet-name-input').value.trim();
   if(!n){ showToast('请给宠物起个名字~','#ef4444'); return; }
-  S.name=n;
-  S.breed=selectedBreed;
-  S.named=true;
+  S.name = n; S.breed = selectedBreed; S.named = true;
   document.getElementById('naming-overlay').classList.add('hidden');
   render();
-  showToast('欢迎来到宠物乐园，'+n+'！💕','#f472b6');
+  showToast('欢迎，'+n+'！💕','#f472b6');
 }
 
-// === PHOTO GALLERY ===
+// ===== PHOTO GALLERY =====
 function openPhotoGallery(){
-  const grid=document.getElementById('photo-grid');
+  const grid = document.getElementById('photo-grid');
   if(S.photos.length===0){
-    grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:#9ca3af;padding:20px">还没有照片哦~<br>去拍照留念吧！📷</div>';
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#9ca3af;padding:16px">还没有照片哦~<br>去拍照留念吧！📷</div>';
   } else {
-    grid.innerHTML=S.photos.map(p=>`
+    grid.innerHTML = S.photos.map(p=>`
       <div class="polaroid" style="--rot:${p.rot}deg">
-        <div class="polaroid-emoji">${p.moodEmoji}</div>
+        <div class="polaroid-emoji">${p.emoji}</div>
         <div class="polaroid-info">Lv.${p.level}<br>${p.age}天<br>${p.date}</div>
-      </div>
-    `).join('');
+      </div>`).join('');
   }
   document.getElementById('gallery-overlay').classList.remove('hidden');
 }
 function closeGallery(){ document.getElementById('gallery-overlay').classList.add('hidden'); }
 
-// === RESET ===
 function confirmReset(){
-  if(confirm('确定要重置宠物吗？所有数据将清除！')){ 
-    localStorage.removeItem('petgame_v1');
+  if(confirm('确定要重置宠物吗？所有数据将清除！')){
+    localStorage.removeItem('petgame_v2');
     location.reload();
   }
 }
 
-// === LEVEL UP click to dismiss ===
 document.getElementById('levelup-overlay').addEventListener('click',function(){
   this.classList.add('hidden');
 });
 
-// === INIT ===
+// ===== INIT =====
 load();
 if(!S.named){
   document.getElementById('naming-overlay').classList.remove('hidden');
-  // Set default name placeholder
-  const breedNames=['小咪','小汪','小兔','小熊','小灰','小仓'];
-  document.getElementById('pet-name-input').placeholder='例如：'+breedNames[S.breed||0];
 } else {
   document.getElementById('naming-overlay').classList.add('hidden');
 }
 render();
+initDrag();
+buildSceneDecos();
 startTimers();
 </script>
 </body>
