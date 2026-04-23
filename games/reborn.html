@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>修仙转世模拟器</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0a14;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;min-height:100vh}
+a{color:#c084fc;text-decoration:none}
+a:hover{text-decoration:underline}
+#topbar{display:flex;align-items:center;justify-content:space-between;height:52px;background:#1a1a2e;border-bottom:1px solid #2d2d4e;padding:0 20px;position:sticky;top:0;z-index:100}
+#topbar .back{font-size:14px;color:#a5b4fc}
+#topbar .title{font-size:16px;font-weight:700;background:linear-gradient(135deg,#c084fc,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+#topbar .ver{font-size:12px;color:#64748b}
+.screen{display:none;max-width:720px;margin:0 auto;padding:24px}
+.screen.active{display:block}
+/* --- Screen 1 allocation --- */
+.life-header{text-align:center;margin-bottom:24px}
+.life-header .life-num{font-size:32px;font-weight:800;background:linear-gradient(135deg,#c084fc,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.life-header .subtitle{color:#94a3b8;margin-top:4px}
+.section-title{font-size:15px;font-weight:600;color:#c084fc;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.section-title::before{content:'';display:inline-block;width:3px;height:15px;background:linear-gradient(135deg,#c084fc,#818cf8);border-radius:2px}
+.alloc-card{background:#12121f;border:1px solid #2d2d4e;border-radius:12px;padding:20px;margin-bottom:20px}
+.attr-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.attr-row:last-child{margin-bottom:0}
+.attr-label{flex:1;font-size:14px;display:flex;align-items:center;gap:6px}
+.attr-icon{font-size:18px}
+.attr-name{font-weight:600}
+.attr-sub{font-size:11px;color:#64748b;margin-left:2px}
+.attr-controls{display:flex;align-items:center;gap:8px}
+.btn-adj{width:28px;height:28px;border-radius:6px;border:1px solid #2d2d4e;background:#1a1a2e;color:#e2e8f0;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.btn-adj:hover{border-color:#c084fc;color:#c084fc}
+.btn-adj:disabled{opacity:.3;cursor:not-allowed}
+.attr-val{width:30px;text-align:center;font-size:18px;font-weight:700;color:#c084fc}
+.points-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#0a0a14;border-radius:8px;margin-top:12px;border:1px solid #2d2d4e}
+.points-label{font-size:13px;color:#94a3b8}
+.points-val{font-size:20px;font-weight:700;color:#f59e0b}
+.merit-bonus{font-size:12px;color:#10b981;margin-top:2px;text-align:right}
+/* talent cards */
+.talent-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+@media(max-width:500px){.talent-grid{grid-template-columns:1fr}}
+.talent-card{background:#0a0a14;border:2px solid #2d2d4e;border-radius:10px;padding:14px;cursor:pointer;transition:all .2s;position:relative}
+.talent-card:hover{border-color:#818cf8;transform:translateY(-2px)}
+.talent-card.selected{border-color:#c084fc;box-shadow:0 0 16px rgba(192,132,252,.35)}
+.talent-name{font-size:13px;font-weight:700;color:#c084fc;margin-bottom:4px}
+.talent-desc{font-size:11px;color:#94a3b8;line-height:1.5;margin-bottom:6px}
+.talent-effect{font-size:11px;color:#10b981;font-weight:600}
+.btn-primary{display:block;width:100%;padding:14px;margin-top:20px;border-radius:10px;border:none;background:linear-gradient(135deg,#c084fc,#818cf8);color:#fff;font-size:16px;font-weight:700;cursor:pointer;transition:opacity .2s}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+/* --- Screen 2 life --- */
+#screen-life{max-width:720px}
+.life-layout{display:flex;gap:16px;align-items:flex-start}
+.life-sidebar{width:190px;flex-shrink:0;background:#12121f;border:1px solid #2d2d4e;border-radius:12px;padding:16px;position:sticky;top:70px}
+@media(max-width:600px){.life-layout{flex-direction:column}.life-sidebar{width:100%;position:static}}
+.sidebar-age{font-size:24px;font-weight:800;color:#c084fc;text-align:center;margin-bottom:12px}
+.sidebar-age span{font-size:12px;color:#64748b;font-weight:400;display:block}
+.stat-pill{display:flex;justify-content:space-between;align-items:center;padding:5px 8px;border-radius:6px;margin-bottom:6px;background:#1a1a2e;font-size:12px}
+.stat-pill .sname{color:#94a3b8}
+.stat-pill .sval{font-weight:700;color:#c084fc}
+.realm-badge{text-align:center;padding:8px;border-radius:8px;margin:10px 0;font-size:13px;font-weight:700;background:linear-gradient(135deg,rgba(192,132,252,.15),rgba(129,140,248,.15));border:1px solid rgba(192,132,252,.3);color:#c084fc}
+.lifespan-wrap{margin:10px 0}
+.lifespan-label{display:flex;justify-content:space-between;font-size:11px;color:#64748b;margin-bottom:4px}
+.lifespan-bar{height:6px;background:#1a1a2e;border-radius:3px;overflow:hidden}
+.lifespan-fill{height:100%;background:linear-gradient(90deg,#c084fc,#818cf8);border-radius:3px;transition:width .3s}
+.lifespan-fill.low{background:linear-gradient(90deg,#ef4444,#f59e0b)}
+.ctrl-btns{display:flex;gap:8px;margin-top:12px}
+.btn-ctrl{flex:1;padding:8px 0;border-radius:8px;border:1px solid #2d2d4e;background:#1a1a2e;color:#e2e8f0;font-size:12px;cursor:pointer;transition:all .15s;font-weight:600}
+.btn-ctrl:hover{border-color:#c084fc;color:#c084fc}
+.btn-ctrl.active-ff{background:linear-gradient(135deg,#c084fc,#818cf8);border-color:transparent;color:#fff}
+.progress-wrap{margin-top:10px}
+.progress-bar{height:4px;background:#1a1a2e;border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,#c084fc,#818cf8);border-radius:2px;transition:width .3s}
+/* event log */
+.event-log{flex:1;min-width:0;background:#12121f;border:1px solid #2d2d4e;border-radius:12px;padding:16px;max-height:70vh;overflow-y:auto}
+.event-log::-webkit-scrollbar{width:4px}
+.event-log::-webkit-scrollbar-track{background:#0a0a14}
+.event-log::-webkit-scrollbar-thumb{background:#2d2d4e;border-radius:2px}
+.ev-row{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.ev-age{flex-shrink:0;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:#1a1a2e;border:2px solid #2d2d4e;color:#94a3b8}
+.ev-text{flex:1;font-size:13px;line-height:1.6;padding-top:6px;color:#e2e8f0}
+.ev-row.spiritual .ev-age{border-color:#c084fc;color:#c084fc;background:rgba(192,132,252,.1)}
+.ev-row.spiritual .ev-text{color:#ddd6fe}
+.ev-row.wealth .ev-age{border-color:#f59e0b;color:#f59e0b;background:rgba(245,158,11,.1)}
+.ev-row.wealth .ev-text{color:#fde68a}
+.ev-row.danger .ev-age{border-color:#ef4444;color:#ef4444;background:rgba(239,68,68,.1)}
+.ev-row.danger .ev-text{color:#fca5a5}
+.ev-row.social .ev-age{border-color:#60a5fa;color:#60a5fa;background:rgba(96,165,250,.1)}
+.ev-row.social .ev-text{color:#bfdbfe}
+.ev-row.mundane .ev-age{border-color:#475569;color:#94a3b8}
+.ev-row.realm-up{background:rgba(192,132,252,.08);border:1px solid rgba(192,132,252,.3);border-radius:8px;padding:8px 10px;margin-bottom:10px;animation:realmPulse .6s ease}
+@keyframes realmPulse{0%{transform:scale(.97);opacity:.5}60%{transform:scale(1.02)}100%{transform:scale(1);opacity:1}}
+.ev-row.realm-up .ev-age{border-color:#f59e0b;color:#f59e0b;background:rgba(245,158,11,.15)}
+.ev-row.realm-up .ev-text{color:#fde68a;font-weight:600}
+.ev-row.death-event{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.4);border-radius:8px;padding:10px;margin-bottom:10px}
+.ev-row.death-event .ev-text{color:#fca5a5;font-weight:600;font-size:14px}
+/* Screen 3 summary */
+.summary-card{background:#12121f;border:1px solid #2d2d4e;border-radius:12px;padding:24px;margin-bottom:16px}
+.died-age{font-size:48px;font-weight:800;text-align:center;background:linear-gradient(135deg,#c084fc,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+.died-label{text-align:center;color:#94a3b8;font-size:14px;margin-bottom:16px}
+.summary-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px}
+.sum-item{background:#1a1a2e;border-radius:8px;padding:12px;text-align:center}
+.sum-item .s-label{font-size:11px;color:#64748b;margin-bottom:4px}
+.sum-item .s-val{font-size:20px;font-weight:700;color:#c084fc}
+.score-big{text-align:center;padding:20px;background:linear-gradient(135deg,rgba(192,132,252,.1),rgba(129,140,248,.1));border:1px solid rgba(192,132,252,.3);border-radius:10px;margin-bottom:16px}
+.score-big .s-num{font-size:52px;font-weight:800;background:linear-gradient(135deg,#f59e0b,#fbbf24);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1}
+.score-big .s-label{font-size:13px;color:#94a3b8;margin-top:6px}
+.merit-earned{text-align:center;padding:10px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:8px;color:#10b981;font-size:14px;font-weight:600;margin-bottom:16px}
+.ach-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-top:8px}
+.ach-badge{background:#1a1a2e;border:1px solid #2d2d4e;border-radius:8px;padding:10px;text-align:center;font-size:11px}
+.ach-badge .ach-icon{font-size:22px;margin-bottom:4px}
+.ach-badge .ach-name{font-weight:600;color:#c084fc;display:block;margin-bottom:2px}
+.ach-badge .ach-desc{color:#64748b;font-size:10px}
+.ach-badge.locked{opacity:.35;filter:grayscale(1)}
+.ach-badge.new-unlock{border-color:#f59e0b;box-shadow:0 0 10px rgba(245,158,11,.3);animation:fadeIn .5s ease}
+.btns-row{display:flex;gap:12px;margin-top:20px}
+.btn-secondary{flex:1;padding:12px;border-radius:10px;border:1px solid #2d2d4e;background:#1a1a2e;color:#e2e8f0;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-secondary:hover{border-color:#c084fc;color:#c084fc}
+.btn-restart{flex:1;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,#c084fc,#818cf8);color:#fff;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .2s}
+.btn-restart:hover{opacity:.9}
+.total-merit{display:flex;align-items:center;justify-content:space-between;background:#1a1a2e;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:8px}
+.total-merit .tm-label{color:#94a3b8}
+.total-merit .tm-val{color:#f59e0b;font-weight:700;font-size:16px}
+/* achievements screen */
+.ach-screen-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:16px}
+</style>
+</head>
+<body>
+<div id="topbar">
+  <a class="back" href="../index.html">← 返回</a>
+  <span class="title">修仙转世模拟器</span>
+  <span class="ver">v1.0</span>
+</div>
+
+<!-- Screen 1: Allocation -->
+<div id="screen-alloc" class="screen active">
+  <div style="max-width:720px;margin:0 auto;padding:24px">
+    <div class="life-header">
+      <div class="life-num" id="life-num-display">第 1 世</div>
+      <div class="subtitle">分配灵根，踏入轮回</div>
+    </div>
+    <div id="merit-info" style="display:none" class="merit-earned" id="merit-info">功德加持：获得 <span id="merit-bonus-pts">0</span> 额外自由点</div>
+    <div class="alloc-card">
+      <div class="section-title">灵根分配</div>
+      <div class="attr-row">
+        <div class="attr-label"><span class="attr-icon">⚔️</span><div><span class="attr-name">根骨</span><span class="attr-sub"> Physique</span></div></div>
+        <div class="attr-controls">
+          <button class="btn-adj" id="dec-physique" onclick="adjustAttr('physique',-1)">−</button>
+          <span class="attr-val" id="val-physique">0</span>
+          <button class="btn-adj" id="inc-physique" onclick="adjustAttr('physique',1)">+</button>
+        </div>
+      </div>
+      <div class="attr-row">
+        <div class="attr-label"><span class="attr-icon">📖</span><div><span class="attr-name">悟性</span><span class="attr-sub"> Comprehension</span></div></div>
+        <div class="attr-controls">
+          <button class="btn-adj" id="dec-comprehension" onclick="adjustAttr('comprehension',-1)">−</button>
+          <span class="attr-val" id="val-comprehension">0</span>
+          <button class="btn-adj" id="inc-comprehension" onclick="adjustAttr('comprehension',1)">+</button>
+        </div>
+      </div>
+      <div class="attr-row">
+        <div class="attr-label"><span class="attr-icon">💰</span><div><span class="attr-name">家世</span><span class="attr-sub"> Background</span></div></div>
+        <div class="attr-controls">
+          <button class="btn-adj" id="dec-background" onclick="adjustAttr('background',-1)">−</button>
+          <span class="attr-val" id="val-background">0</span>
+          <button class="btn-adj" id="inc-background" onclick="adjustAttr('background',1)">+</button>
+        </div>
+      </div>
+      <div class="attr-row">
+        <div class="attr-label"><span class="attr-icon">✨</span><div><span class="attr-name">气运</span><span class="attr-sub"> Luck</span></div></div>
+        <div class="attr-controls">
+          <button class="btn-adj" id="dec-luck" onclick="adjustAttr('luck',-1)">−</button>
+          <span class="attr-val" id="val-luck">0</span>
+          <button class="btn-adj" id="inc-luck" onclick="adjustAttr('luck',1)">+</button>
+        </div>
+      </div>
+      <div class="points-bar">
+        <span class="points-label">剩余灵根点</span>
+        <span class="points-val" id="remaining-pts">20</span>
+      </div>
+    </div>
+    <div class="alloc-card">
+      <div class="section-title">天赋选择（三选一）</div>
+      <div class="talent-grid" id="talent-grid"></div>
+    </div>
+    <button class="btn-primary" id="btn-reborn" onclick="startLife()" disabled>入世转生</button>
+  </div>
+</div>
+
+<!-- Screen 2: Life events -->
+<div id="screen-life" class="screen">
+  <div style="max-width:720px;margin:0 auto;padding:24px">
+    <div class="life-layout">
+      <div class="life-sidebar">
+        <div class="sidebar-age" id="sidebar-age">
+          <span>此生第</span>0<span>岁</span>
+        </div>
+        <div class="stat-pill"><span class="sname">⚔️ 根骨</span><span class="sval" id="sp-physique">0</span></div>
+        <div class="stat-pill"><span class="sname">📖 悟性</span><span class="sval" id="sp-comprehension">0</span></div>
+        <div class="stat-pill"><span class="sname">💰 家世</span><span class="sval" id="sp-background">0</span></div>
+        <div class="stat-pill"><span class="sname">✨ 气运</span><span class="sval" id="sp-luck">0</span></div>
+        <div class="realm-badge" id="realm-badge">凡人</div>
+        <div class="lifespan-wrap">
+          <div class="lifespan-label"><span>寿命</span><span id="lifespan-text">0/0</span></div>
+          <div class="lifespan-bar"><div class="lifespan-fill" id="lifespan-fill" style="width:100%"></div></div>
+        </div>
+        <div class="progress-wrap">
+          <div class="lifespan-label"><span>人生进程</span><span id="progress-text">0%</span></div>
+          <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+        </div>
+        <div class="ctrl-btns">
+          <button class="btn-ctrl" id="btn-step" onclick="stepYear()">逐年</button>
+          <button class="btn-ctrl" id="btn-ff" onclick="toggleFastForward()">快进</button>
+        </div>
+      </div>
+      <div class="event-log" id="event-log"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Screen 3: Summary -->
+<div id="screen-summary" class="screen">
+  <div style="max-width:720px;margin:0 auto;padding:24px">
+    <div class="summary-card">
+      <div class="died-age" id="died-age">0</div>
+      <div class="died-label" id="died-label">享年 0 岁，归入轮回</div>
+      <div class="score-big">
+        <div class="s-num" id="final-score">0</div>
+        <div class="s-label">此生评分</div>
+      </div>
+      <div class="summary-grid">
+        <div class="sum-item"><div class="s-label">境界</div><div class="s-val" id="sum-realm">凡人</div></div>
+        <div class="sum-item"><div class="s-label">根骨</div><div class="s-val" id="sum-physique">0</div></div>
+        <div class="sum-item"><div class="s-label">悟性</div><div class="s-val" id="sum-comprehension">0</div></div>
+        <div class="sum-item"><div class="s-label">气运</div><div class="s-val" id="sum-luck">0</div></div>
+      </div>
+      <div class="merit-earned">此生功德 +<span id="merit-earned-val">0</span>　　累计功德 <span id="merit-total-val">0</span></div>
+      <div class="total-merit"><span class="tm-label">历世总功德</span><span class="tm-val" id="merit-total-big">0</span></div>
+    </div>
+    <div class="alloc-card">
+      <div class="section-title">此生成就</div>
+      <div class="ach-grid" id="ach-new-grid"></div>
+    </div>
+    <div class="btns-row">
+      <button class="btn-secondary" onclick="showAchScreen()">全部成就</button>
+      <button class="btn-restart" onclick="goToAlloc()">再入轮回</button>
+    </div>
+  </div>
+</div>
+
+<!-- Screen 4: All achievements -->
+<div id="screen-achievements" class="screen">
+  <div style="max-width:720px;margin:0 auto;padding:24px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <button class="btn-secondary" style="width:auto;padding:8px 16px" onclick="showScreen('screen-summary')">← 返回</button>
+      <h2 style="font-size:18px;font-weight:700;color:#c084fc">全部成就</h2>
+    </div>
+    <div class="ach-screen-grid" id="ach-all-grid"></div>
+  </div>
+</div>
+
+<script>
+// =================== DATA ===================
+const TALENTS = [
+  {id:'heavenly_root',name:'天灵根',desc:'天生灵根纯净，悟道极快',effect:'悟性+3',apply:a=>{a.comprehension+=3}},
+  {id:'purple_mansion',name:'紫府先天',desc:'先天紫府开启，气运与体魄兼备',effect:'气运+2 根骨+1',apply:a=>{a.luck+=2;a.physique+=1}},
+  {id:'wealthy_fate',name:'富贵命格',desc:'天生贵命，出身不凡',effect:'家世+3',apply:a=>{a.background+=3}},
+  {id:'wood_heart',name:'草木之心',desc:'与自然相通，体魄强健延年益寿',effect:'根骨+2，寿命延长',apply:a=>{a.physique+=2;a.bonusLifespan=15}},
+  {id:'hard_life',name:'命硬',desc:'命如磐石，百折不摧',effect:'根骨+3',apply:a=>{a.physique+=3}},
+  {id:'ancient_wisdom',name:'智慧宿慧',desc:'前世记忆残留，智慧超凡',effect:'悟性+2，解锁特殊事件',apply:a=>{a.comprehension+=2;a.scholarUnlocked=true}},
+  {id:'lucky_carp',name:'锦鲤附体',desc:'幸运加身，逢凶化吉',effect:'气运+3',apply:a=>{a.luck+=3}},
+  {id:'military_family',name:'将门虎子',desc:'将门世家，武艺天成',effect:'根骨+2 家世+1',apply:a=>{a.physique+=2;a.background+=1}},
+  {id:'lone_star',name:'天煞孤星',desc:'孤星入命，孤高天纵',effect:'气运-1 悟性+4',apply:a=>{a.luck-=1;a.comprehension+=4}},
+  {id:'merchant_clan',name:'商贾世家',desc:'家道殷实，财运亨通',effect:'家世+2 气运+1',apply:a=>{a.background+=2;a.luck+=1}},
+  {id:'commoner',name:'白丁寒门',desc:'出身寒微，勤学苦读',effect:'家世-2 悟性+3 根骨+2',apply:a=>{a.background-=2;a.comprehension+=3;a.physique+=2}},
+  {id:'ill_fated',name:'命途多舛',desc:'命运多舛，历经磨难，意志如铁',effect:'家世-1 气运-1 根骨+4 悟性+2',apply:a=>{a.background-=1;a.luck-=1;a.physique+=4;a.comprehension+=2}},
+  {id:'thin_fate',name:'仙缘浅薄',desc:'与仙道缘分虽浅，气运卓绝',effect:'悟性-1 气运+4',apply:a=>{a.comprehension-=1;a.luck+=4}},
+  {id:'near_death',name:'将死之人',desc:'生来体弱，然悟性超群',effect:'根骨-2 悟性+5',apply:a=>{a.physique-=2;a.comprehension+=5}},
+  {id:'wu_wei',name:'无为自然',desc:'顺应自然，诸属皆匀',effect:'所有属性+1',apply:a=>{a.physique+=1;a.comprehension+=1;a.background+=1;a.luck+=1}}
+];
+
+const REALMS = [
+  {name:'凡人',min:0,bonus:0},
+  {name:'练气',min:4,bonus:20},
+  {name:'筑基',min:7,bonus:50},
+  {name:'金丹',min:10,bonus:100},
+  {name:'元婴',min:13,bonus:200},
+  {name:'化神',min:16,bonus:500}
+];
+
+const ACHIEVEMENTS = [
+  {id:'first_life',name:'初入轮回',desc:'完成第一世',icon:'🌱'},
+  {id:'century',name:'百岁人瑞',desc:'活到100岁',icon:'🕯️'},
+  {id:'cultivator',name:'仙缘初启',desc:'加入修仙门派',icon:'⛩️'},
+  {id:'foundation',name:'筑基成功',desc:'达到筑基境界',icon:'🏔️'},
+  {id:'golden_core',name:'金丹大道',desc:'凝聚金丹',icon:'💎'},
+  {id:'ascend',name:'飞升成仙',desc:'飞升，超脱轮回',icon:'🌟'},
+  {id:'scholar',name:'满腹经纶',desc:'科举高中',icon:'📜'},
+  {id:'teacher',name:'桃李天下',desc:'执教一方，桃李满天下',icon:'🏫'},
+  {id:'lucky_carp_talent',name:'鸿运当头',desc:'选择锦鲤附体天赋',icon:'🐟'},
+  {id:'ten_lives',name:'十世轮回',desc:'完成十世轮回',icon:'♾️'},
+  {id:'war_god',name:'修罗战神',desc:'根骨达到12',icon:'⚔️'},
+  {id:'rags_to_riches',name:'白手起家',desc:'家世≤2起步，最终≥7',icon:'💰'},
+  {id:'sage',name:'天道酬勤',desc:'悟性达到15',icon:'📖'},
+  {id:'reversal',name:'否极泰来',desc:'早年历尽磨难，仍活过80岁',icon:'🌈'},
+  {id:'five_social',name:'五福临门',desc:'一世中触发五个社交事件',icon:'🎊'},
+  {id:'wu_wei_long',name:'无为而治',desc:'选无为自然，活到90岁',icon:'🍃'},
+  {id:'lone_core',name:'孤注一掷',desc:'天煞孤星天赋，达到金丹',icon:'🌙'},
+  {id:'five_lives',name:'前世今生',desc:'完成五世轮回',icon:'🔄'},
+  {id:'nascent',name:'元婴成就',desc:'达到元婴境界',icon:'👶'},
+  {id:'long_lived',name:'寿元绵长',desc:'活到120岁',icon:'🌲'}
+];
+
+const EVENTS = [
+  // MUNDANE
+  {id:'birth',text:'降生于世，哇哇大哭，人生的序章就此展开。',type:'mundane',minAge:0,maxAge:0,weight:100,lifespan:5,score:0},
+  {id:'childhood1',text:'幼年时期，在父母的庇护下无忧无虑地成长。',type:'mundane',minAge:1,maxAge:5,weight:80},
+  {id:'childhood2',text:'童年记忆碎片：追蝴蝶、摸鱼、爬树，无忧无虑。',type:'mundane',minAge:1,maxAge:5,weight:60},
+  {id:'reading',text:'开始识字读书，先生夸你聪慧过人。',type:'mundane',minAge:3,maxAge:8,minComp:3,weight:50,comprehension:1},
+  {id:'naughty',text:'顽劣孩童，整日逃课，先生头疼不已。',type:'mundane',minAge:3,maxAge:8,weight:40},
+  {id:'friend',text:'结识一位挚友，两人形影不离，相知相守。',type:'social',minAge:5,maxAge:15,weight:50,score:5},
+  {id:'exam_pass',text:'参加科举考试，文章绝伦，榜上题名！',type:'mundane',minAge:8,maxAge:18,minComp:5,weight:30,background:1,score:10,achievement:'scholar'},
+  {id:'exam_fail',text:'科举落第，心灰意冷，在家苦读三载。',type:'mundane',minAge:8,maxAge:18,weight:50},
+  {id:'marriage',text:'成婚，与伴侣相识相爱，白头偕老之约。',type:'social',minAge:15,maxAge:25,weight:60,score:5},
+  {id:'business',text:'经商致富，运筹帷幄，积累了丰厚家产。',type:'wealth',minAge:20,maxAge:40,minBg:4,weight:40,background:1,score:8},
+  {id:'children',text:'膝下承欢，儿孙满堂，尽享天伦之乐。',type:'social',minAge:30,maxAge:60,weight:50,score:10},
+  {id:'old_weak',text:'年迈体衰，步履蹒跚，岁月不饶人。',type:'mundane',minAge:50,maxAge:80,weight:80,physique:-1},
+  {id:'grandchildren',text:'含饴弄孙，安享晚年，岁月静好。',type:'mundane',minAge:60,maxAge:90,weight:70,score:5},
+  {id:'peaceful_death',text:'寿终正寝，平静离世，此生无憾。',type:'mundane',minAge:70,maxAge:100,weight:90,isDeath:true},
+  {id:'village_elder',text:'成为村中德高望重的长者，邻里皆尊。',type:'mundane',minAge:40,maxAge:70,weight:35,score:6},
+  {id:'harvest',text:'今岁风调雨顺，庄稼丰收，仓廪充实。',type:'mundane',minAge:20,maxAge:60,minBg:2,weight:45,score:3},
+  {id:'pet',text:'养了一条老黄狗，相伴十余年，忠心耿耿。',type:'mundane',minAge:10,maxAge:50,weight:30,score:2},
+  // CULTIVATION
+  {id:'found_manual',text:'偶然发现一本破旧的修炼秘籍，如获至宝，废寝忘食研读。',type:'spiritual',minAge:5,maxAge:20,minComp:3,weight:40,comprehension:1},
+  {id:'join_sect',text:'拜入青云修仙门派，踏上修炼之路，从此与红尘渐远。',type:'spiritual',minAge:10,maxAge:30,minComp:4,weight:35,score:15,achievement:'cultivator'},
+  {id:'qi_break',text:'突破练气期，感受到天地灵气涌入体内，通体舒泰。',type:'spiritual',minAge:15,maxAge:40,minComp:4,weight:30,comprehension:1,score:10},
+  {id:'seclusion',text:'闭关三年，感悟天地玄机，出关时修为大进。',type:'spiritual',minAge:20,maxAge:60,minComp:6,weight:25,comprehension:2,lifespan:10,score:20},
+  {id:'bottleneck',text:'修炼遭遇瓶颈，苦思冥想数年，始终难以突破。',type:'spiritual',minAge:30,maxAge:80,minComp:5,weight:30},
+  {id:'foundation_break',text:'参悟天地玄机，一朝顿悟，筑基成功！境界飞升！',type:'spiritual',minAge:30,maxAge:80,minComp:7,weight:20,comprehension:2,lifespan:20,score:30,achievement:'foundation',realmCheck:'筑基'},
+  {id:'golden_core_ev',text:'真元凝聚，金丹圆满，修为踏入化境，仙道大成！',type:'spiritual',minAge:50,maxAge:120,minComp:10,weight:15,lifespan:40,score:50,achievement:'golden_core',realmCheck:'金丹'},
+  {id:'nascent_ev',text:'神识凝聚，元婴出窍，修为突破，寿元大增！',type:'spiritual',minAge:80,maxAge:200,minComp:13,weight:8,lifespan:80,score:80,achievement:'nascent',realmCheck:'元婴'},
+  {id:'spirit_disciple',text:'灵根初显，引来仙门弟子注意，被收为记名弟子。',type:'spiritual',minAge:5,maxAge:20,minComp:5,minLuck:3,weight:20},
+  {id:'old_master',text:'得遇世外高人，传授一甲子功力，受益无穷。',type:'spiritual',minAge:20,maxAge:60,minLuck:7,weight:10,comprehension:3,lifespan:15,score:25},
+  {id:'missed_ascend',text:'飞升机缘降临，却因修为不足，眼睁睁错过，追悔莫及。',type:'spiritual',minAge:40,maxAge:100,minComp:8,weight:15,score:-5},
+  {id:'ascend_ev',text:'天门洞开，仙乐齐鸣，飞升成仙，超脱轮回！',type:'spiritual',minAge:60,maxAge:300,minComp:14,minLuck:5,weight:5,lifespan:999,score:100,achievement:'ascend',isDeath:true,isAscend:true},
+  {id:'dao_companion',text:'修道路上偶遇道侣，两人相扶相持，共证大道。',type:'spiritual',minAge:20,maxAge:80,minComp:4,weight:20,score:12},
+  {id:'magic_treasure',text:'机缘巧合得一件上品法宝，如虎添翼，修炼事半功倍。',type:'spiritual',minAge:30,maxAge:100,minLuck:5,weight:15,comprehension:1,score:18},
+  // WEALTH
+  {id:'find_treasure',text:'无意间挖到一坛金银，意外之财，家境大为改善。',type:'wealth',minAge:5,maxAge:20,minLuck:5,weight:20,background:1,score:10},
+  {id:'lottery',text:'中了彩头，喜从天降，乡邻称羡。',type:'wealth',minAge:15,maxAge:40,minLuck:4,weight:25,background:1,score:8},
+  {id:'business_fail',text:'生意失败，一夕倾家荡产，人生低谷。',type:'wealth',minAge:20,maxAge:60,minBg:3,weight:20,background:-2},
+  {id:'lost_artifact',text:'拾得遗失的灵器，物归原主，主人感激涕零，厚礼相赠。',type:'wealth',minAge:10,maxAge:30,minLuck:6,weight:15,luck:1,score:10},
+  {id:'investment',text:'慧眼识珠，投资得利，财运亨通，富甲一方。',type:'wealth',minAge:30,maxAge:70,minBg:5,minLuck:3,weight:20,background:1,score:12},
+  {id:'windfall',text:'天降横财，意外获赠一处庄园，生活富足。',type:'wealth',minAge:25,maxAge:55,minLuck:6,weight:12,background:1,score:8},
+  // DANGER
+  {id:'bandit',text:'遭遇山贼劫持，拼死抵抗，好在命大逃脱。',type:'danger',minAge:10,maxAge:40,weight:25,physique:-1,score:-5,physiqueSave:5},
+  {id:'sect_war',text:'卷入门派纷争，险些丧命，身上留下几道疤。',type:'danger',minAge:15,maxAge:50,weight:20,physique:-1,score:-5},
+  {id:'qi_deviation',text:'修炼走火入魔，受了内伤，元气大损。',type:'danger',minAge:20,maxAge:60,minComp:3,weight:15,physique:-2,lifespan:-10},
+  {id:'disaster',text:'遭遇天灾，洪水肆虐，流离失所，苦不堪言。',type:'danger',minAge:30,maxAge:80,weight:20,background:-1,score:-3},
+  {id:'illness',text:'染上恶疾，久治不愈，缠绵病榻数载。',type:'danger',minAge:5,maxAge:30,weight:15,physique:-2,lifespan:-15},
+  {id:'battle',text:'一场大战，身负重伤，九死一生。',type:'danger',minAge:40,maxAge:90,minPhysique:3,weight:15,physique:-1,lifespan:-10},
+  {id:'dying',text:'油尽灯枯，大限将至，时日无多。',type:'danger',minAge:60,maxAge:100,weight:40,lifespan:-50},
+  {id:'demon_attack',text:'妖兽突袭村落，奋力保护乡亲，浴血搏杀。',type:'danger',minAge:15,maxAge:60,weight:18,physique:-1,score:5},
+  {id:'poison',text:'误服毒药，险些毙命，幸得高人解救。',type:'danger',minAge:10,maxAge:50,weight:12,physique:-1,lifespan:-8,luck:1},
+  // SOCIAL
+  {id:'red_face',text:'红颜知己，倾心相许，奈何缘分已尽，此情难忘。',type:'social',minAge:15,maxAge:35,weight:30,score:3},
+  {id:'fallout',text:'与多年好友反目，心生嫌隙，痛失挚交。',type:'social',minAge:20,maxAge:50,weight:25,luck:-1},
+  {id:'filial_child',text:'子女出息，金榜题名，光耀门楣，家族引以为荣。',type:'social',minAge:25,maxAge:60,minBg:3,weight:30,score:10},
+  {id:'teach',text:'在乡间义学教书，桃李满天下，德馨千里。',type:'social',minAge:10,maxAge:30,minComp:5,weight:25,score:8,achievement:'teacher'},
+  {id:'network',text:'广结善缘，人脉遍布四方，有缘人处处相助。',type:'social',minAge:30,maxAge:70,minLuck:4,weight:20,luck:1,score:8},
+  {id:'mentor',text:'得一贵人提携，仕途平坦，春风得意。',type:'social',minAge:20,maxAge:45,minBg:3,minLuck:3,weight:20,background:1,score:10},
+  {id:'betrayed',text:'遭人暗算，心腹背叛，险遭灭门之祸。',type:'danger',minAge:25,maxAge:60,weight:15,luck:-1,score:-8},
+  {id:'reunion',text:'游子归乡，与亲人团聚，喜极而泣。',type:'social',minAge:20,maxAge:60,weight:25,score:4},
+  {id:'charity',text:'慷慨解囊，赈济灾民，积德行善，名声大振。',type:'social',minAge:30,maxAge:70,minBg:4,weight:18,luck:1,score:6},
+  // MORE MISC
+  {id:'dream',text:'夜梦仙境，醒来神清气爽，若有所悟。',type:'spiritual',minAge:5,maxAge:80,weight:20,score:2},
+  {id:'journey',text:'一次远游，行万里路，见识了外面的天地之大。',type:'mundane',minAge:15,maxAge:50,weight:25,score:3},
+  {id:'study_hard',text:'夜以继日苦读，头悬梁锥刺股，学识精进。',type:'mundane',minAge:10,maxAge:30,minComp:2,weight:30,comprehension:1},
+  {id:'festival',text:'逢年过节，与家人共度良宵，其乐融融。',type:'mundane',minAge:5,maxAge:70,weight:35,score:2},
+  {id:'lost_family',text:'失去至亲，悲痛欲绝，在孤独中学会坚强。',type:'mundane',minAge:10,maxAge:60,weight:20,score:-2,physique:-1},
+  {id:'second_wind',text:'人到中年，忽得顿悟，重拾年轻时的梦想。',type:'mundane',minAge:35,maxAge:60,weight:20,comprehension:1,score:5},
+  {id:'spring_rain',text:'春雨绵绵，独坐庭前，心境平和如水。',type:'mundane',minAge:20,maxAge:90,weight:30,score:1},
+  {id:'ancient_ruins',text:'偶入古遗迹，发现先人留下的修炼心得，如获珍宝。',type:'spiritual',minAge:20,maxAge:60,minLuck:4,weight:15,comprehension:1,score:8},
+  {id:'celestial_event',text:'亲历日月合璧奇观，天象示瑞，心生感悟。',type:'spiritual',minAge:10,maxAge:80,minLuck:5,weight:10,comprehension:1,score:5},
+  {id:'generous_patron',text:'得豪绅资助，生活无忧，专心学问。',type:'wealth',minAge:15,maxAge:40,minBg:2,weight:15,background:1,score:5},
+  {id:'rare_herb',text:'山中采药，偶得稀世灵草，服下后神清气爽，寿元增益。',type:'spiritual',minAge:20,maxAge:80,minLuck:4,weight:12,lifespan:8,score:5},
+  {id:'old_age_wisdom',text:'耄耋之年，回首往事，满心皆是感慨与从容。',type:'mundane',minAge:75,maxAge:120,weight:25,score:6},
+  {id:'natural_death_old',text:'在睡梦中安然离世，无病无痛，是为善终。',type:'mundane',minAge:80,maxAge:130,weight:60,isDeath:true},
+  {id:'death_illness_early',text:'久病缠身，英年早逝，令人扼腕。',type:'danger',minAge:20,maxAge:50,weight:8,isDeath:true},
+  {id:'cultivate_success2',text:'在山洞中独自苦修十年，出关时已是脱胎换骨。',type:'spiritual',minAge:25,maxAge:70,minComp:6,weight:18,comprehension:1,physique:1,lifespan:5,score:12},
+  {id:'spirit_beast',text:'结识一头灵兽，两者心意相通，共同修炼。',type:'spiritual',minAge:15,maxAge:60,minLuck:5,weight:12,physique:1,score:8},
+  {id:'market_encounter',text:'集市中偶遇异人，交谈甚欢，得授一门秘技。',type:'mundane',minAge:10,maxAge:60,weight:15,luck:1,score:4}
+];
+// =================== STATE ===================
+let state = {
+  life: 0,
+  age: 0,
+  attrs: {physique:0, comprehension:0, background:0, luck:0},
+  lifespan: 0,
+  maxLifespan: 0,
+  score: 0,
+  merit: parseInt(localStorage.getItem('reborn_merit')||'0'),
+  totalLives: parseInt(localStorage.getItem('reborn_lives')||'0'),
+  achievements: JSON.parse(localStorage.getItem('reborn_achievements')||'[]'),
+  eventLog: [],
+  talent: null,
+  realm: '凡人',
+  prevRealm: '凡人',
+  ffInterval: null,
+  ffRunning: false,
+  allocPoints: {},
+  drawnTalents: [],
+  selectedTalent: null,
+  thisLifeScore: 0,
+  socialEventsThisLife: 0,
+  earlyNegative: 0,
+  survivedTo80: false,
+  startBg: 0,
+  highPhysique: false
+};
+let allocBase = 20;
+let allocUsed = 0;
+
+function getBonus(){return Math.floor(state.merit/5)}
+
+function getRealm(comp){
+  for(let i=REALMS.length-1;i>=0;i--){
+    if(comp>=REALMS[i].min) return REALMS[i];
+  }
+  return REALMS[0];
+}
+
+function getRealmName(comp){return getRealm(comp).name}
+
+// =================== ALLOCATION SCREEN ===================
+function initAlloc(){
+  state.life++;
+  state.allocPoints = {physique:0,comprehension:0,background:0,luck:0};
+  allocBase = 20 + getBonus();
+  allocUsed = 0;
+  state.selectedTalent = null;
+  // Draw 3 random talents
+  let pool = [...TALENTS];
+  state.drawnTalents = [];
+  for(let i=0;i<3&&pool.length>0;i++){
+    let idx = Math.floor(Math.random()*pool.length);
+    state.drawnTalents.push(pool.splice(idx,1)[0]);
+  }
+  renderAllocScreen();
+}
+
+function renderAllocScreen(){
+  document.getElementById('life-num-display').textContent = '第 '+state.life+' 世';
+  const bonus = getBonus();
+  const meritInfo = document.getElementById('merit-info');
+  if(bonus>0){
+    meritInfo.style.display='block';
+    document.getElementById('merit-bonus-pts').textContent=bonus;
+  } else {
+    meritInfo.style.display='none';
+  }
+  const attrs = ['physique','comprehension','background','luck'];
+  attrs.forEach(a=>{
+    document.getElementById('val-'+a).textContent = state.allocPoints[a]||0;
+    document.getElementById('dec-'+a).disabled = (state.allocPoints[a]||0)<=0;
+    document.getElementById('inc-'+a).disabled = allocUsed>=allocBase;
+  });
+  document.getElementById('remaining-pts').textContent = allocBase-allocUsed;
+  // Render talent cards
+  const grid = document.getElementById('talent-grid');
+  grid.innerHTML = '';
+  state.drawnTalents.forEach(t=>{
+    const card = document.createElement('div');
+    card.className = 'talent-card'+(state.selectedTalent===t.id?' selected':'');
+    card.innerHTML = `<div class="talent-name">${t.name}</div><div class="talent-desc">${t.desc}</div><div class="talent-effect">${t.effect}</div>`;
+    card.onclick=()=>selectTalent(t.id);
+    grid.appendChild(card);
+  });
+  updateRebornBtn();
+}
+
+function adjustAttr(attr, delta){
+  const cur = state.allocPoints[attr]||0;
+  if(delta<0 && cur<=0) return;
+  if(delta>0 && allocUsed>=allocBase) return;
+  state.allocPoints[attr] = cur+delta;
+  allocUsed = Object.values(state.allocPoints).reduce((a,b)=>a+b,0);
+  renderAllocScreen();
+}
+
+function selectTalent(id){
+  state.selectedTalent = id;
+  renderAllocScreen();
+}
+
+function updateRebornBtn(){
+  const allUsed = allocUsed === allocBase;
+  const talentPicked = !!state.selectedTalent;
+  document.getElementById('btn-reborn').disabled = !(allUsed && talentPicked);
+}
+
+// =================== START LIFE ===================
+function startLife(){
+  // Apply base allocation
+  const attrs = {
+    physique: state.allocPoints.physique||0,
+    comprehension: state.allocPoints.comprehension||0,
+    background: state.allocPoints.background||0,
+    luck: state.allocPoints.luck||0,
+    bonusLifespan:0,
+    scholarUnlocked:false
+  };
+  // Apply talent
+  const talent = TALENTS.find(t=>t.id===state.selectedTalent);
+  if(talent) talent.apply(attrs);
+  state.talent = state.selectedTalent;
+  state.attrs = {
+    physique: Math.max(0,attrs.physique),
+    comprehension: Math.max(0,attrs.comprehension),
+    background: Math.max(0,attrs.background),
+    luck: Math.max(0,attrs.luck)
+  };
+  // Achievements for talent
+  if(state.selectedTalent==='lucky_carp') unlockAchievement('lucky_carp_talent');
+  // Calc lifespan
+  state.maxLifespan = 70 + state.attrs.physique*5 + state.attrs.background*2 + (attrs.bonusLifespan||0);
+  state.lifespan = state.maxLifespan;
+  state.age = 0;
+  state.score = 0;
+  state.thisLifeScore = 0;
+  state.eventLog = [];
+  state.realm = '凡人';
+  state.prevRealm = '凡人';
+  state.ffRunning = false;
+  state.socialEventsThisLife = 0;
+  state.earlyNegative = 0;
+  state.survivedTo80 = false;
+  state.startBg = state.attrs.background;
+  state.highPhysique = false;
+  if(state.ffInterval) clearInterval(state.ffInterval);
+  showScreen('screen-life');
+  updateSidebar();
+  clearEventLog();
+  // First year immediately
+  processYear();
+}
+
+// =================== YEAR PROCESSING ===================
+function getEligibleEvents(age, attrs){
+  return EVENTS.filter(ev=>{
+    if(ev.minAge!==undefined && age<ev.minAge) return false;
+    if(ev.maxAge!==undefined && age>ev.maxAge) return false;
+    if(ev.minComp!==undefined && attrs.comprehension<ev.minComp) return false;
+    if(ev.minLuck!==undefined && attrs.luck<ev.minLuck) return false;
+    if(ev.minPhysique!==undefined && attrs.physique<ev.minPhysique) return false;
+    if(ev.minBg!==undefined && attrs.background<ev.minBg) return false;
+    return true;
+  });
+}
+
+function weightedRandom(events){
+  const total = events.reduce((s,e)=>s+e.weight,0);
+  let r = Math.random()*total;
+  for(const e of events){
+    r-=e.weight;
+    if(r<=0) return e;
+  }
+  return events[events.length-1];
+}
+
+function processYear(){
+  if(state.lifespan<=0) return;
+  state.age++;
+  // Deplete lifespan by 1 per year (base)
+  state.lifespan = Math.max(0, state.lifespan-1);
+  // Get eligible events
+  const eligible = getEligibleEvents(state.age, state.attrs);
+  if(eligible.length>0){
+    const ev = weightedRandom(eligible);
+    applyEvent(ev);
+  }
+  // Check realm change
+  const newRealm = getRealmName(state.attrs.comprehension);
+  if(newRealm !== state.realm){
+    const oldR = state.realm;
+    state.realm = newRealm;
+    addRealmEvent(oldR, newRealm);
+  }
+  // Track achievements
+  if(state.attrs.physique>=12) state.highPhysique=true;
+  if(state.age>=80) state.survivedTo80=true;
+  if(state.attrs.comprehension>=15) unlockAchievement('sage');
+  if(state.highPhysique) unlockAchievement('war_god');
+  if(state.age>=100) unlockAchievement('century');
+  if(state.age>=120) unlockAchievement('long_lived');
+  updateSidebar();
+  scrollLog();
+  if(state.lifespan<=0) endLife();
+}
+
+function applyEvent(ev){
+  // Apply stat effects
+  if(ev.physique) state.attrs.physique = Math.max(0, state.attrs.physique + ev.physique);
+  if(ev.comprehension) state.attrs.comprehension = Math.max(0, state.attrs.comprehension + ev.comprehension);
+  if(ev.background) state.attrs.background = Math.max(0, state.attrs.background + ev.background);
+  if(ev.luck) state.attrs.luck = Math.max(0, state.attrs.luck + ev.luck);
+  if(ev.lifespan){
+    if(ev.lifespan===999){state.lifespan=999;state.maxLifespan=999;}
+    else { state.lifespan = Math.max(0, state.lifespan + ev.lifespan); state.maxLifespan = Math.max(state.maxLifespan, state.lifespan); }
+  }
+  if(ev.score) state.score += ev.score;
+  if(ev.score && ev.score<0 && state.age<30) state.earlyNegative++;
+  if(ev.achievement) unlockAchievement(ev.achievement);
+  if(ev.type==='social') state.socialEventsThisLife++;
+  if(state.socialEventsThisLife>=5) unlockAchievement('five_social');
+  // Special physique save for bandit
+  if(ev.id==='bandit' && state.attrs.physique>=5){ state.attrs.physique+=1; state.score+=5; }
+  addEventToLog(ev);
+  if(ev.isDeath){
+    state.lifespan=0;
+  }
+}
+
+function addEventToLog(ev){
+  state.eventLog.push({age:state.age, text:ev.text, type:ev.type, isDeath:ev.isDeath, isAscend:ev.isAscend});
+  renderEventRow(state.age, ev.text, ev.type, ev.isDeath, ev.isAscend);
+}
+
+function addRealmEvent(oldR, newR){
+  const text = `【境界突破】从 ${oldR} 踏入 ${newR} ！天地为之震颤，前路更加宽广。`;
+  state.eventLog.push({age:state.age, text, type:'spiritual', isRealm:true});
+  renderEventRow(state.age, text, 'spiritual', false, false, true);
+}
+
+function renderEventRow(age, text, type, isDeath, isAscend, isRealm){
+  const log = document.getElementById('event-log');
+  const row = document.createElement('div');
+  let cls = 'ev-row '+type;
+  if(isDeath) cls += ' death-event';
+  if(isRealm) cls = 'ev-row realm-up';
+  row.className = cls;
+  row.innerHTML = `<div class="ev-age">${age}</div><div class="ev-text">${text}</div>`;
+  log.appendChild(row);
+}
+
+function clearEventLog(){
+  document.getElementById('event-log').innerHTML='';
+}
+
+function scrollLog(){
+  const log = document.getElementById('event-log');
+  log.scrollTop = log.scrollHeight;
+}
+
+// =================== SIDEBAR ===================
+function updateSidebar(){
+  document.getElementById('sidebar-age').innerHTML = `<span>此生第</span>${state.age}<span>岁</span>`;
+  document.getElementById('sp-physique').textContent = state.attrs.physique;
+  document.getElementById('sp-comprehension').textContent = state.attrs.comprehension;
+  document.getElementById('sp-background').textContent = state.attrs.background;
+  document.getElementById('sp-luck').textContent = state.attrs.luck;
+  document.getElementById('realm-badge').textContent = state.realm;
+  const maxLS = state.maxLifespan===999?999:state.maxLifespan;
+  const pct = maxLS===999?100:Math.max(0,Math.round(state.lifespan/maxLS*100));
+  document.getElementById('lifespan-text').textContent = state.lifespan+'/'+(maxLS===999?'∞':maxLS);
+  const fill = document.getElementById('lifespan-fill');
+  fill.style.width = pct+'%';
+  fill.className = 'lifespan-fill'+(pct<25?' low':'');
+  const agePct = maxLS===999?0:Math.min(100,Math.round(state.age/maxLS*100));
+  document.getElementById('progress-fill').style.width=agePct+'%';
+  document.getElementById('progress-text').textContent=agePct+'%';
+}
+
+// =================== CONTROLS ===================
+function stepYear(){
+  if(state.ffRunning) toggleFastForward();
+  if(state.lifespan>0) processYear();
+}
+
+function toggleFastForward(){
+  if(state.ffRunning){
+    clearInterval(state.ffInterval);
+    state.ffRunning=false;
+    document.getElementById('btn-ff').textContent='快进';
+    document.getElementById('btn-ff').classList.remove('active-ff');
+  } else {
+    if(state.lifespan<=0) return;
+    state.ffRunning=true;
+    document.getElementById('btn-ff').textContent='暂停';
+    document.getElementById('btn-ff').classList.add('active-ff');
+    state.ffInterval = setInterval(()=>{
+      if(state.lifespan<=0){
+        clearInterval(state.ffInterval);
+        state.ffRunning=false;
+        document.getElementById('btn-ff').textContent='快进';
+        document.getElementById('btn-ff').classList.remove('active-ff');
+      } else {
+        processYear();
+      }
+    },80);
+  }
+}
+
+// =================== END LIFE ===================
+function endLife(){
+  if(state.ffRunning) toggleFastForward();
+  // Final achievements
+  if(state.totalLives+1===1) unlockAchievement('first_life');
+  if(state.earlyNegative>=3 && state.survivedTo80) unlockAchievement('reversal');
+  if(state.startBg<=2 && state.attrs.background>=7) unlockAchievement('rags_to_riches');
+  if(state.talent==='wu_wei' && state.age>=90) unlockAchievement('wu_wei_long');
+  if(state.talent==='lone_star' && (state.realm==='金丹'||state.realm==='元婴'||state.realm==='化神')) unlockAchievement('lone_core');
+  state.totalLives++;
+  if(state.totalLives>=5) unlockAchievement('five_lives');
+  if(state.totalLives>=10) unlockAchievement('ten_lives');
+  localStorage.setItem('reborn_lives', state.totalLives);
+  // Score calc
+  const realmBonus = getRealm(state.attrs.comprehension).bonus;
+  const meritBonus = getBonus();
+  const finalScore = state.age + realmBonus + state.score + meritBonus*5;
+  const meritEarned = Math.floor(finalScore/10);
+  state.merit += meritEarned;
+  localStorage.setItem('reborn_merit', state.merit);
+  // Show summary
+  showSummary(finalScore, meritEarned);
+}
+
+function showSummary(finalScore, meritEarned){
+  const isAscend = state.eventLog.some(e=>e.isAscend);
+  document.getElementById('died-age').textContent = state.age;
+  document.getElementById('died-label').textContent = isAscend
+    ? '恭喜飞升！超脱轮回！'
+    : `享年 ${state.age} 岁，归入轮回`;
+  document.getElementById('final-score').textContent = finalScore;
+  document.getElementById('sum-realm').textContent = state.realm;
+  document.getElementById('sum-physique').textContent = state.attrs.physique;
+  document.getElementById('sum-comprehension').textContent = state.attrs.comprehension;
+  document.getElementById('sum-luck').textContent = state.attrs.luck;
+  document.getElementById('merit-earned-val').textContent = meritEarned;
+  document.getElementById('merit-total-val').textContent = state.merit;
+  document.getElementById('merit-total-big').textContent = state.merit;
+  // Achievements this life
+  const grid = document.getElementById('ach-new-grid');
+  grid.innerHTML='';
+  ACHIEVEMENTS.forEach(a=>{
+    const unlocked = state.achievements.includes(a.id);
+    const div = document.createElement('div');
+    div.className='ach-badge'+(unlocked?'':' locked');
+    div.innerHTML=`<div class="ach-icon">${a.icon}</div><span class="ach-name">${unlocked?a.name:'???'}</span><div class="ach-desc">${unlocked?a.desc:''}</div>`;
+    grid.appendChild(div);
+  });
+  showScreen('screen-summary');
+}
+
+function showAchScreen(){
+  const grid = document.getElementById('ach-all-grid');
+  grid.innerHTML='';
+  ACHIEVEMENTS.forEach(a=>{
+    const unlocked = state.achievements.includes(a.id);
+    const div = document.createElement('div');
+    div.className='ach-badge'+(unlocked?'':' locked');
+    div.innerHTML=`<div class="ach-icon">${a.icon}</div><span class="ach-name">${unlocked?a.name:'???'}</span><div class="ach-desc">${unlocked?a.desc:'尚未解锁'}</div>`;
+    grid.appendChild(div);
+  });
+  showScreen('screen-achievements');
+}
+
+function unlockAchievement(id){
+  if(!state.achievements.includes(id)){
+    state.achievements.push(id);
+    localStorage.setItem('reborn_achievements', JSON.stringify(state.achievements));
+  }
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function goToAlloc(){
+  showScreen('screen-alloc');
+  initAlloc();
+}
+
+// =================== INIT ===================
+initAlloc();
+</script>
+</body>
+</html>
