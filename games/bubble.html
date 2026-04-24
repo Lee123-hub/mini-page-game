@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>吹泡泡</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#b8e4f7;overflow:hidden;font-family:'Segoe UI',sans-serif;user-select:none}
+canvas{display:block;position:fixed;top:0;left:0}
+
+/* ── 顶栏 ── */
+#topbar{position:fixed;top:0;left:0;right:0;height:48px;
+  background:rgba(255,255,255,.45);backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(255,255,255,.6);
+  display:flex;align-items:center;padding:0 16px;z-index:50;gap:12px}
+#topbar a{color:#5b9bd5;text-decoration:none;font-size:13px;font-weight:600;opacity:.8}
+#topbar a:hover{opacity:1}
+#topbar h1{font-size:15px;font-weight:700;color:#3a7bbf;flex:1}
+.tag{background:rgba(90,160,230,.15);color:#3a7bbf;border-radius:20px;
+  padding:3px 10px;font-size:12px;font-weight:600}
+
+/* ── 控制面板（右下）── */
+#panel{position:fixed;right:16px;bottom:16px;width:200px;
+  background:rgba(255,255,255,.55);backdrop-filter:blur(16px);
+  border:1px solid rgba(255,255,255,.8);border-radius:16px;
+  padding:14px 16px;z-index:50;box-shadow:0 4px 24px rgba(80,140,200,.15)}
+#panel h3{font-size:12px;font-weight:700;color:#3a7bbf;margin-bottom:10px;letter-spacing:.5px}
+.row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.row label{font-size:11px;color:#5a8aaa;font-weight:600}
+.row .val{font-size:11px;color:#3a7bbf;font-weight:700;min-width:28px;text-align:right}
+input[type=range]{-webkit-appearance:none;width:90px;height:4px;border-radius:4px;
+  background:linear-gradient(90deg,#5bb8f5,#a8d8ea);outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;
+  border-radius:50%;background:#fff;border:2px solid #5bb8f5;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.divider{height:1px;background:rgba(90,160,230,.15);margin:8px 0}
+#panel .hint{font-size:10px;color:#8ab0c8;line-height:1.5;margin-top:6px}
+
+/* ── 泡泡计数 ── */
+#counter{position:fixed;top:58px;left:16px;
+  background:rgba(255,255,255,.5);backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.7);border-radius:12px;
+  padding:8px 14px;font-size:13px;font-weight:700;color:#3a7bbf;z-index:50}
+</style>
+</head>
+<body>
+<div id="topbar">
+  <a href="../index.html">← 返回</a>
+  <h1>🫧 吹泡泡</h1>
+  <span class="tag" id="popsTag">戳破 0 个</span>
+</div>
+<canvas id="c"></canvas>
+<div id="counter">🫧 <span id="cntAlive">0</span> 个泡泡</div>
+
+<div id="panel">
+  <h3>🌀 风机控制</h3>
+  <div class="row">
+    <label>风力</label>
+    <input type="range" id="sFan" min="1" max="10" value="4" step=".5">
+    <span class="val" id="vFan">4</span>
+  </div>
+  <div class="row">
+    <label>风扇范围</label>
+    <input type="range" id="sFanW" min="40" max="240" value="110" step="5">
+    <span class="val" id="vFanW">110</span>
+  </div>
+  <div class="divider"></div>
+  <h3>⭕ 泡泡圈</h3>
+  <div class="row">
+    <label>圈的大小</label>
+    <input type="range" id="sWand" min="18" max="72" value="32" step="2">
+    <span class="val" id="vWand">32</span>
+  </div>
+  <div class="divider"></div>
+  <div class="hint">拖动泡泡圈移动位置<br>点击泡泡可以戳破它</div>
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H;
+function resize(){
+  W=canvas.width=innerWidth;
+  H=canvas.height=innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ── 参数 ──
+let fanPower = 4;
+let fanWidth = 110;
+let wandRadius = 32;
+
+// ── 滑块绑定 ──
+function bindSlider(id, valId, setter){
+  const el=document.getElementById(id);
+  const vEl=document.getElementById(valId);
+  el.addEventListener('input',()=>{ setter(parseFloat(el.value)); vEl.textContent=el.value; });
+}
+bindSlider('sFan','vFan', v=>fanPower=v);
+bindSlider('sFanW','vFanW', v=>fanWidth=v);
+bindSlider('sWand','vWand', v=>wandRadius=v);
+
+// ── 泡泡圈位置（可拖动）──
+let wandX, wandY;
+function initWandPos(){ wandX = W*0.72; wandY = H*0.52; }
+initWandPos();
+window.addEventListener('resize', initWandPos);
+
+// ── 风机（固定右侧）──
+function fanCenterY(){ return H/2; }
+function fanX(){ return W - 80; }
+
+// ── 泡泡物理 ──
+let bubbles = [];
+let popCount = 0;
+let aliveCount = 0;
+
+// 彩虹色相偏移（每个泡泡一个基础色相）
+function randHue(){ return Math.random()*360; }
+
+class Bubble {
+  constructor(x, y, r){
+    this.x = x; this.y = y;
+    this.r = r;
+    this.vx = -(0.3 + Math.random()*0.5); // 初始微向左
+    this.vy = (Math.random()-0.5)*0.8;
+    this.hue = randHue();
+    this.alpha = 0; // 淡入
+    this.born = Date.now();
+    this.alive = true;
+    this.wobble = Math.random()*Math.PI*2; // 抖动相位
+    this.wobbleSpeed = 0.04 + Math.random()*0.03;
+    this.wobbleAmt = 0.018 + Math.random()*0.015;
+    this.popProgress = 0; // 0=存活, >0=爆破动画
+    this.sparkles = []; // 爆破碎片
+  }
+
+  pop(){
+    if(this.popProgress>0)return;
+    this.alive=false;
+    this.popProgress=0.01;
+    popCount++;
+    document.getElementById('popsTag').textContent=`戳破 ${popCount} 个`;
+    // 生成碎片
+    const n = 8+Math.floor(Math.random()*6);
+    for(let i=0;i<n;i++){
+      const ang = (Math.PI*2/n)*i + Math.random()*0.5;
+      this.sparkles.push({
+        x:this.x, y:this.y,
+        vx: Math.cos(ang)*(1.5+Math.random()*2.5),
+        vy: Math.sin(ang)*(1.5+Math.random()*2.5),
+        life:1, r:this.r*(0.08+Math.random()*0.12),
+        hue:this.hue+Math.random()*40
+      });
+    }
+  }
+}
+
+// ── 泡泡生成 ──
+let lastSpawn = 0;
+const SPAWN_INTERVAL = 600; // ms between bubbles
+
+function spawnBubble(){
+  const now = Date.now();
+  if(now-lastSpawn < SPAWN_INTERVAL) return;
+  lastSpawn = now;
+  // 在泡泡圈内随机一个点
+  const angle = Math.random()*Math.PI*2;
+  const dist = Math.random()*(wandRadius*0.4);
+  const bx = wandX + Math.cos(angle)*dist;
+  const by = wandY + Math.sin(angle)*dist;
+  const br = wandRadius*(0.55+Math.random()*0.45);
+  bubbles.push(new Bubble(bx, by, br));
+}
+
+// ── 风力场 ──
+function getWind(bx, by){
+  // 风从右向左，圆锥形扇形区域
+  const fx = fanX(); const fy = fanCenterY();
+  const dx = fx - bx; // 泡泡在风机左边，dx>0
+  const dy = by - fy;
+  if(dx < 0) return {wx:0, wy:0}; // 泡泡在风机右边，无风
+  // 距风机距离
+  const dist = Math.sqrt(dx*dx+dy*dy);
+  // 纵向偏移角度
+  const halfAngle = Math.atan2(fanWidth/2, 1); // 扇形半角
+  const angle = Math.atan2(Math.abs(dy), Math.max(dx,1));
+  if(angle > halfAngle) return {wx:0,wy:0};
+  // 风力随距离衰减，边缘衰减
+  const edgeFade = 1 - (angle/halfAngle)**2;
+  const distFade = Math.max(0, 1 - dist/(W*0.9));
+  const strength = fanPower * edgeFade * (0.4 + distFade*0.6);
+  // 主风向向左
+  const wx = -strength * 1.0;
+  // 轻微竖向扰动
+  const wy = (dy/Math.max(dist,1)) * strength * 0.15;
+  return {wx, wy};
+}
+
+// ── 更新物理 ──
+function updateBubbles(dt){
+  aliveCount = 0;
+  for(let i=bubbles.length-1;i>=0;i--){
+    const b = bubbles[i];
+
+    // 爆破动画
+    if(b.popProgress>0){
+      b.popProgress += dt*2.5;
+      b.sparkles.forEach(s=>{
+        s.x+=s.vx*dt*60; s.y+=s.vy*dt*60;
+        s.vy+=0.04*dt*60*0.3;
+        s.life-=dt*2;
+      });
+      if(b.popProgress>1) bubbles.splice(i,1);
+      continue;
+    }
+
+    // 淡入
+    if(b.alpha<1) b.alpha = Math.min(1, b.alpha+dt*2);
+
+    // 风力
+    const {wx,wy} = getWind(b.x, b.y);
+    b.vx += wx * dt * 0.8;
+    b.vy += wy * dt * 0.8;
+
+    // 浮力（轻微上升）
+    b.vy -= 0.012 * dt * 60;
+
+    // 阻力
+    b.vx *= (1 - 0.018*dt*60);
+    b.vy *= (1 - 0.018*dt*60);
+
+    // 抖动（模拟空气湍流）
+    b.wobble += b.wobbleSpeed * dt * 60;
+    b.vx += Math.sin(b.wobble*1.3) * b.wobbleAmt * dt * 60;
+    b.vy += Math.cos(b.wobble) * b.wobbleAmt * dt * 60;
+
+    b.x += b.vx * dt * 60;
+    b.y += b.vy * dt * 60;
+
+    // 边界碰撞（顶底软弹）
+    const TOP=58, BOT=H-10;
+    if(b.y-b.r<TOP){ b.y=TOP+b.r; b.vy=Math.abs(b.vy)*0.4; }
+    if(b.y+b.r>BOT){ b.y=BOT-b.r; b.vy=-Math.abs(b.vy)*0.4; }
+
+    // 离屏（左/右）消失
+    if(b.x+b.r < 0 || b.x-b.r > W){ bubbles.splice(i,1); continue; }
+
+    aliveCount++;
+  }
+  document.getElementById('cntAlive').textContent = aliveCount;
+}
+
+// ── 绘制 ──
+
+// 渐变天空背景
+function drawBg(){
+  const grad = ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,'#c8ecff');
+  grad.addColorStop(0.5,'#b8e4f7');
+  grad.addColorStop(1,'#d4f0e8');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0,0,W,H);
+
+  // 云朵
+  drawCloud(W*0.1, H*0.15, 80, 0.7);
+  drawCloud(W*0.3, H*0.1, 60, 0.5);
+  drawCloud(W*0.55, H*0.18, 95, 0.6);
+  drawCloud(W*0.78, H*0.08, 70, 0.55);
+
+  // 草地
+  const ggrad = ctx.createLinearGradient(0,H-70,0,H);
+  ggrad.addColorStop(0,'#a8d8b0');
+  ggrad.addColorStop(1,'#7fc48a');
+  ctx.fillStyle = ggrad;
+  ctx.beginPath();
+  ctx.moveTo(0,H-50);
+  // 起伏草地
+  for(let x=0;x<=W;x+=40){
+    const yOff = Math.sin(x*0.03)*8+Math.sin(x*0.07)*4;
+    ctx.lineTo(x, H-50+yOff);
+  }
+  ctx.lineTo(W,H); ctx.lineTo(0,H);
+  ctx.closePath();
+  ctx.fill();
+
+  // 小花
+  for(let i=0;i<12;i++){
+    const fx=(i+0.5)*(W/12);
+    const fy=H-45+Math.sin(fx*0.03)*8+Math.sin(fx*0.07)*4;
+    drawFlower(fx,fy,4,i);
+  }
+}
+
+function drawCloud(cx,cy,w,alpha){
+  ctx.save();
+  ctx.globalAlpha=alpha;
+  ctx.fillStyle='#fff';
+  ctx.shadowColor='rgba(150,200,240,.3)';
+  ctx.shadowBlur=10;
+  const r=w*0.22;
+  const puffs=[
+    {x:0,y:0,r:r*1.2},
+    {x:-w*0.28,y:r*0.3,r:r*0.85},
+    {x:w*0.28,y:r*0.3,r:r*0.9},
+    {x:-w*0.14,y:-r*0.2,r:r*0.75},
+    {x:w*0.14,y:-r*0.25,r:r*0.7},
+  ];
+  ctx.beginPath();
+  puffs.forEach(p=>{
+    ctx.moveTo(cx+p.x+p.r,cy+p.y);
+    ctx.arc(cx+p.x,cy+p.y,p.r,0,Math.PI*2);
+  });
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawFlower(x,y,r,seed){
+  const hue=(seed*47+180)%360;
+  ctx.save();
+  ctx.globalAlpha=0.8;
+  // petals
+  const n=5;
+  for(let i=0;i<n;i++){
+    const a=(Math.PI*2/n)*i+seed;
+    ctx.beginPath();
+    ctx.ellipse(x+Math.cos(a)*r*1.3, y+Math.sin(a)*r*1.3, r*0.9, r*0.6,
+      a, 0, Math.PI*2);
+    ctx.fillStyle=`hsl(${hue},80%,80%)`;
+    ctx.fill();
+  }
+  // center
+  ctx.beginPath();
+  ctx.arc(x,y,r*0.7,0,Math.PI*2);
+  ctx.fillStyle=`hsl(${(hue+40)%360},90%,85%)`;
+  ctx.fill();
+  ctx.restore();
+}
+
+// 风力可视化（流线）
+function drawWindLines(){
+  const fx=fanX(), fy=fanCenterY();
+  ctx.save();
+  ctx.globalAlpha=0.13;
+  const lines=12;
+  for(let i=0;i<lines;i++){
+    const t=i/(lines-1);
+    const startY = fy - fanWidth*0.5 + fanWidth*t;
+    const spreadEnd = fanWidth*(0.7+t*0.3);
+    ctx.beginPath();
+    ctx.moveTo(fx-18, startY);
+    // 贝塞尔曲线模拟风线
+    const endX = 0;
+    const endY = fy - spreadEnd + spreadEnd*2*t;
+    ctx.bezierCurveTo(
+      fx-W*0.3, startY + (endY-startY)*0.2,
+      fx-W*0.6, fy+(endY-fy)*0.6,
+      endX, endY
+    );
+    const hue = 200+t*30;
+    ctx.strokeStyle=`hsl(${hue},70%,70%)`;
+    ctx.lineWidth=1.5;
+    ctx.setLineDash([8,12]);
+    ctx.lineDashOffset = -(Date.now()*0.04)%(20);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// 风机绘制
+function drawFan(){
+  const fx=fanX(), fy=fanCenterY();
+
+  // 底座
+  ctx.save();
+  // 柱子
+  const pillarGrad=ctx.createLinearGradient(fx-8,0,fx+8,0);
+  pillarGrad.addColorStop(0,'#c8d8e8');
+  pillarGrad.addColorStop(.5,'#e8f4fc');
+  pillarGrad.addColorStop(1,'#b0c8dc');
+  ctx.fillStyle=pillarGrad;
+  ctx.beginPath();
+  ctx.roundRect(fx-6, fy+55, 12, H-fy-55, 6);
+  ctx.fill();
+
+  // 底盘
+  const baseGrad=ctx.createRadialGradient(fx,H-50,2,fx,H-50,45);
+  baseGrad.addColorStop(0,'#e0eef8');
+  baseGrad.addColorStop(1,'#a8c4d8');
+  ctx.fillStyle=baseGrad;
+  ctx.beginPath();
+  ctx.ellipse(fx,H-50,42,12,0,0,Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle='rgba(120,160,190,.4)';
+  ctx.lineWidth=1;
+  ctx.stroke();
+
+  // 机身（圆形外壳）
+  const bodyR=54;
+  const bodyGrad=ctx.createRadialGradient(fx-10,fy-10,5,fx,fy,bodyR);
+  bodyGrad.addColorStop(0,'#f0f8ff');
+  bodyGrad.addColorStop(0.6,'#daeefa');
+  bodyGrad.addColorStop(1,'#aacce0');
+  ctx.beginPath();
+  ctx.arc(fx,fy,bodyR,0,Math.PI*2);
+  ctx.fillStyle=bodyGrad;
+  ctx.shadowColor='rgba(80,140,180,.25)';
+  ctx.shadowBlur=16;
+  ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.strokeStyle='rgba(140,190,220,.6)';
+  ctx.lineWidth=2;
+  ctx.stroke();
+
+  // 外圈装饰环
+  ctx.beginPath();
+  ctx.arc(fx,fy,bodyR-6,0,Math.PI*2);
+  ctx.strokeStyle='rgba(180,220,240,.5)';
+  ctx.lineWidth=3;
+  ctx.stroke();
+
+  // 扇叶（旋转动画）
+  const now=Date.now()*0.001;
+  const blades=4;
+  ctx.save();
+  ctx.translate(fx,fy);
+  ctx.rotate(now*3*Math.sign(fanPower));
+  for(let i=0;i<blades;i++){
+    const a=(Math.PI*2/blades)*i;
+    ctx.save();
+    ctx.rotate(a);
+    const bladeGrad=ctx.createLinearGradient(0,0,0,-36);
+    bladeGrad.addColorStop(0,'rgba(100,180,220,.95)');
+    bladeGrad.addColorStop(1,'rgba(160,220,240,.7)');
+    ctx.fillStyle=bladeGrad;
+    ctx.beginPath();
+    ctx.ellipse(6,-20,9,22,0.3,0,Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle='rgba(80,150,200,.3)';
+    ctx.lineWidth=.5;
+    ctx.stroke();
+    ctx.restore();
+  }
+  // 中心轴
+  const hubGrad=ctx.createRadialGradient(-2,-2,1,0,0,9);
+  hubGrad.addColorStop(0,'#fff');
+  hubGrad.addColorStop(1,'#90c0d8');
+  ctx.beginPath();
+  ctx.arc(0,0,9,0,Math.PI*2);
+  ctx.fillStyle=hubGrad;
+  ctx.fill();
+  ctx.restore();
+
+  // 网格（装饰）
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(fx,fy,bodyR-2,0,Math.PI*2);
+  ctx.clip();
+  ctx.strokeStyle='rgba(140,190,220,.2)';
+  ctx.lineWidth=1;
+  for(let r=10;r<bodyR;r+=14){
+    ctx.beginPath(); ctx.arc(fx,fy,r,0,Math.PI*2); ctx.stroke();
+  }
+  for(let a=0;a<Math.PI*2;a+=Math.PI/6){
+    ctx.beginPath();
+    ctx.moveTo(fx,fy);
+    ctx.lineTo(fx+Math.cos(a)*bodyR,fy+Math.sin(a)*bodyR);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // 风口指示（左侧弧形出风口）
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(fx,fy,bodyR+4, Math.PI*0.75, Math.PI*1.25);
+  ctx.strokeStyle='rgba(80,160,220,.4)';
+  ctx.lineWidth=4;
+  ctx.lineCap='round';
+  ctx.stroke();
+
+  // 风扇范围指示线（半透明扇形）
+  ctx.beginPath();
+  ctx.moveTo(fx,fy);
+  const ha=Math.atan2(fanWidth/2,1);
+  ctx.arc(fx,fy,bodyR+18,Math.PI-ha,Math.PI+ha);
+  ctx.closePath();
+  ctx.fillStyle='rgba(100,180,240,.07)';
+  ctx.fill();
+  ctx.strokeStyle='rgba(100,180,240,.2)';
+  ctx.lineWidth=1;
+  ctx.setLineDash([4,6]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  ctx.restore();
+
+  // 旋钮/调节按钮（装饰）
+  ctx.save();
+  ctx.fillStyle='rgba(160,210,235,.7)';
+  ctx.strokeStyle='rgba(100,160,190,.5)';
+  ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.roundRect(fx+bodyR-2,fy-16,18,32,6);
+  ctx.fill(); ctx.stroke();
+  ctx.fillStyle='rgba(80,140,180,.5)';
+  [fy-8,fy,fy+8].forEach(y=>{
+    ctx.beginPath(); ctx.arc(fx+bodyR+7,y,3,0,Math.PI*2); ctx.fill();
+  });
+  ctx.restore();
+}
+
+// 泡泡圈绘制
+function drawWand(){
+  const x=wandX, y=wandY, r=wandRadius;
+
+  // 握柄
+  ctx.save();
+  const handleLen=70;
+  const hGrad=ctx.createLinearGradient(x,y,x+handleLen,y+handleLen*0.3);
+  hGrad.addColorStop(0,'#f9d89a');
+  hGrad.addColorStop(.5,'#f5c468');
+  hGrad.addColorStop(1,'#e8a830');
+  ctx.strokeStyle=hGrad;
+  ctx.lineWidth=8;
+  ctx.lineCap='round';
+  ctx.shadowColor='rgba(200,120,0,.2)';
+  ctx.shadowBlur=6;
+  ctx.beginPath();
+  ctx.moveTo(x,y);
+  ctx.lineTo(x+handleLen,y+handleLen*0.28);
+  ctx.stroke();
+  // 握柄纹路
+  ctx.strokeStyle='rgba(255,255,255,.4)';
+  ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(x+8,y+2);
+  ctx.lineTo(x+handleLen-4,y+handleLen*0.28-2);
+  ctx.stroke();
+  ctx.restore();
+
+  // 泡泡圈（带肥皂膜效果）
+  ctx.save();
+  ctx.shadowColor='rgba(100,180,240,.3)';
+  ctx.shadowBlur=10;
+
+  // 肥皂膜（渐变填充）
+  const filmGrad=ctx.createRadialGradient(x-r*0.3,y-r*0.3,r*0.1,x,y,r);
+  const t=Date.now()*0.001;
+  const h1=(t*40)%360, h2=(t*40+120)%360, h3=(t*40+240)%360;
+  filmGrad.addColorStop(0,`hsla(${h1},80%,85%,.28)`);
+  filmGrad.addColorStop(0.4,`hsla(${h2},70%,80%,.18)`);
+  filmGrad.addColorStop(1,`hsla(${h3},60%,90%,.08)`);
+  ctx.beginPath();
+  ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.fillStyle=filmGrad;
+  ctx.fill();
+
+  // 圈本身
+  const ringGrad=ctx.createLinearGradient(x-r,y,x+r,y);
+  ringGrad.addColorStop(0,'#a8d8f0');
+  ringGrad.addColorStop(.5,'#e0f4ff');
+  ringGrad.addColorStop(1,'#90c8e8');
+  ctx.beginPath();
+  ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.strokeStyle=ringGrad;
+  ctx.lineWidth=4;
+  ctx.stroke();
+
+  // 高光
+  ctx.beginPath();
+  ctx.arc(x-r*0.25,y-r*0.3,r*0.12,0,Math.PI*2);
+  ctx.fillStyle='rgba(255,255,255,.7)';
+  ctx.fill();
+  ctx.restore();
+}
+
+// 泡泡绘制
+function drawBubble(b){
+  if(b.popProgress>0){
+    // 爆破动画：扩散圆环 + 碎片
+    const p=b.popProgress;
+    const rr=b.r*(1+p*1.5);
+    ctx.save();
+    ctx.globalAlpha=Math.max(0,(1-p)*0.8);
+    ctx.beginPath();
+    ctx.arc(b.x,b.y,rr,0,Math.PI*2);
+    ctx.strokeStyle=`hsla(${b.hue},80%,75%,1)`;
+    ctx.lineWidth=2*(1-p);
+    ctx.stroke();
+    ctx.restore();
+    // 碎片水珠
+    b.sparkles.forEach(s=>{
+      if(s.life<=0)return;
+      ctx.save();
+      ctx.globalAlpha=s.life*0.9;
+      ctx.beginPath();
+      ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+      const sg=ctx.createRadialGradient(s.x-s.r*.3,s.y-s.r*.3,s.r*.1,s.x,s.y,s.r);
+      sg.addColorStop(0,`hsla(${s.hue},90%,95%,.9)`);
+      sg.addColorStop(1,`hsla(${s.hue},70%,70%,.3)`);
+      ctx.fillStyle=sg;
+      ctx.fill();
+      ctx.restore();
+    });
+    return;
+  }
+
+  ctx.save();
+  ctx.globalAlpha=b.alpha*0.92;
+  const r=b.r;
+  const x=b.x, y=b.y;
+  const t=Date.now()*0.001;
+
+  // 主体：彩虹渐变
+  const h0=b.hue, h1=(b.hue+80)%360, h2=(b.hue+160)%360;
+  const grad=ctx.createRadialGradient(x-r*.3,y-r*.3,r*.05, x,y,r);
+  grad.addColorStop(0,  `hsla(${h0},90%,95%,.15)`);
+  grad.addColorStop(0.3,`hsla(${h1},85%,80%,.25)`);
+  grad.addColorStop(0.7,`hsla(${h2},80%,75%,.3)`);
+  grad.addColorStop(1,  `hsla(${h0},70%,60%,.55)`);
+
+  ctx.beginPath();
+  ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.fillStyle=grad;
+  ctx.fill();
+
+  // 彩虹边缘光
+  const rimGrad=ctx.createLinearGradient(x-r,y,x+r,y);
+  rimGrad.addColorStop(0,   `hsla(${h0},100%,70%,.7)`);
+  rimGrad.addColorStop(0.25,`hsla(${(h0+90)%360},100%,75%,.6)`);
+  rimGrad.addColorStop(0.5, `hsla(${(h0+180)%360},100%,75%,.6)`);
+  rimGrad.addColorStop(0.75,`hsla(${(h0+270)%360},100%,70%,.5)`);
+  rimGrad.addColorStop(1,   `hsla(${h0},100%,70%,.7)`);
+  ctx.beginPath();
+  ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.strokeStyle=rimGrad;
+  ctx.lineWidth=1.8;
+  ctx.stroke();
+
+  // 主高光（顶部白色弧）
+  ctx.beginPath();
+  ctx.arc(x-r*0.22, y-r*0.28, r*0.35, Math.PI*1.1, Math.PI*1.95);
+  const hl=ctx.createLinearGradient(x-r*.5,y-r*.6,x,y-r*.1);
+  hl.addColorStop(0,'rgba(255,255,255,.85)');
+  hl.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.strokeStyle=hl;
+  ctx.lineWidth=r*0.12;
+  ctx.lineCap='round';
+  ctx.stroke();
+
+  // 底部小反光
+  ctx.beginPath();
+  ctx.arc(x+r*.2, y+r*.35, r*.12, 0, Math.PI*2);
+  ctx.fillStyle='rgba(255,255,255,.3)';
+  ctx.fill();
+
+  ctx.restore();
+}
+
+// ── 泡泡圈拖拽 ──
+let draggingWand = false;
+let wandDragOX=0, wandDragOY=0;
+
+canvas.addEventListener('mousedown', e=>{
+  const dx=e.clientX-wandX, dy=e.clientY-wandY;
+  if(Math.sqrt(dx*dx+dy*dy)<wandRadius+16){
+    draggingWand=true;
+    wandDragOX=dx; wandDragOY=dy;
+  } else {
+    // 检测戳泡泡
+    for(let i=bubbles.length-1;i>=0;i--){
+      const b=bubbles[i];
+      if(b.popProgress>0||!b.alive)continue;
+      const ddx=e.clientX-b.x, ddy=e.clientY-b.y;
+      if(Math.sqrt(ddx*ddx+ddy*ddy)<b.r+4){ b.pop(); break; }
+    }
+  }
+});
+canvas.addEventListener('mousemove', e=>{
+  if(!draggingWand)return;
+  wandX = e.clientX-wandDragOX;
+  wandY = e.clientY-wandDragOY;
+  // 限制在屏幕内
+  wandX=Math.max(wandRadius+10, Math.min(W-wandRadius-10, wandX));
+  wandY=Math.max(58+wandRadius+10, Math.min(H-wandRadius-10, wandY));
+});
+canvas.addEventListener('mouseup', ()=>draggingWand=false);
+
+// 触摸
+canvas.addEventListener('touchstart', e=>{
+  e.preventDefault();
+  const t=e.touches[0];
+  const dx=t.clientX-wandX, dy=t.clientY-wandY;
+  if(Math.sqrt(dx*dx+dy*dy)<wandRadius+20){
+    draggingWand=true; wandDragOX=dx; wandDragOY=dy;
+  } else {
+    for(let i=bubbles.length-1;i>=0;i--){
+      const b=bubbles[i];
+      if(b.popProgress>0||!b.alive)continue;
+      const ddx=t.clientX-b.x, ddy=t.clientY-b.y;
+      if(Math.sqrt(ddx*ddx+ddy*ddy)<b.r+8){ b.pop(); break; }
+    }
+  }
+},{passive:false});
+canvas.addEventListener('touchmove', e=>{
+  e.preventDefault();
+  if(!draggingWand)return;
+  const t=e.touches[0];
+  wandX=Math.max(wandRadius+10,Math.min(W-wandRadius-10,t.clientX-wandDragOX));
+  wandY=Math.max(58+wandRadius+10,Math.min(H-wandRadius-10,t.clientY-wandDragOY));
+},{passive:false});
+canvas.addEventListener('touchend', ()=>draggingWand=false);
+
+// ── 主循环 ──
+let lastFrame=0;
+function loop(now){
+  requestAnimationFrame(loop);
+  const dt=Math.min((now-lastFrame)/1000, 0.05);
+  lastFrame=now;
+
+  // 生成泡泡（当泡泡圈在风机吹到的区域时）
+  const {wx}=getWind(wandX,wandY);
+  if(wx<-0.3) spawnBubble();
+
+  updateBubbles(dt);
+
+  // 绘制
+  ctx.clearRect(0,0,W,H);
+  drawBg();
+  drawWindLines();
+  drawFan();
+  drawWand();
+  bubbles.forEach(drawBubble);
+
+  // 泡泡圈拖拽光晕提示
+  if(draggingWand){
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(wandX,wandY,wandRadius+8,0,Math.PI*2);
+    ctx.strokeStyle='rgba(100,180,255,.4)';
+    ctx.lineWidth=2;
+    ctx.setLineDash([6,6]);
+    ctx.lineDashOffset=-(now*0.03)%12;
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
