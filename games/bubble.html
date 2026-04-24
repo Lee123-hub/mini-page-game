@@ -120,11 +120,13 @@ let aliveCount = 0;
 function randHue(){ return Math.random()*360; }
 
 class Bubble {
-  constructor(x, y, r){
+  constructor(x, y, r, windStrength=1){
     this.x = x; this.y = y;
     this.r = r;
-    this.vx = -(0.3 + Math.random()*0.5); // 初始微向左
-    this.vy = (Math.random()-0.5)*0.8;
+    // 初速与风力正比：风力1→0.3~0.6，风力10→3~6
+    const speed = windStrength * (0.3 + Math.random()*0.3);
+    this.vx = -speed;
+    this.vy = (Math.random()-0.5) * windStrength * 0.15;
     this.hue = randHue();
     this.alpha = 0; // 淡入
     this.born = Date.now();
@@ -159,19 +161,20 @@ class Bubble {
 
 // ── 泡泡生成 ──
 let lastSpawn = 0;
-const SPAWN_INTERVAL = 600; // ms between bubbles
+let lastSpawnInterval = 9999; // 动态间隔，由风力决定
 
-function spawnBubble(){
+function spawnBubble(windStrength){
+  // 间隔随风力变化：风力1→1200ms，风力10→120ms
+  lastSpawnInterval = 1200 / windStrength;
   const now = Date.now();
-  if(now-lastSpawn < SPAWN_INTERVAL) return;
+  if(now-lastSpawn < lastSpawnInterval) return;
   lastSpawn = now;
-  // 在泡泡圈内随机一个点
   const angle = Math.random()*Math.PI*2;
   const dist = Math.random()*(wandRadius*0.4);
   const bx = wandX + Math.cos(angle)*dist;
   const by = wandY + Math.sin(angle)*dist;
   const br = wandRadius*(0.55+Math.random()*0.45);
-  bubbles.push(new Bubble(bx, by, br));
+  bubbles.push(new Bubble(bx, by, br, windStrength));
 }
 
 // ── 风力场 ──
@@ -720,9 +723,10 @@ function loop(now){
   const dt=Math.min((now-lastFrame)/1000, 0.05);
   lastFrame=now;
 
-  // 生成泡泡（当泡泡圈在风机吹到的区域时）
-  const {wx}=getWind(wandX,wandY);
-  if(wx<-0.3) spawnBubble();
+  // 生成泡泡：只在泡泡圈被风机真正吹到时才产生，强度直接驱动频率
+  const windAtWand = getWind(wandX, wandY);
+  const windStrengthAtWand = Math.sqrt(windAtWand.wx**2 + windAtWand.wy**2);
+  if(windStrengthAtWand > fanPower * 0.12) spawnBubble(windStrengthAtWand);
 
   updateBubbles(dt);
 
