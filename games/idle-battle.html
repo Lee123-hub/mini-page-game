@@ -6,55 +6,57 @@
 <title>放置挂机战斗</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#0a0a14;color:#e0e0ff;font-family:'Segoe UI',sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-#topbar{background:#1a1a2e;padding:8px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #333366;flex-shrink:0}
-#topbar a{color:#aaa;text-decoration:none;font-size:13px}
-#topbar a:hover{color:#fff}
-#topbar h1{font-size:16px;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:700}
+body{background:#e8f5ff;color:#2d3a4a;font-family:'Segoe UI',sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+#topbar{background:linear-gradient(135deg,#ffffff,#f0f8ff);padding:8px 16px;display:flex;align-items:center;gap:12px;border-bottom:2px solid #b8deff;flex-shrink:0;box-shadow:0 2px 8px rgba(100,160,255,0.15)}
+#topbar a{color:#5588cc;text-decoration:none;font-size:13px}
+#topbar a:hover{color:#2244aa}
+#topbar h1{font-size:16px;background:linear-gradient(135deg,#ff7eb3,#ff9d6c,#ffcc5c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:700}
 #battle-canvas{width:100%;display:block;flex-shrink:0}
 #ui{flex:1;display:flex;gap:6px;padding:6px;overflow:hidden;min-height:0}
-.panel{background:#111122;border:1px solid #333366;border-radius:8px;padding:8px;overflow:hidden}
+.panel{background:#ffffff;border:1px solid #c8e4ff;border-radius:10px;padding:8px;overflow:hidden;box-shadow:0 2px 8px rgba(100,160,255,0.1)}
 #left-panel{width:160px;flex-shrink:0;display:flex;flex-direction:column;gap:6px}
 #center-panel{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}
 #right-panel{width:200px;flex-shrink:0;display:flex;flex-direction:column;gap:6px}
-.panel-title{font-size:11px;color:#8888cc;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;border-bottom:1px solid #2a2a4a;padding-bottom:3px}
-.stat-row{display:flex;justify-content:space-between;font-size:11px;padding:1px 0}
-.stat-val{color:#a0a0ff}
-.exp-bar-wrap{background:#1a1a2e;border-radius:3px;height:8px;overflow:hidden;margin:3px 0}
-.exp-bar{height:100%;background:linear-gradient(90deg,#667eea,#764ba2);border-radius:3px;transition:width 0.3s}
+.panel-title{font-size:11px;color:#7aaad0;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;border-bottom:1px solid #d8eeff;padding-bottom:3px;font-weight:600}
+.stat-row{display:flex;justify-content:space-between;font-size:11px;padding:1px 0;color:#445566}
+.stat-val{color:#e07030;font-weight:600}
+.exp-bar-wrap{background:#e8f0ff;border-radius:3px;height:8px;overflow:hidden;margin:3px 0}
+.exp-bar{height:100%;background:linear-gradient(90deg,#ff9d6c,#ffcc5c);border-radius:3px;transition:width 0.3s}
 .stage-ctrl{display:flex;align-items:center;justify-content:space-between;gap:4px}
-.stage-btn{background:#222244;border:1px solid #444488;color:#aaa;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:12px}
-.stage-btn:hover{background:#333366;color:#fff}
-.stage-name{flex:1;text-align:center;font-size:12px;color:#cc99ff}
+.stage-btn{background:#e8f4ff;border:1px solid #99ccff;color:#4488cc;padding:3px 8px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600}
+.stage-btn:hover{background:#cce8ff;color:#2255aa}
+.stage-name{flex:1;text-align:center;font-size:12px;color:#ff7eb3;font-weight:700}
 .chest-grid{display:flex;flex-wrap:wrap;gap:4px;overflow-y:auto;max-height:120px}
-.chest-item{width:36px;height:36px;border-radius:6px;border:2px solid #333;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;position:relative;flex-shrink:0}
-.chest-item .badge{position:absolute;top:-4px;right:-4px;background:#cc3333;color:#fff;font-size:9px;min-width:14px;height:14px;border-radius:7px;display:flex;align-items:center;justify-content:center;padding:0 2px}
-.chest-item.selected{outline:2px solid #fff}
+.chest-item{width:36px;height:36px;border-radius:8px;border:2px solid #ddd;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;position:relative;flex-shrink:0;background:#f8fcff}
+.chest-item .badge{position:absolute;top:-4px;right:-4px;background:#ff6688;color:#fff;font-size:9px;min-width:14px;height:14px;border-radius:7px;display:flex;align-items:center;justify-content:center;padding:0 2px;font-weight:700}
+.chest-item.selected{outline:2px solid #ff7eb3}
 .equip-slots{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px}
-.equip-slot{background:#0d0d20;border:1px solid #333366;border-radius:6px;padding:4px;min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;color:#555588;cursor:pointer;position:relative;overflow:hidden}
-.equip-slot .slot-name{font-size:9px;color:#555}
+.equip-slot{background:#f0f8ff;border:1px solid #c8e0ff;border-radius:8px;padding:4px;min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;color:#aabbcc;cursor:pointer;position:relative;overflow:hidden}
+.equip-slot .slot-name{font-size:9px;color:#99aacc}
 .equip-slot .item-name{font-size:9px;text-align:center;line-height:1.2;margin-top:2px}
 .inv-grid{display:flex;flex-wrap:wrap;gap:3px;overflow-y:auto;flex:1;min-height:0;align-content:flex-start}
-.inv-item{width:40px;height:40px;border-radius:5px;border:2px solid transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:9px;text-align:center;line-height:1.2;padding:2px;position:relative}
-.inv-item:hover{filter:brightness(1.3)}
+.inv-item{width:40px;height:40px;border-radius:6px;border:2px solid transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:9px;text-align:center;line-height:1.2;padding:2px;position:relative;background:#f8fcff}
+.inv-item:hover{filter:brightness(0.95) saturate(1.3)}
 .inv-item.equipped-item{border-style:dashed}
 .action-row{display:flex;gap:4px;flex-shrink:0}
-.act-btn{flex:1;background:#222244;border:1px solid #444488;color:#aaa;padding:4px;border-radius:4px;cursor:pointer;font-size:11px}
-.act-btn:hover{background:#333366;color:#fff}
-.act-btn.primary{background:linear-gradient(135deg,#667eea33,#764ba233);border-color:#667eea}
-.act-btn.primary:hover{background:linear-gradient(135deg,#667eea66,#764ba266);color:#fff}
+.act-btn{flex:1;background:#f0f8ff;border:1px solid #99ccff;color:#4488cc;padding:4px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600}
+.act-btn:hover{background:#ddeeff;color:#2255aa}
+.act-btn.primary{background:linear-gradient(135deg,#ff9d6c44,#ffcc5c44);border-color:#ffaa66}
+.act-btn.primary:hover{background:linear-gradient(135deg,#ff9d6c88,#ffcc5c88);color:#884400}
 .tabs{display:flex;gap:4px;flex-shrink:0}
-.tab{padding:4px 10px;border-radius:4px 4px 0 0;cursor:pointer;font-size:11px;border:1px solid transparent;border-bottom:none;background:#0d0d20;color:#888}
-.tab.active{background:#111122;border-color:#333366;color:#ccccff}
+.tab{padding:4px 10px;border-radius:6px 6px 0 0;cursor:pointer;font-size:11px;border:1px solid transparent;border-bottom:none;background:#e8f4ff;color:#88aacc;font-weight:600}
+.tab.active{background:#ffffff;border-color:#c8e0ff;color:#4488cc}
 .tab-content{display:none;flex:1;min-height:0;flex-direction:column;gap:4px}
 .tab-content.active{display:flex}
 .monster-preview{display:flex;justify-content:center;padding:4px}
+#save-indicator{font-size:10px;color:#88bbdd;margin-left:auto;opacity:0;transition:opacity 0.5s}
 </style>
 </head>
 <body>
 <div id="topbar">
   <a href="../index.html">← 返回</a>
   <h1>放置挂机战斗 RPG</h1>
+  <span id="save-indicator">✅ 已存档</span>
 </div>
 <canvas id="battle-canvas"></canvas>
 <div id="ui">
@@ -306,12 +308,13 @@ let stars = [];
 let orbs = [];
 
 function initStars() {
-  stars = [];
-  for(let i=0;i<80;i++) stars.push({x:Math.random(),y:Math.random(),r:Math.random()*1.5+0.3,blink:Math.random()*Math.PI*2});
-  fogParticles = [];
-  for(let i=0;i<25;i++) fogParticles.push({x:Math.random()*canvasW,y:Math.random()*canvasH,w:60+Math.random()*120,h:20+Math.random()*40,alpha:Math.random()*0.08+0.02,speed:0.1+Math.random()*0.3,dir:Math.random()<0.5?1:-1});
-  orbs = [];
-  for(let i=0;i<6;i++) orbs.push({x:Math.random()*canvasW,y:Math.random()*canvasH,r:4+Math.random()*8,color:RARITIES[Math.floor(Math.random()*10+5)].color,vx:(Math.random()-0.5)*0.4,vy:(Math.random()-0.5)*0.4,alpha:0.3+Math.random()*0.4,phase:Math.random()*Math.PI*2});
+  stars = []; // reused for floating sparkle confetti in bright mode
+  for(let i=0;i<20;i++) stars.push({x:Math.random(),y:Math.random()*0.65,r:Math.random()*2+1,blink:Math.random()*Math.PI*2,color:['#ffddee','#ffeebb','#ddeeff','#ddffee'][Math.floor(Math.random()*4)]});
+  fogParticles = []; // reused for drifting clouds
+  for(let i=0;i<5;i++) fogParticles.push({x:Math.random()*canvasW,y:canvasH*(0.1+Math.random()*0.3),w:80+Math.random()*120,h:28+Math.random()*20,alpha:0.85,speed:0.18+Math.random()*0.18,dir:1});
+  orbs = []; // candy-color floating orbs
+  const candyColors=['#ff9ee8','#ffe066','#66eebb','#88ccff','#ffaa66','#cc99ff'];
+  for(let i=0;i<5;i++) orbs.push({x:Math.random()*canvasW,y:canvasH*(0.1+Math.random()*0.55),r:5+Math.random()*7,color:candyColors[i%candyColors.length],vx:(Math.random()-0.5)*0.35,vy:(Math.random()-0.5)*0.25,phase:Math.random()*Math.PI*2});
 }
 
 let playerX=0, playerY=0;
@@ -324,83 +327,90 @@ let playerDeathFlash=0;
 
 // ===== DRAW FUNCTIONS =====
 function drawBackground(t) {
-  // Deep space gradient
-  const grd = ctx.createLinearGradient(0,0,0,canvasH);
-  grd.addColorStop(0,'#020212');
-  grd.addColorStop(0.4,'#050520');
-  grd.addColorStop(1,'#0a0818');
-  ctx.fillStyle = grd;
-  ctx.fillRect(0,0,canvasW,canvasH);
-  
-  // Nebula layers
-  const ng1 = ctx.createRadialGradient(canvasW*0.2, canvasH*0.3, 0, canvasW*0.2, canvasH*0.3, canvasW*0.35);
-  ng1.addColorStop(0,'rgba(60,20,100,0.15)');
-  ng1.addColorStop(1,'transparent');
-  ctx.fillStyle = ng1;
-  ctx.fillRect(0,0,canvasW,canvasH);
-  
-  const ng2 = ctx.createRadialGradient(canvasW*0.8, canvasH*0.6, 0, canvasW*0.8, canvasH*0.6, canvasW*0.3);
-  ng2.addColorStop(0,'rgba(20,40,100,0.12)');
-  ng2.addColorStop(1,'transparent');
-  ctx.fillStyle = ng2;
-  ctx.fillRect(0,0,canvasW,canvasH);
-  
-  // Stars
-  for(const s of stars) {
-    const blink = 0.5 + 0.5*Math.sin(s.blink + t*0.002);
-    ctx.globalAlpha = blink*0.8+0.2;
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(s.x*canvasW, s.y*canvasH, s.r, 0, Math.PI*2);
-    ctx.fill();
+  // Sky gradient
+  const sky = ctx.createLinearGradient(0,0,0,canvasH*0.72);
+  sky.addColorStop(0,'#6ec6f5');
+  sky.addColorStop(0.6,'#b8e4ff');
+  sky.addColorStop(1,'#dff2ff');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0,0,canvasW,canvasH*0.72);
+
+  // Distant hills (soft pastel)
+  ctx.fillStyle = '#a8dda0';
+  ctx.beginPath();
+  ctx.moveTo(0, canvasH*0.72);
+  for(let x=0;x<=canvasW;x+=20){
+    const hy = canvasH*0.62 + Math.sin(x*0.015+1)*canvasH*0.05 + Math.sin(x*0.008)*canvasH*0.03;
+    x===0 ? ctx.moveTo(x,hy) : ctx.lineTo(x,hy);
   }
-  ctx.globalAlpha = 1;
-  
-  // Fog
+  ctx.lineTo(canvasW,canvasH*0.72); ctx.lineTo(0,canvasH*0.72); ctx.closePath();
+  ctx.fill();
+
+  // Clouds
   for(const f of fogParticles) {
     f.x += f.speed * f.dir;
-    if(f.x > canvasW+f.w/2) f.x = -f.w/2;
-    if(f.x < -f.w/2) f.x = canvasW+f.w/2;
-    const fg = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.w);
-    fg.addColorStop(0, `rgba(100,80,200,${f.alpha})`);
-    fg.addColorStop(1, 'transparent');
-    ctx.fillStyle = fg;
-    ctx.beginPath();
-    ctx.ellipse(f.x, f.y, f.w, f.h, 0, 0, Math.PI*2);
-    ctx.fill();
+    if(f.x > canvasW+f.w) f.x = -f.w;
+    ctx.save();
+    ctx.globalAlpha = f.alpha;
+    // fluffy cloud shape
+    const cx=f.x, cy=f.y, cw=f.w, ch=f.h;
+    ctx.fillStyle='#ffffff';
+    ctx.beginPath(); ctx.ellipse(cx,cy,cw*0.5,ch*0.5,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx-cw*0.22,cy+ch*0.1,cw*0.35,ch*0.38,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx+cw*0.25,cy+ch*0.08,cw*0.32,ch*0.35,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx,cy+ch*0.18,cw*0.44,ch*0.32,0,0,Math.PI*2); ctx.fill();
+    ctx.restore();
   }
-  
-  // Floating orbs
+
+  // Candy orbs (floating sparkle)
   for(const o of orbs) {
-    o.x += o.vx; o.y += o.vy;
-    o.phase += 0.02;
-    if(o.x<0||o.x>canvasW) o.vx*=-1;
-    if(o.y<0||o.y>canvasH) o.vy*=-1;
-    const pulse = 0.7 + 0.3*Math.sin(o.phase);
-    const og = ctx.createRadialGradient(o.x,o.y,0,o.x,o.y,o.r*3*pulse);
-    og.addColorStop(0, o.color+'cc');
-    og.addColorStop(0.3, o.color+'44');
-    og.addColorStop(1, 'transparent');
-    ctx.fillStyle = og;
-    ctx.beginPath();
-    ctx.arc(o.x,o.y,o.r*3*pulse,0,Math.PI*2);
-    ctx.fill();
+    o.x += o.vx; o.y += o.vy + Math.sin(o.phase)*0.2;
+    o.phase += 0.025;
+    if(o.x<-20) o.x=canvasW+20; if(o.x>canvasW+20) o.x=-20;
+    if(o.y<5) o.vy=Math.abs(o.vy); if(o.y>canvasH*0.68) o.vy=-Math.abs(o.vy);
+    const pulse = 0.75 + 0.25*Math.sin(o.phase*1.5);
+    ctx.save();
+    ctx.globalAlpha = 0.55*pulse;
+    ctx.shadowColor = o.color; ctx.shadowBlur = 10;
+    ctx.fillStyle = o.color;
+    ctx.beginPath(); ctx.arc(o.x,o.y,o.r*pulse,0,Math.PI*2); ctx.fill();
+    ctx.shadowBlur=0; ctx.restore();
   }
-  
-  // Ground line
-  const gl = ctx.createLinearGradient(0, canvasH*0.75, 0, canvasH);
-  gl.addColorStop(0,'rgba(30,20,60,0.6)');
-  gl.addColorStop(1,'rgba(10,5,20,0.9)');
-  ctx.fillStyle = gl;
-  ctx.fillRect(0, canvasH*0.75, canvasW, canvasH*0.25);
-  
-  // Ground glow line
-  ctx.strokeStyle = 'rgba(120,80,200,0.3)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(0, canvasH*0.75);
-  ctx.lineTo(canvasW, canvasH*0.75);
-  ctx.stroke();
+
+  // Sparkle confetti
+  for(const s of stars) {
+    const blink = 0.4 + 0.6*Math.abs(Math.sin(s.blink + t*0.0015));
+    ctx.globalAlpha = blink;
+    ctx.fillStyle = s.color;
+    ctx.beginPath(); ctx.arc(s.x*canvasW, s.y*canvasH, s.r, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // Grass ground
+  const grass = ctx.createLinearGradient(0,canvasH*0.72,0,canvasH);
+  grass.addColorStop(0,'#7ec850');
+  grass.addColorStop(0.18,'#6ab840');
+  grass.addColorStop(1,'#4a9030');
+  ctx.fillStyle = grass;
+  ctx.fillRect(0, canvasH*0.72, canvasW, canvasH*0.28);
+
+  // Grass highlight line
+  ctx.strokeStyle = 'rgba(180,255,120,0.5)';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0,canvasH*0.72); ctx.lineTo(canvasW,canvasH*0.72); ctx.stroke();
+
+  // Little flowers on ground
+  const flowerX = [canvasW*0.1,canvasW*0.3,canvasW*0.55,canvasW*0.88];
+  const flowerC = ['#ff88cc','#ffdd44','#ff99aa','#cc88ff'];
+  for(let fi=0;fi<4;fi++){
+    const fx=flowerX[fi], fy=canvasH*0.75;
+    ctx.fillStyle='#228822';
+    ctx.fillRect(fx-1,fy,2,6);
+    ctx.fillStyle=flowerC[fi];
+    ctx.beginPath(); ctx.arc(fx,fy,4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#fff8aa';
+    ctx.beginPath(); ctx.arc(fx,fy,1.5,0,Math.PI*2); ctx.fill();
+  }
 }
 
 function drawPlayer(t) {
@@ -424,58 +434,67 @@ function drawPlayer(t) {
   ctx.fill();
   ctx.restore();
   
-  // Body - armor (blue)
+  // Body - bright orange/white knight
   ctx.save();
   const bob = Math.sin(t*0.003)*2;
-  
+
   // Legs
-  ctx.fillStyle = '#223366';
+  ctx.fillStyle = '#e8a050';
   ctx.fillRect(x-7, y+8+bob, 6, 16);
   ctx.fillRect(x+1, y+8+bob, 6, 16);
-  // Boots
-  ctx.fillStyle = '#111133';
+  // Boots (brown)
+  ctx.fillStyle = '#8b5e3c';
   ctx.fillRect(x-8, y+22+bob, 7, 6);
   ctx.fillRect(x+1, y+22+bob, 7, 6);
-  // Body
+  // Body armor (warm white + orange trim)
   const bodyGrad = ctx.createLinearGradient(x-9, y-10, x+9, y+8);
-  bodyGrad.addColorStop(0,'#4466cc');
-  bodyGrad.addColorStop(1,'#223380');
+  bodyGrad.addColorStop(0,'#fff8ee');
+  bodyGrad.addColorStop(1,'#ffe0b0');
   ctx.fillStyle = bodyGrad;
   ctx.fillRect(x-9, y-10+bob, 18, 20);
-  // Shoulder pads
-  ctx.fillStyle = '#5577dd';
+  // Orange trim lines
+  ctx.strokeStyle = '#ff9944';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(x-9, y-10+bob, 18, 20);
+  // Shoulder pads (orange)
+  ctx.fillStyle = '#ff8833';
   ctx.fillRect(x-12, y-10+bob, 6, 6);
   ctx.fillRect(x+6, y-10+bob, 6, 6);
-  // Belt
-  ctx.fillStyle = '#aa8833';
+  // Belt (golden)
+  ctx.fillStyle = '#ffcc33';
   ctx.fillRect(x-9, y+8+bob, 18, 3);
-  // Head
+  // Head (skin)
   const headGrad = ctx.createLinearGradient(x-7, y-22, x+7, y-8);
-  headGrad.addColorStop(0,'#ffccaa');
-  headGrad.addColorStop(1,'#cc9966');
+  headGrad.addColorStop(0,'#ffe0c0');
+  headGrad.addColorStop(1,'#ffccaa');
   ctx.fillStyle = headGrad;
   ctx.fillRect(x-6, y-22+bob, 12, 14);
-  // Helmet
-  ctx.fillStyle = '#334499';
+  // Helmet (white with orange visor)
+  ctx.fillStyle = '#ffffff';
   ctx.fillRect(x-7, y-24+bob, 14, 8);
   ctx.fillRect(x-5, y-26+bob, 10, 4);
-  // Eyes
-  ctx.fillStyle = '#00ccff';
+  ctx.fillStyle = '#ff9944';
+  ctx.fillRect(x-7, y-18+bob, 14, 3); // visor strip
+  // Eyes (dark)
+  ctx.fillStyle = '#443322';
   ctx.fillRect(x-4, y-17+bob, 3, 3);
   ctx.fillRect(x+1, y-17+bob, 3, 3);
+  // Smile
+  ctx.strokeStyle = '#775533'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.arc(x, y-12+bob, 3, 0.1, Math.PI-0.1); ctx.stroke();
   // Sword (arm extends right)
   const swingAnim = playerAtkTimer > 0 ? Math.sin((1.5-playerAtkTimer/1500)*Math.PI)*20 : 0;
   ctx.save();
   ctx.translate(x+10, y-5+bob);
   ctx.rotate((swingAnim)*Math.PI/180);
-  // Sword handle
-  ctx.fillStyle = '#884411';
-  ctx.fillRect(0, 0, 4, 16);
-  // Guard
-  ctx.fillStyle = '#aa8833';
-  ctx.fillRect(-3, 3, 10, 4);
+  // Sword handle (brown)
+  ctx.fillStyle = '#8b5e3c';
+  ctx.fillRect(0, 0, 4, 14);
+  // Guard (golden)
+  ctx.fillStyle = '#ffcc33';
+  ctx.fillRect(-4, 3, 12, 4);
   // Blade
-  const bladeColor = player.equipped.weapon ? RARITIES[player.equipped.weapon.tier].color : '#aaaaff';
+  const bladeColor = player.equipped.weapon ? RARITIES[player.equipped.weapon.tier].color : '#c8e8ff';
   const bladeGrad = ctx.createLinearGradient(0,0,4,-22);
   bladeGrad.addColorStop(0, bladeColor+'cc');
   bladeGrad.addColorStop(1, '#ffffff');
@@ -483,11 +502,12 @@ function drawPlayer(t) {
   ctx.beginPath();
   ctx.moveTo(0,-2); ctx.lineTo(4,-2); ctx.lineTo(2,-24); ctx.closePath();
   ctx.fill();
-  // Blade glow
+  // Blade glow (keep for equipped)
   if(player.equipped.weapon) {
     ctx.shadowColor = bladeColor;
-    ctx.shadowBlur = 8;
-    ctx.stroke();
+    ctx.shadowBlur = 10;
+    ctx.strokeStyle = bladeColor+'88'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(0,-2); ctx.lineTo(4,-2); ctx.lineTo(2,-24); ctx.closePath(); ctx.stroke();
     ctx.shadowBlur = 0;
   }
   ctx.restore();
@@ -509,131 +529,117 @@ function drawMonster(t) {
   const tColor = RARITIES[tierIdx].color;
   
   // Shadow
-  ctx.globalAlpha = 0.3;
-  ctx.fillStyle = '#000';
+  ctx.globalAlpha = 0.15;
+  ctx.fillStyle = '#226600';
   ctx.beginPath();
-  ctx.ellipse(x, y+28, 18, 6, 0, 0, Math.PI*2);
+  ctx.ellipse(x, y+28, 18, 5, 0, 0, Math.PI*2);
   ctx.fill();
   ctx.globalAlpha = 1;
-  
-  const bob = Math.sin(t*0.004+1)*2;
+
+  const bob = Math.sin(t*0.004+1)*3; // slime bounces more
   ctx.save();
-  
-  // Body glow
-  const bodyGlow = ctx.createRadialGradient(x, y, 0, x, y, 30);
-  bodyGlow.addColorStop(0, tColor+'33');
-  bodyGlow.addColorStop(1, 'transparent');
-  ctx.fillStyle = bodyGlow;
-  ctx.beginPath();
-  ctx.arc(x, y, 40, 0, Math.PI*2);
-  ctx.fill();
-  
-  // Tail
-  ctx.fillStyle = '#660011';
-  ctx.beginPath();
-  ctx.moveTo(x+8, y+15+bob);
-  ctx.quadraticCurveTo(x+30, y+5+bob, x+24, y-8+bob);
-  ctx.quadraticCurveTo(x+22, y-10+bob, x+18, y-6+bob);
-  ctx.quadraticCurveTo(x+20, y+2+bob, x+10, y+14+bob);
-  ctx.closePath();
-  ctx.fill();
-  
-  // Legs
-  ctx.fillStyle = '#880022';
-  ctx.fillRect(x-12, y+10+bob, 8, 18);
-  ctx.fillRect(x+4, y+10+bob, 8, 18);
-  ctx.fillStyle = '#440011';
-  ctx.fillRect(x-14, y+24+bob, 9, 6);
-  ctx.fillRect(x+3, y+24+bob, 9, 6);
-  
-  // Body
-  const bGrad = ctx.createLinearGradient(x-14, y-15, x+14, y+12);
-  bGrad.addColorStop(0, '#cc2233');
-  bGrad.addColorStop(0.5, '#880011');
-  bGrad.addColorStop(1, '#550008');
-  ctx.fillStyle = bGrad;
-  ctx.beginPath();
-  ctx.roundRect(x-14, y-15+bob, 28, 28, 4);
-  ctx.fill();
-  
-  // Chest markings
-  ctx.strokeStyle = tColor+'88';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(x, y-12+bob); ctx.lineTo(x, y+10+bob);
-  ctx.moveTo(x-8, y-4+bob); ctx.lineTo(x+8, y-4+bob);
-  ctx.stroke();
-  
-  // Arms
-  ctx.fillStyle = '#aa1122';
-  const armSwing = monsterAtkTimer > 0 ? Math.sin((2-monsterAtkTimer/2000)*Math.PI)*25 : 0;
-  // Left arm with claws
-  ctx.save();
-  ctx.translate(x-16, y-8+bob);
-  ctx.rotate(-armSwing*Math.PI/180);
-  ctx.fillRect(-6, 0, 8, 18);
-  ctx.fillStyle = '#cc3344';
-  ctx.fillRect(-7, 14, 3, 6); ctx.fillRect(-4, 15, 3, 7); ctx.fillRect(-1, 14, 3, 6);
-  ctx.restore();
-  // Right arm
-  ctx.save();
-  ctx.translate(x+16, y-8+bob);
-  ctx.rotate(armSwing*Math.PI/180);
-  ctx.fillRect(-2, 0, 8, 18);
-  ctx.fillStyle = '#cc3344';
-  ctx.fillRect(-1, 14, 3, 6); ctx.fillRect(2, 15, 3, 7); ctx.fillRect(5, 14, 3, 6);
-  ctx.restore();
-  
-  // Head
-  const hGrad = ctx.createLinearGradient(x-12, y-30, x+12, y-12);
-  hGrad.addColorStop(0, '#dd3344');
-  hGrad.addColorStop(1, '#880011');
-  ctx.fillStyle = hGrad;
-  ctx.beginPath();
-  ctx.roundRect(x-12, y-30+bob, 24, 18, 3);
-  ctx.fill();
-  
-  // Horns
-  ctx.fillStyle = '#331100';
-  ctx.beginPath();
-  ctx.moveTo(x-8, y-28+bob); ctx.lineTo(x-12, y-42+bob); ctx.lineTo(x-4, y-28+bob); ctx.closePath();
-  ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(x+4, y-28+bob); ctx.lineTo(x+12, y-42+bob); ctx.lineTo(x+8, y-28+bob); ctx.closePath();
-  ctx.fill();
-  // Horn glow for high tiers
-  if(tierIdx >= 10) {
-    ctx.shadowColor = tColor;
-    ctx.shadowBlur = 10;
-    ctx.fillStyle = tColor+'88';
-    ctx.beginPath();
-    ctx.moveTo(x-8, y-28+bob); ctx.lineTo(x-12, y-42+bob); ctx.lineTo(x-4, y-28+bob); ctx.closePath();
-    ctx.fill();
-    ctx.shadowBlur = 0;
+
+  // Rarity glow aura (candy color)
+  if(tierIdx >= 5) {
+    const aura = ctx.createRadialGradient(x, y, 0, x, y, 36);
+    aura.addColorStop(0, tColor+'44');
+    aura.addColorStop(1, 'transparent');
+    ctx.fillStyle = aura;
+    ctx.beginPath(); ctx.arc(x, y, 46, 0, Math.PI*2); ctx.fill();
   }
-  
-  // Eyes
-  ctx.fillStyle = tColor;
-  ctx.shadowColor = tColor;
-  ctx.shadowBlur = 6;
-  ctx.fillRect(x-8, y-24+bob, 5, 5);
-  ctx.fillRect(x+3, y-24+bob, 5, 5);
-  ctx.shadowBlur = 0;
-  
+
+  const armSwing = monsterAtkTimer > 0 ? Math.sin((2-monsterAtkTimer/2000)*Math.PI)*25 : 0;
+
+  if(tierIdx < 8) {
+    // === SLIME (stages 1-8) ===
+    // Tiny nub arms
+    ctx.fillStyle = '#55cc44';
+    ctx.save(); ctx.translate(x-18, y+5+bob); ctx.rotate(-armSwing*Math.PI/180);
+    ctx.beginPath(); ctx.ellipse(0,0,7,5,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+    ctx.save(); ctx.translate(x+18, y+5+bob); ctx.rotate(armSwing*Math.PI/180);
+    ctx.beginPath(); ctx.ellipse(0,0,7,5,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+    // Body blob
+    const slimeGrad = ctx.createRadialGradient(x-6, y-8, 2, x, y, 22);
+    slimeGrad.addColorStop(0, '#aaffaa');
+    slimeGrad.addColorStop(0.5, '#55dd44');
+    slimeGrad.addColorStop(1, '#33aa22');
+    ctx.fillStyle = slimeGrad;
+    ctx.beginPath();
+    ctx.ellipse(x, y+bob, 20, 22, 0, 0, Math.PI*2); ctx.fill();
+    // Highlight
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.beginPath(); ctx.ellipse(x-6, y-8+bob, 7, 5, -0.4, 0, Math.PI*2); ctx.fill();
+    // Eyes (big cute)
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.ellipse(x-7,y-4+bob,5,6,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(x+7,y-4+bob,5,6,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=tColor; ctx.shadowColor=tColor; ctx.shadowBlur=4;
+    ctx.beginPath(); ctx.ellipse(x-6,y-4+bob,3,4,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(x+8,y-4+bob,3,4,0,0,Math.PI*2); ctx.fill();
+    ctx.shadowBlur=0;
+    ctx.fillStyle='#000'; ctx.beginPath(); ctx.arc(x-6,y-4+bob,1.5,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x+8,y-4+bob,1.5,0,Math.PI*2); ctx.fill();
+    // Smile
+    ctx.strokeStyle='#226600'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.arc(x,y+6+bob,6,0.2,Math.PI-0.2); ctx.stroke();
+    // Crown for high-tier slime
+    if(tierIdx>=5){ ctx.fillStyle=tColor; ctx.shadowColor=tColor; ctx.shadowBlur=6;
+      ctx.beginPath(); ctx.moveTo(x-8,y-18+bob); ctx.lineTo(x-6,y-26+bob); ctx.lineTo(x,y-20+bob);
+      ctx.lineTo(x+6,y-26+bob); ctx.lineTo(x+8,y-18+bob); ctx.closePath(); ctx.fill(); ctx.shadowBlur=0; }
+  } else {
+    // === MUSHROOM BOSS (stages 9-20) ===
+    // Stem/legs
+    ctx.fillStyle = '#e8c898';
+    ctx.beginPath(); ctx.roundRect(x-10, y+2+bob, 20, 22, 3); ctx.fill();
+    // Arms
+    ctx.fillStyle = '#ddb870';
+    ctx.save(); ctx.translate(x-14, y+4+bob); ctx.rotate(-armSwing*Math.PI/180);
+    ctx.fillRect(-6,0,8,14); ctx.restore();
+    ctx.save(); ctx.translate(x+14, y+4+bob); ctx.rotate(armSwing*Math.PI/180);
+    ctx.fillRect(-2,0,8,14); ctx.restore();
+    // Cap (big colorful mushroom hat)
+    const capGrad = ctx.createRadialGradient(x-5, y-20, 2, x, y-12, 26);
+    capGrad.addColorStop(0, tColor+'ff');
+    capGrad.addColorStop(0.6, tColor+'cc');
+    capGrad.addColorStop(1, tColor+'44');
+    ctx.fillStyle = capGrad;
+    ctx.shadowColor = tColor; ctx.shadowBlur = tierIdx>=15 ? 16 : 6;
+    ctx.beginPath(); ctx.ellipse(x, y-14+bob, 26, 18, 0, Math.PI, Math.PI*2); ctx.fill();
+    ctx.shadowBlur=0;
+    // White spots on cap
+    ctx.fillStyle='rgba(255,255,255,0.8)';
+    [[x-10,y-20],[x+8,y-22],[x,y-14]].forEach(([sx,sy])=>{
+      ctx.beginPath(); ctx.arc(sx,sy+bob,3,0,Math.PI*2); ctx.fill();
+    });
+    // Cap underside
+    ctx.fillStyle='#fff8ee';
+    ctx.beginPath(); ctx.ellipse(x, y-5+bob, 24, 8, 0, 0, Math.PI); ctx.fill();
+    // Face
+    ctx.fillStyle='#443322';
+    ctx.beginPath(); ctx.ellipse(x-7,y+6+bob,4,5,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(x+7,y+6+bob,4,5,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=tColor; ctx.shadowColor=tColor; ctx.shadowBlur=5;
+    ctx.beginPath(); ctx.arc(x-7,y+6+bob,2.5,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x+7,y+6+bob,2.5,0,Math.PI*2); ctx.fill();
+    ctx.shadowBlur=0;
+    // Grumpy mouth
+    ctx.strokeStyle='#443322'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.arc(x,y+14+bob,5,Math.PI+0.3,-0.3); ctx.stroke();
+  }
+
   // HP bar
   ctx.restore();
-  drawHpBar(x-30, y-44+bob, 60, 6, hpPct, '#cc2222', '#660000');
+  drawHpBar(x-30, y-48+bob, 60, 7, hpPct, '#44cc44', '#cc4422');
 }
 
 function drawHpBar(x, y, w, h, pct, colorFull, colorLow) {
-  ctx.fillStyle = '#111';
-  ctx.fillRect(x, y, w, h);
-  const c = pct>0.5 ? colorFull : pct>0.25 ? '#ccaa00' : colorLow;
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.beginPath(); ctx.roundRect(x, y, w, h, 3); ctx.fill();
+  const c = pct>0.5 ? colorFull : pct>0.25 ? '#ffaa00' : colorLow;
   ctx.fillStyle = c;
-  ctx.fillRect(x+1, y+1, (w-2)*pct, h-2);
-  ctx.strokeStyle = '#444';
+  ctx.beginPath(); ctx.roundRect(x+1, y+1, Math.max(0,(w-2)*pct), h-2, 2); ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,0.15)';
   ctx.lineWidth = 1;
-  ctx.strokeRect(x, y, w, h);
+  ctx.beginPath(); ctx.roundRect(x, y, w, h, 3); ctx.stroke();
 }
 
 // ===== SLASH EFFECTS =====
@@ -702,9 +708,9 @@ function drawDamageNumbers(dt) {
       ctx.shadowBlur = 10;
     } else {
       ctx.font = d.isPlayer ? 'bold 13px Arial' : '11px Arial';
-      ctx.fillStyle = d.isPlayer ? '#ff6666' : '#88ff88';
-      ctx.shadowColor = d.isPlayer ? '#ff0000' : '#00ff00';
-      ctx.shadowBlur = 6;
+      ctx.fillStyle = d.isPlayer ? '#ff4455' : '#228833';
+      ctx.shadowColor = d.isPlayer ? '#ff8888' : '#aaffaa';
+      ctx.shadowBlur = 5;
     }
     ctx.textAlign = 'center';
     ctx.fillText((d.isCrit?'暴击! ':'') + Math.round(d.value), d.x, d.y);
@@ -771,10 +777,10 @@ function drawParticles(dt) {
 
 // ===== SCREEN FLASH =====
 function levelUpFlash() {
-  screenFlash = {alpha:0.6, color:'#8866ff'};
+  screenFlash = {alpha:0.45, color:'#ffffaa'};
 }
 function deathFlash() {
-  screenFlash = {alpha:0.5, color:'#ff2222'};
+  screenFlash = {alpha:0.35, color:'#ffcccc'};
 }
 function rareDropFlash(color) {
   screenFlash = {alpha:0.4, color};
@@ -790,11 +796,11 @@ function drawScreenFlash(dt) {
   if(screenFlash.alpha<0) screenFlash.alpha=0;
 }
 
-// ===== VIGNETTE =====
+// ===== VIGNETTE (soft warm border) =====
 function drawVignette() {
-  const vg = ctx.createRadialGradient(canvasW/2,canvasH/2,canvasH*0.3,canvasW/2,canvasH/2,canvasH*0.9);
+  const vg = ctx.createRadialGradient(canvasW/2,canvasH/2,canvasH*0.35,canvasW/2,canvasH/2,canvasH*0.95);
   vg.addColorStop(0,'transparent');
-  vg.addColorStop(1,'rgba(0,0,0,0.6)');
+  vg.addColorStop(1,'rgba(100,160,80,0.12)');
   ctx.fillStyle = vg;
   ctx.fillRect(0,0,canvasW,canvasH);
 }
@@ -920,7 +926,8 @@ function gameLoop(ts) {
   
   // Update battle
   battleTick(dt);
-  
+  tickSave(dt);
+
   // Draw
   drawBackground(ts);
   drawLightBeams(dt);
@@ -1066,6 +1073,7 @@ function clickInvItem(item) {
   inventory = inventory.filter(i=>i!==item);
   renderInventoryGrid();
   renderEquipSlots();
+  saveGame();
 }
 
 // ===== ACTION BUTTONS =====
@@ -1081,8 +1089,8 @@ document.getElementById('btn-open-selected').addEventListener('click', ()=>{
   if(chests.findIndex(c=>c.tier===selectedChestTier)<0) selectedChestTier=-1;
   renderChestGrid();
   renderInventoryGrid();
-  // Switch to inventory tab to show the new item
   switchTab('inventory');
+  saveGame();
 });
 
 document.getElementById('btn-open-all').addEventListener('click', ()=>{
@@ -1099,6 +1107,7 @@ document.getElementById('btn-open-all').addEventListener('click', ()=>{
   renderChestGrid();
   renderInventoryGrid();
   switchTab('inventory');
+  saveGame();
 });
 
 document.getElementById('btn-sell-all').addEventListener('click', ()=>{
@@ -1110,14 +1119,15 @@ document.getElementById('btn-sell-all').addEventListener('click', ()=>{
   gainExp(totalXp);
   renderInventoryGrid();
   updateUI();
+  saveGame();
 });
 
 // Stage controls
 document.getElementById('prev-stage').addEventListener('click', ()=>{
-  if(stage > 1) { stage--; spawnMonster(); updateUI(); }
+  if(stage > 1) { stage--; spawnMonster(); updateUI(); saveGame(); }
 });
 document.getElementById('next-stage').addEventListener('click', ()=>{
-  if(stage < 20) { stage++; spawnMonster(); updateUI(); }
+  if(stage < 20) { stage++; spawnMonster(); updateUI(); saveGame(); }
 });
 
 // Equip slot right-click to unequip
@@ -1131,6 +1141,7 @@ document.querySelectorAll('.equip-slot').forEach(el=>{
       inventory.push(item);
       renderInventoryGrid();
       renderEquipSlots();
+      saveGame();
     }
   });
   el.addEventListener('click', ()=>{
@@ -1170,6 +1181,54 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
+// ===== SAVE / LOAD =====
+const SAVE_KEY = 'idleBattleSave_v1';
+let saveTimer = 0;
+
+function saveGame() {
+  const data = {
+    player: {
+      level: player.level, exp: player.exp,
+      hp: player.hp, maxHp: player.maxHp,
+      atk: player.atk, def: player.def,
+      critRate: player.critRate, critDmg: player.critDmg,
+      dodge: player.dodge, hit: player.hit,
+      elemAtk: player.elemAtk, elemDef: player.elemDef,
+      equipped: player.equipped
+    },
+    inventory,
+    chests,
+    stage,
+    itemIdCounter
+  };
+  localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+  // Flash the indicator
+  const ind = document.getElementById('save-indicator');
+  ind.style.opacity = '1';
+  clearTimeout(ind._fadeTimer);
+  ind._fadeTimer = setTimeout(()=>{ ind.style.opacity='0'; }, 1800);
+}
+
+function loadGame() {
+  const raw = localStorage.getItem(SAVE_KEY);
+  if(!raw) return false;
+  try {
+    const d = JSON.parse(raw);
+    Object.assign(player, d.player);
+    inventory = d.inventory || [];
+    chests = d.chests || [];
+    stage = d.stage || 1;
+    itemIdCounter = d.itemIdCounter || 1;
+    return true;
+  } catch(e) { return false; }
+}
+
+// Auto-save every 30 seconds via game loop
+function tickSave(dt) {
+  saveTimer += dt;
+  if(saveTimer >= 30) { saveTimer = 0; saveGame(); }
+}
+
 // ===== CANVAS HEIGHT =====
 function setCanvasHeight() {
   const vh = window.innerHeight;
@@ -1185,14 +1244,18 @@ function init() {
   setCanvasHeight();
   setupCanvas();
   initStars();
+
+  const hasSave = loadGame();
+  if(!hasSave) {
+    // First time: give 5 starter chests
+    for(let i=0;i<5;i++) chests.push({tier:Math.floor(Math.random()*4), id:itemIdCounter++});
+  }
+
   spawnMonster();
   player.hp = getPlayerStats().maxHp;
   playerAtkTimer = 1.5;
   monsterAtkTimer = 2.0;
-  
-  // Give some starter chests for demo
-  for(let i=0;i<5;i++) chests.push({tier:Math.floor(Math.random()*4), id:itemIdCounter++});
-  
+
   renderChestGrid();
   renderInventoryGrid();
   updateUI();
