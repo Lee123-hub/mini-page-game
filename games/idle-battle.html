@@ -802,16 +802,6 @@ function drawVignette() {
 // ===== BATTLE LOGIC =====
 let lastTime = 0;
 function battleTick(dt) {
-  if(playerDeadTimer > 0) {
-    playerDeadTimer -= dt;
-    if(playerDeadTimer <= 0) {
-      // Respawn
-      player.hp = getPlayerStats().maxHp;
-      spawnMonster();
-    }
-    return;
-  }
-  
   if(!monster) { spawnMonster(); return; }
   
   // Player attacks
@@ -845,6 +835,9 @@ function doPlayerAttack() {
   
   if(monster.hp <= 0) {
     monster.hp = 0;
+    // Kill: restore player to full HP
+    player.hp = getPlayerStats().maxHp;
+    spawnDamageNumber(playerX, playerY-38, '满血复活!', false, false);
     onMonsterDeath();
   }
 }
@@ -863,11 +856,13 @@ function doMonsterAttack() {
   spawnDamageNumber(playerX, playerY-20, dmg, false, true);
   
   if(player.hp <= 0) {
-    player.hp = 0;
-    playerDeadTimer = 3.0;
+    // Instant respawn: restore player and reset monster to full HP
+    player.hp = getPlayerStats().maxHp;
+    monster.hp = monster.maxHp;
     playerAtkTimer = 1.5;
     monsterAtkTimer = 2.0;
     deathFlash();
+    spawnDamageNumber(playerX, playerY-38, '复活!', false, false);
   }
 }
 
