@@ -17,39 +17,40 @@ body{background:#e8f5ff;color:#2d3a4a;font-family:'Segoe UI',sans-serif;height:1
 #left-panel{width:160px;flex-shrink:0;display:flex;flex-direction:column;gap:6px}
 #center-panel{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}
 #right-panel{width:200px;flex-shrink:0;display:flex;flex-direction:column;gap:6px}
-.panel-title{font-size:11px;color:#7aaad0;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;border-bottom:1px solid #d8eeff;padding-bottom:3px;font-weight:600}
-.stat-row{display:flex;justify-content:space-between;font-size:11px;padding:1px 0;color:#445566}
-.stat-val{color:#e07030;font-weight:600}
-.exp-bar-wrap{background:#e8f0ff;border-radius:3px;height:8px;overflow:hidden;margin:3px 0}
-.exp-bar{height:100%;background:linear-gradient(90deg,#ff9d6c,#ffcc5c);border-radius:3px;transition:width 0.3s}
+.panel-title{font-size:12px;color:#7aaad0;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;border-bottom:1px solid #d8eeff;padding-bottom:3px;font-weight:700}
+.stat-row{display:flex;justify-content:space-between;font-size:13px;padding:2px 0;color:#334455}
+.stat-val{color:#d05010;font-weight:700}
+.exp-bar-wrap{background:#e8f0ff;border-radius:4px;height:9px;overflow:hidden;margin:4px 0}
+.exp-bar{height:100%;background:linear-gradient(90deg,#ff9d6c,#ffcc5c);border-radius:4px;transition:width 0.3s}
 .stage-ctrl{display:flex;align-items:center;justify-content:space-between;gap:4px}
-.stage-btn{background:#e8f4ff;border:1px solid #99ccff;color:#4488cc;padding:3px 8px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600}
+.stage-btn{background:#e8f4ff;border:1px solid #99ccff;color:#4488cc;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700}
 .stage-btn:hover{background:#cce8ff;color:#2255aa}
-.stage-name{flex:1;text-align:center;font-size:12px;color:#ff7eb3;font-weight:700}
-.chest-grid{display:flex;flex-wrap:wrap;gap:4px;overflow-y:auto;max-height:120px}
-.chest-item{width:36px;height:36px;border-radius:8px;border:2px solid #ddd;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;position:relative;flex-shrink:0;background:#f8fcff}
-.chest-item .badge{position:absolute;top:-4px;right:-4px;background:#ff6688;color:#fff;font-size:9px;min-width:14px;height:14px;border-radius:7px;display:flex;align-items:center;justify-content:center;padding:0 2px;font-weight:700}
+.stage-name{flex:1;text-align:center;font-size:13px;color:#ff7eb3;font-weight:700}
+.chest-grid{display:flex;flex-wrap:wrap;gap:5px;overflow-y:auto;max-height:130px}
+.chest-item{width:44px;height:44px;border-radius:8px;border:2px solid #ddd;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;position:relative;flex-shrink:0;background:#f8fcff}
+.chest-item .badge{position:absolute;top:-5px;right:-5px;background:#ff6688;color:#fff;font-size:10px;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px;font-weight:700}
 .chest-item.selected{outline:2px solid #ff7eb3}
-.equip-slots{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px}
-.equip-slot{background:#f0f8ff;border:1px solid #c8e0ff;border-radius:8px;padding:4px;min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;color:#aabbcc;cursor:pointer;position:relative;overflow:hidden}
-.equip-slot .slot-name{font-size:9px;color:#99aacc}
-.equip-slot .item-name{font-size:9px;text-align:center;line-height:1.2;margin-top:2px}
-.inv-grid{display:flex;flex-wrap:wrap;gap:3px;overflow-y:auto;flex:1;min-height:0;align-content:flex-start}
-.inv-item{width:40px;height:40px;border-radius:6px;border:2px solid transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:9px;text-align:center;line-height:1.2;padding:2px;position:relative;background:#f8fcff}
+.equip-slots{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
+.equip-slot{background:#f0f8ff;border:1px solid #c8e0ff;border-radius:8px;padding:5px;min-height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;color:#aabbcc;cursor:pointer;position:relative;overflow:hidden}
+.equip-slot .slot-name{font-size:11px;color:#7799bb;font-weight:600}
+.equip-slot .item-name{font-size:11px;text-align:center;line-height:1.3;margin-top:3px;font-weight:600}
+.inv-grid{display:flex;flex-wrap:wrap;gap:4px;overflow-y:auto;flex:1;min-height:0;align-content:flex-start}
+.inv-item{width:52px;height:52px;border-radius:7px;border:2px solid transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;text-align:center;line-height:1.3;padding:3px;position:relative;background:#f8fcff}
 .inv-item:hover{filter:brightness(0.95) saturate(1.3)}
 .inv-item.equipped-item{border-style:dashed}
-.action-row{display:flex;gap:4px;flex-shrink:0}
-.act-btn{flex:1;background:#f0f8ff;border:1px solid #99ccff;color:#4488cc;padding:4px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600}
+.action-row{display:flex;gap:5px;flex-shrink:0}
+.act-btn{flex:1;background:#f0f8ff;border:1px solid #99ccff;color:#4488cc;padding:5px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600}
 .act-btn:hover{background:#ddeeff;color:#2255aa}
 .act-btn.primary{background:linear-gradient(135deg,#ff9d6c44,#ffcc5c44);border-color:#ffaa66}
 .act-btn.primary:hover{background:linear-gradient(135deg,#ff9d6c88,#ffcc5c88);color:#884400}
 .tabs{display:flex;gap:4px;flex-shrink:0}
-.tab{padding:4px 10px;border-radius:6px 6px 0 0;cursor:pointer;font-size:11px;border:1px solid transparent;border-bottom:none;background:#e8f4ff;color:#88aacc;font-weight:600}
+.tab{padding:5px 12px;border-radius:6px 6px 0 0;cursor:pointer;font-size:12px;border:1px solid transparent;border-bottom:none;background:#e8f4ff;color:#88aacc;font-weight:600}
 .tab.active{background:#ffffff;border-color:#c8e0ff;color:#4488cc}
 .tab-content{display:none;flex:1;min-height:0;flex-direction:column;gap:4px}
 .tab-content.active{display:flex}
 .monster-preview{display:flex;justify-content:center;padding:4px}
-#save-indicator{font-size:10px;color:#88bbdd;margin-left:auto;opacity:0;transition:opacity 0.5s}
+#save-indicator{font-size:11px;color:#88bbdd;margin-left:auto;opacity:0;transition:opacity 0.5s}
+#item-tooltip{font-size:12px;color:#445566;line-height:1.6}
 </style>
 </head>
 <body>
@@ -160,6 +161,95 @@ const SLOTS = ['weapon','helmet','armor','gloves','boots','accessory'];
 const SLOT_NAMES = {weapon:'武器',helmet:'头盔',armor:'护甲',gloves:'手套',boots:'靴子',accessory:'饰品'};
 const SLOT_ICONS = {weapon:'⚔️',helmet:'⛑️',armor:'🛡️',gloves:'🧤',boots:'👢',accessory:'💍'};
 
+// ===== 10种装备类别，决定名字+属性分布偏向 =====
+// bias: 各属性加权系数（相对基础值的额外乘数叠加）
+const ITEM_TYPES = [
+  { name:'魔法棒',  slot:'weapon',    icon:'🪄', bias:{elemAtk:2.0, critDmg:0.5},
+    desc:'元素攻击大幅提升，暴击伤害略低' },
+  { name:'大剑',    slot:'weapon',    icon:'⚔️', bias:{atk:2.0, critRate:0.6},
+    desc:'攻击力极高，暴击率略低' },
+  { name:'匕首',    slot:'weapon',    icon:'🗡️', bias:{critRate:2.5, dodge:1.5, atk:0.6},
+    desc:'暴击率与闪避超高，攻击力偏低' },
+  { name:'龙鳞甲',  slot:'armor',     icon:'🐉', bias:{def:2.2, elemDef:1.5, hp:0.8},
+    desc:'防御与元素防御极强' },
+  { name:'皮甲',    slot:'armor',     icon:'🥋', bias:{hp:1.8, dodge:1.5, def:0.5},
+    desc:'生命与闪避高，防御偏低' },
+  { name:'龙角盔',  slot:'helmet',    icon:'🪖', bias:{def:1.8, hit:1.5, hp:0.7},
+    desc:'防御命中兼顾' },
+  { name:'法师帽',  slot:'helmet',    icon:'🎩', bias:{elemAtk:1.8, elemDef:1.5, critDmg:1.2},
+    desc:'元素双属性优秀' },
+  { name:'疾风靴',  slot:'boots',     icon:'👟', bias:{dodge:2.5, hit:1.5, def:0.3},
+    desc:'闪避命中大幅提升' },
+  { name:'力量手套',slot:'gloves',    icon:'🥊', bias:{atk:1.8, critRate:1.5, hit:0.8},
+    desc:'攻击暴击强力组合' },
+  { name:'龙晶项链',slot:'accessory', icon:'📿', bias:{hp:1.5, critDmg:2.0, elemAtk:1.2},
+    desc:'全能属性，暴伤突出' },
+];
+
+// 30稀有度 × 10前缀（越高稀有度词汇越霸气）
+const RARITY_PREFIXES = [
+  // tier 0 普通
+  ['破旧的','老旧的','磨损的','粗糙的','普通的','平凡的','简朴的','廉价的','寻常的','粗制的'],
+  // tier 1 坚固
+  ['坚硬的','厚实的','耐用的','粗犷的','结实的','稳固的','笨重的','朴实的','坚韧的','粗壮的'],
+  // tier 2 精良
+  ['精制的','优质的','细腻的','打磨的','精巧的','光滑的','工整的','精良的','细工的','匠心的'],
+  // tier 3 稀有
+  ['湛蓝的','稀有的','珍稀的','罕见的','幸运的','闪烁的','奇异的','独特的','特制的','专属的'],
+  // tier 4 史诗初级
+  ['史诗的','传奇的','英雄的','荣耀的','辉煌的','显赫的','卓越的','杰出的','非凡的','超凡的'],
+  // tier 5 史诗
+  ['炽热的','燃烧的','烈焰的','赤炎的','灼烧的','火焰的','炎炎的','烈火的','暗炎的','熔岩的'],
+  // tier 6 史诗精英
+  ['寒冰的','冰霜的','极寒的','凛冬的','冻结的','永冻的','极冰的','霜雪的','寒霜的','冰封的'],
+  // tier 7 传说
+  ['雷霆的','电闪的','闪电的','霹雳的','惊雷的','轰鸣的','雷神的','天雷的','电光的','雷电的'],
+  // tier 8 传说精英
+  ['黄金的','铂金的','纯金的','闪金的','熔金的','神金的','璀璨的','耀金的','皇金的','王者的'],
+  // tier 9 远古
+  ['远古的','上古的','太古的','亘古的','洪荒的','始古的','原古的','混沌的','蛮荒的','幽古的'],
+  // tier 10 远古精英
+  ['炎龙的','烈龙的','神龙的','龙啸的','龙裂的','焰龙的','冥龙的','暗龙的','战龙的','巨龙的'],
+  // tier 11 神圣
+  ['神圣的','圣洁的','圣光的','圣耀的','圣灵的','天圣的','光明的','圣焰的','圣化的','祈圣的'],
+  // tier 12 神圣精英
+  ['天堂的','天庭的','天界的','天神的','圣界的','天启的','天赋的','苍天的','天道的','天选的'],
+  // tier 13 神器
+  ['神器的','神圣器的','神兵的','神械的','神装的','神制的','神铸的','神工的','神造的','神赐的'],
+  // tier 14 神器精英
+  ['至神的','封神的','弑神的','破神的','逆神的','炼神的','融神的','归神的','化神的','凝神的'],
+  // tier 15 混沌
+  ['混沌的','虚无的','深渊的','黑暗的','腐化的','侵蚀的','扭曲的','污染的','腐蚀的','蚀骨的'],
+  // tier 16 混沌精英
+  ['噬魂的','夺魄的','摄魂的','灭魂的','焚魂的','碎魂的','凝魂的','炼魂的','渡魂的','吞魂的'],
+  // tier 17 虚空
+  ['虚空的','星空的','宇宙的','星际的','银河的','星河的','星辰的','宇宙的','星尘的','星芒的'],
+  // tier 18 虚空精英
+  ['时空的','维度的','次元的','异界的','跨界的','穿越的','折叠的','扭曲的','裂缝的','裂空的'],
+  // tier 19 深渊
+  ['深渊的','无底的','冥渊的','幽冥的','暗渊的','炼狱的','地狱的','幽暗的','深冥的','渊底的'],
+  // tier 20 深渊精英
+  ['冥王的','冥帝的','阎罗的','死神的','幽灵的','亡者的','冥灵的','死域的','冥界的','夺命的'],
+  // tier 21 太古
+  ['太古的','盘古的','鸿蒙的','混元的','初始的','元始的','无极的','太虚的','本源的','宇源的'],
+  // tier 22 太古精英
+  ['天道的','大道的','至道的','本道的','法道的','渡化的','超脱的','飞升的','问道的','悟道的'],
+  // tier 23 永恒
+  ['永恒的','不朽的','永生的','永世的','长生的','恒久的','永久的','万古的','千古的','亘古的'],
+  // tier 24 永恒精英
+  ['无上的','至尊的','超绝的','登峰的','绝世的','无双的','独步的','傲世的','睥睨的','俯仰的'],
+  // tier 25 神话
+  ['神话的','传说中的','史诗级的','神迹的','神奇的','神异的','神秘的','神明的','神渡的','神化的'],
+  // tier 26 神话精英
+  ['造化的','化生的','创化的','演化的','进化的','蜕化的','衍化的','圆化的','归元的','返本的'],
+  // tier 27 创世
+  ['创世的','开天的','辟地的','天地的','万物的','宇宙初的','始源的','元力的','本元的','原力的'],
+  // tier 28 创世精英
+  ['主宰的','统御的','掌控的','支配的','凌驾的','超越的','突破的','极限的','最强的','无敌的'],
+  // tier 29 至尊
+  ['至尊的','唯一的','绝对的','最终的','终极的','极尽的','无上至的','万古第一的','宇宙级的','神灵之'],
+];
+
 // ===== GAME STATE =====
 let player = {
   level:1, exp:0, hp:500, maxHp:500,
@@ -177,25 +267,36 @@ let itemIdCounter = 1;
 // ===== ITEM GENERATION =====
 function rollItem(tierIndex) {
   const t = tierIndex;
-  const slot = SLOTS[Math.floor(Math.random()*SLOTS.length)];
-  const r = (base, perTier) => {
-    const v = (base + t*perTier) * (0.7 + Math.random()*0.6);
+  // Pick random item type
+  const itype = ITEM_TYPES[Math.floor(Math.random()*ITEM_TYPES.length)];
+  // Pick random prefix from this tier
+  const prefix = RARITY_PREFIXES[t][Math.floor(Math.random()*10)];
+  const fullName = prefix + itype.name;
+
+  // Base stat roller with type bias
+  const r = (statKey, base, perTier) => {
+    const biasMul = itype.bias[statKey] !== undefined ? itype.bias[statKey] : 1.0;
+    const v = (base + t*perTier) * biasMul * (0.75 + Math.random()*0.5);
     return Math.round(v*10)/10;
   };
+
   return {
     id: itemIdCounter++,
     tier: tierIndex,
-    slot,
-    name: RARITIES[tierIndex].name + SLOT_NAMES[slot],
-    hp:       r(50,  80),
-    atk:      r(5,   12),
-    def:      r(3,    8),
-    critRate: r(0.5,  0.3),
-    critDmg:  r(5,    4),
-    dodge:    r(0.3,  0.25),
-    hit:      r(1,    0.2),
-    elemAtk:  r(2,   10),
-    elemDef:  r(2,    8),
+    slot: itype.slot,
+    icon: itype.icon,
+    typeName: itype.name,
+    prefix,
+    name: fullName,
+    hp:       r('hp',       50,  80),
+    atk:      r('atk',       5,  12),
+    def:      r('def',       3,   8),
+    critRate: r('critRate', 0.5, 0.3),
+    critDmg:  r('critDmg',   5,   4),
+    dodge:    r('dodge',    0.3, 0.25),
+    hit:      r('hit',       1,  0.2),
+    elemAtk:  r('elemAtk',   2,  10),
+    elemDef:  r('elemDef',   2,   8),
   };
 }
 
@@ -976,19 +1077,16 @@ function renderEquipSlots() {
     const slotEl = el.closest('.equip-slot');
     if(item) {
       const r = RARITIES[item.tier];
-      el.textContent = item.name;
+      const icon = item.icon || SLOT_ICONS[item.slot];
+      el.innerHTML = `<span style="font-size:15px">${icon}</span><span style="font-size:11px;font-weight:700;word-break:break-all">${item.name}</span>`;
       el.style.color = r.color;
       slotEl.style.borderColor = r.color+'88';
       slotEl.style.boxShadow = `0 0 8px ${r.color}66, inset 0 0 8px ${r.color}22`;
-      if(item.tier >= 20) {
-        slotEl.style.animation = 'equip-pulse 1.5s ease-in-out infinite';
-      } else {
-        slotEl.style.animation = '';
-      }
+      slotEl.style.animation = item.tier >= 20 ? 'equip-pulse 1.5s ease-in-out infinite' : '';
     } else {
-      el.textContent = '空';
-      el.style.color = '#555';
-      slotEl.style.borderColor = '#333366';
+      el.innerHTML = '<span style="font-size:18px">＋</span>';
+      el.style.color = '#aabbcc';
+      slotEl.style.borderColor = '#c8e0ff';
       slotEl.style.boxShadow = '';
       slotEl.style.animation = '';
     }
@@ -1034,7 +1132,8 @@ function renderInventoryGrid() {
     div.style.boxShadow = `0 0 ${4+item.tier}px ${r.color}${item.tier>=20?'cc':'66'}`;
     div.style.color = r.color;
     div.title = formatItemTooltip(item);
-    div.innerHTML = `<div style="font-size:9px;line-height:1.1">${SLOT_ICONS[item.slot]}<br>${item.name}</div>`;
+    const icon = item.icon || SLOT_ICONS[item.slot];
+    div.innerHTML = `<div style="line-height:1.2;text-align:center"><div style="font-size:16px">${icon}</div><div style="font-size:10px;font-weight:600;word-break:break-all">${item.name}</div></div>`;
     div.addEventListener('click', ()=>clickInvItem(item));
     div.addEventListener('contextmenu', (e)=>{e.preventDefault();showItemTooltip(item);});
     grid.appendChild(div);
@@ -1043,7 +1142,9 @@ function renderInventoryGrid() {
 
 function formatItemTooltip(item) {
   const r = RARITIES[item.tier];
-  return `[${r.name}] ${item.name}\n` +
+  const itype = ITEM_TYPES.find(it=>it.name===item.typeName);
+  return `[${r.name}] ${item.name}\n部位: ${SLOT_NAMES[item.slot]}\n` +
+    (itype ? itype.desc+'\n' : '') +
     `HP+${item.hp.toFixed(0)} ATK+${item.atk.toFixed(0)} DEF+${item.def.toFixed(0)}\n` +
     `暴击+${item.critRate.toFixed(1)}% 暴伤+${item.critDmg.toFixed(0)}%\n` +
     `闪避+${item.dodge.toFixed(1)}% 命中+${item.hit.toFixed(1)}%\n` +
@@ -1052,13 +1153,17 @@ function formatItemTooltip(item) {
 
 function showItemTooltip(item) {
   const r = RARITIES[item.tier];
+  const itype = ITEM_TYPES.find(it=>it.name===item.typeName);
   const tt = document.getElementById('item-tooltip');
-  tt.innerHTML = `<b style="color:${r.color}">[${r.name}] ${item.name}</b><br>` +
-    `HP+${item.hp.toFixed(0)}&nbsp; ATK+${item.atk.toFixed(0)}&nbsp; DEF+${item.def.toFixed(0)}<br>` +
-    `暴击+${item.critRate.toFixed(1)}%&nbsp; 暴伤+${item.critDmg.toFixed(0)}%<br>` +
-    `闪避+${item.dodge.toFixed(1)}%&nbsp; 命中+${item.hit.toFixed(1)}%<br>` +
-    `元攻+${item.elemAtk.toFixed(0)}&nbsp; 元防+${item.elemDef.toFixed(0)}<br>` +
-    `<span style="color:#aaa;font-size:9px">变卖获得: ${sellExpForTier(item.tier)} EXP | 点击装备</span>`;
+  tt.innerHTML =
+    `<b style="color:${r.color};font-size:13px">${item.name}</b><br>` +
+    `<span style="color:#7799bb;font-size:11px">[${r.name}] ${SLOT_NAMES[item.slot]}</span><br>` +
+    (itype ? `<span style="color:#99aacc;font-size:11px;font-style:italic">${itype.desc}</span><br>` : '') +
+    `<span style="color:#445566">❤️ HP <b>+${item.hp.toFixed(0)}</b> &nbsp;⚔️ ATK <b>+${item.atk.toFixed(0)}</b> &nbsp;🛡️ DEF <b>+${item.def.toFixed(0)}</b></span><br>` +
+    `<span style="color:#445566">💥 暴击 <b>+${item.critRate.toFixed(1)}%</b> &nbsp;💫 暴伤 <b>+${item.critDmg.toFixed(0)}%</b></span><br>` +
+    `<span style="color:#445566">💨 闪避 <b>+${item.dodge.toFixed(1)}%</b> &nbsp;🎯 命中 <b>+${item.hit.toFixed(1)}%</b></span><br>` +
+    `<span style="color:#445566">✨ 元攻 <b>+${item.elemAtk.toFixed(0)}</b> &nbsp;🔮 元防 <b>+${item.elemDef.toFixed(0)}</b></span><br>` +
+    `<span style="color:#ffaa44;font-size:11px">💰 变卖: ${sellExpForTier(item.tier)} EXP &nbsp;|&nbsp; 点击装备</span>`;
 }
 
 function clickInvItem(item) {
